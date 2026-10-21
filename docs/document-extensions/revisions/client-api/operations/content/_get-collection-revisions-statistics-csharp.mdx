@@ -1,0 +1,60 @@
+import Admonition from '@theme/Admonition';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import CodeBlock from '@theme/CodeBlock';
+
+<Admonition type="note" title="">
+
+* Use `GetCollectionRevisionsStatisticsOperation` to get the total number of revisions in the database,
+  broken down by collection.
+
+* The operation is a maintenance operation, so it is sent with `store.Maintenance`.
+
+* By default, the operation targets the [default database](../../../../../client-api/setting-up-default-database.mdx).  
+  To query a different database, see [switch operations to a different database](../../../../../client-api/operations/how-to/switch-operations-to-a-different-database.mdx).
+
+</Admonition>
+
+## Syntax
+
+<TabItem value="syntax_1" label="syntax_1">
+<CodeBlock language="csharp">
+{`public GetCollectionRevisionsStatisticsOperation();
+`}
+</CodeBlock>
+</TabItem>
+
+| Return Value | |
+| ------------- | ----- |
+| `CollectionRevisionsStatistics` | Revisions statistics of the database |
+
+`CollectionRevisionsStatistics`:
+
+| Property | Type | Description |
+| ------------- | ------------- | ----- |
+| **CountOfRevisions** | `long` | Total number of revisions in the database |
+| **Collections** | `Dictionary<string, long>` | Number of revisions per collection, keyed by collection name |
+
+## Example
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="Sync" label="Sync">
+<CodeBlock language="csharp">
+{`CollectionRevisionsStatistics stats = store.Maintenance.Send(new GetCollectionRevisionsStatisticsOperation());
+
+Console.WriteLine($"Total revisions: {stats.CountOfRevisions}");
+
+foreach (var (collection, count) in stats.Collections)
+{
+    Console.WriteLine($"{collection}: {count}");
+}
+`}
+</CodeBlock>
+</TabItem>
+<TabItem value="Async" label="Async">
+<CodeBlock language="csharp">
+{`CollectionRevisionsStatistics stats = await store.Maintenance.SendAsync(new GetCollectionRevisionsStatisticsOperation());
+`}
+</CodeBlock>
+</TabItem>
+</Tabs>

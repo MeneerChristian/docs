@@ -323,6 +323,28 @@ EmbeddingsTransformation = new EmbeddingsTransformation()
 
 </ContentFrame>
 
+<ContentFrame>
+
+#### Update an embeddings generation task:
+
+* To change the configuration of an existing task, send `UpdateEmbeddingsGenerationOperation` with the task ID
+  returned when the task was added, and the updated `EmbeddingsGenerationConfiguration`.  
+* Set `reset` to `true` to also reset the transformation named by the configuration's `TransformationName`.
+
+<TabItem value="update_embeddings_task" label="update_embeddings_task">
+```csharp
+// Task ID returned when the task was added
+long taskId = addAiIntegrationTaskResult.TaskId;
+
+// Send the updated configuration; reset: true also resets the transformation
+var updateEmbeddingsTaskOp =
+    new UpdateEmbeddingsGenerationOperation(taskId, embeddingsTaskConfiguration, reset: true);
+var updateResult = store.Maintenance.Send(updateEmbeddingsTaskOp);
+```
+</TabItem>
+
+</ContentFrame>
+
 </Panel>
 
 <Panel heading="Chunking methods and tokens">
@@ -656,6 +678,15 @@ public enum VectorEmbeddingType
 <TabItem value="syntax_3" label="syntax_3">
 ```csharp
 public AddEmbeddingsGenerationOperation(EmbeddingsGenerationConfiguration configuration);
+```
+</TabItem>
+
+#### Updating the embeddings generation task:
+
+<TabItem value="syntax_4" label="syntax_4">
+```csharp
+public UpdateEmbeddingsGenerationOperation(
+    long taskId, EmbeddingsGenerationConfiguration configuration, bool reset = false);
 ```
 </TabItem>
     

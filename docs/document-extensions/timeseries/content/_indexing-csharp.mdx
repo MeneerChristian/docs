@@ -526,6 +526,77 @@ protected void AddMapForAll<TBase>(
 `}
 </CodeBlock>
 </TabItem>
+### `AbstractGenericTimeSeriesIndexCreationTask`
+
+* This is the base class of `AbstractTimeSeriesIndexCreationTask<TDocument, TReduceResult>` and `AbstractMultiMapTimeSeriesIndexCreationTask<TReduceResult>`.  
+* It provides the field options (`Index`, `Store`, `Analyze`, `TermVector`, `Spatial`, `Suggestion`) used to configure the index-entry fields.  
+* Its type parameter is the index-entry (reduce result) type.  
+
+<TabItem value="csharp" label="csharp">
+<CodeBlock language="csharp">
+{`// Base class of the time series index creation tasks:
+// ===================================================
+public abstract class AbstractGenericTimeSeriesIndexCreationTask<TReduceResult> : AbstractTimeSeriesIndexCreationTask \{ \}
+
+// Field options available in AbstractGenericTimeSeriesIndexCreationTask:
+// ======================================================================
+protected void Index(Expression<Func<TReduceResult, object>> field, FieldIndexing indexing);
+protected void Index(string field, FieldIndexing indexing);
+
+protected void Store(Expression<Func<TReduceResult, object>> field, FieldStorage storage);
+protected void Store(string field, FieldStorage storage);
+protected void StoreAllFields(FieldStorage storage);
+
+protected void Analyze(Expression<Func<TReduceResult, object>> field, string analyzer);
+protected void Analyze(string field, string analyzer);
+
+protected void TermVector(Expression<Func<TReduceResult, object>> field, FieldTermVector termVector);
+protected void TermVector(string field, FieldTermVector termVector);
+
+protected void Spatial(Expression<Func<TReduceResult, object>> field, Func<SpatialOptionsFactory, SpatialOptions> indexing);
+protected void Spatial(string field, Func<SpatialOptionsFactory, SpatialOptions> indexing);
+
+protected void Suggestion(Expression<Func<TReduceResult, object>> field);
+`}
+</CodeBlock>
+</TabItem>
+
+Example of setting field options in a multi-map time series index:  
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="Generic_example" label="Generic_example">
+<CodeBlock language="csharp">
+{`public class StockPrices_ByName : AbstractMultiMapTimeSeriesIndexCreationTask<StockPrices_ByName.Result>
+{
+    public class Result
+    {
+        public string Name { get; set; }
+        public double Value { get; set; }
+        public DateTime Start { get; set; }
+        public DateTime End { get; set; }
+    }
+
+    public StockPrices_ByName()
+    {
+        AddMap<Company>("StockPrices", segments => from ts in segments
+                                                   from entry in ts.Entries
+                                                   select new Result
+                                                   {
+                                                       Name = ts.Name,
+                                                       Value = entry.Value,
+                                                       Start = ts.Start,
+                                                       End = ts.End
+                                                   });
+
+        Index(r => r.Name, FieldIndexing.Exact);
+        Store(r => r.Value, FieldStorage.Yes);
+    }
+}
+`}
+</CodeBlock>
+</TabItem>
+</Tabs>
+
 ### `AbstractJavaScriptTimeSeriesIndexCreationTask`
  
 <TabItem value="csharp" label="csharp">

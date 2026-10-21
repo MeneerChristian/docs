@@ -169,3 +169,53 @@ e.g., in an Npgsql connection string, include `SSL Mode=Require`.
 </Admonition>
 
 </Panel>
+
+<Panel heading="Configuring PostgreSQL credentials with the Client API">
+
+<ContentFrame>
+
+Besides Studio, you can set the PostgreSQL users from code with `ConfigurePostgreSqlOperation`.
+The operation takes a `PostgreSqlConfiguration`, whose `Authentication.Users` list holds the user names and passwords
+that PostgreSQL clients must provide.  
+Each call posts the full configuration, so include every user you want to keep.
+
+```csharp
+using Raven.Client.Documents.Operations.Integrations.PostgreSQL;
+using Raven.Client.ServerWide.Operations.Integrations.PostgreSQL;
+
+var configuration = new PostgreSqlConfiguration
+{
+    Authentication = new PostgreSqlAuthenticationConfiguration
+    {
+        Users = new List<PostgreSqlUser>
+        {
+            new PostgreSqlUser { Username = "analyst", Password = "<password>" }
+        }
+    }
+};
+
+ConfigurePostgreSqlOperationResult result =
+    store.Maintenance.Send(new ConfigurePostgreSqlOperation(configuration));
+```
+
+</ContentFrame>
+
+<ContentFrame>
+
+#### Syntax
+
+```csharp
+public ConfigurePostgreSqlOperation(PostgreSqlConfiguration configuration);
+```
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| **configuration** | `PostgreSqlConfiguration` | The PostgreSQL integration settings. Throws `ArgumentNullException` when null. |
+
+| Return value | |
+|-----------|-------------|
+| `ConfigurePostgreSqlOperationResult` | Contains `RaftCommandIndex` (`long?`). |
+
+</ContentFrame>
+
+</Panel>

@@ -894,6 +894,18 @@ You can also retrieve the configurations of **all existing agents** using `GetAg
   var existingAgentsList = store.AI.GetAgents();
   var agents = existingAgentsList.AiAgents;
   ```
+
+Both `GetAgent` and `GetAgents` send the `GetAiAgentsOperation` maintenance operation.
+You can send it directly with `store.Maintenance.Send`:
+
+* **Example**
+  ```csharp
+  // All agent configurations
+  GetAiAgentsResponse allAgents = store.Maintenance.Send(new GetAiAgentsOperation());
+
+  // A single agent configuration by ID
+  GetAiAgentsResponse oneAgent = store.Maintenance.Send(new GetAiAgentsOperation("reward-productive-employee"));
+  ```
 <br />
 See [GetAgent](../../../../ai-integration/ai-agents/creating-ai-agents/creating-ai-agents_api.mdx#agent-management) and [GetAgents](../../../../ai-integration/ai-agents/creating-ai-agents/creating-ai-agents_api.mdx#agent-management) in the [Syntax](../../../../ai-integration/ai-agents/creating-ai-agents/creating-ai-agents_api.mdx#syntax) section.
 
@@ -907,6 +919,15 @@ To delete an existing agent configuration, use `DeleteAgent` with the agent's ID
   ```csharp
   // Delete an agent configuration by its ID
   await store.AI.DeleteAgentAsync("reward-productive-employee");
+  ```
+
+`DeleteAgent` sends the `DeleteAiAgentOperation` maintenance operation.
+You can send it directly with `store.Maintenance.Send`:
+
+* **Example**
+  ```csharp
+  AiAgentConfigurationResult result =
+      store.Maintenance.Send(new DeleteAiAgentOperation("reward-productive-employee"));
   ```
 <br />
 See [DeleteAgent](../../../../ai-integration/ai-agents/creating-ai-agents/creating-ai-agents_api.mdx#agent-management) in the [Syntax](../../../../ai-integration/ai-agents/creating-ai-agents/creating-ai-agents_api.mdx#syntax) section.
@@ -1631,6 +1652,31 @@ var result = await store.AI.DeleteAgentAsync("reward-productive-employee");
 | `AiAgentConfigurationResult` | Contains `Identifier` (`string`) - the ID of the deleted agent. |
 
 </TabItem>
+<TabItem value="DeleteAiAgentOperation" label="DeleteAiAgentOperation">
+
+The maintenance operation that deletes an AI agent configuration. `DeleteAgent` and `DeleteAgentAsync` send it.
+
+```csharp
+public DeleteAiAgentOperation(string identifier)
+```
+<br />
+Usage:
+
+```csharp
+AiAgentConfigurationResult result =
+    store.Maintenance.Send(new DeleteAiAgentOperation("reward-productive-employee"));
+```
+<br />
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| **identifier** | `string` | The unique ID of the agent to delete. Must not be null or empty. |
+
+| Return value | |
+|-----------|-------------|
+| `AiAgentConfigurationResult` | Contains `Identifier` (`string`) - the ID of the deleted agent. |
+
+</TabItem>
 </Tabs>
 
 <Tabs groupId='agent-retrieval-methods'>
@@ -1686,6 +1732,33 @@ List<AiAgentConfiguration> agents = response.AiAgents;
 | Return value | |
 |-----------|-------------|
 | `GetAiAgentsResponse` | Contains `AiAgents` (`List<AiAgentConfiguration>`) - the list of all agent configurations. |
+
+</TabItem>
+<TabItem value="GetAiAgentsOperation" label="GetAiAgentsOperation">
+
+The maintenance operation that retrieves AI agent configurations. `GetAgent`, `GetAgentAsync`, `GetAgents`, and `GetAgentsAsync` send it.
+Without an ID it returns all agents; with an ID it returns that agent only.
+
+```csharp
+public GetAiAgentsOperation()
+public GetAiAgentsOperation(string agentId)
+```
+<br />
+Usage:
+
+```csharp
+GetAiAgentsResponse allAgents = store.Maintenance.Send(new GetAiAgentsOperation());
+GetAiAgentsResponse oneAgent = store.Maintenance.Send(new GetAiAgentsOperation("reward-productive-employee"));
+```
+<br />
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| **agentId** | `string` | The unique ID of the agent to retrieve. Must not be null or empty. Omit it to retrieve all agents. |
+
+| Return value | |
+|-----------|-------------|
+| `GetAiAgentsResponse` | Contains `AiAgents` (`List<AiAgentConfiguration>`) - the matching agent configurations. |
 
 </TabItem>
 </Tabs>

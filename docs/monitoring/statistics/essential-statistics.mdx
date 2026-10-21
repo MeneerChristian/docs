@@ -1,0 +1,35 @@
+---
+title: "Statistics: Essential Statistics"
+sidebar_label: "Essential Statistics"
+description: "Retrieve essential database statistics, such as document, revision, and attachment counts and basic per-index details, using GetEssentialStatisticsOperation."
+sidebar_position: 4
+supported_languages: ["csharp"]
+see_also:
+     - title: "Statistics: Client API"
+       link: "monitoring/statistics/client-api"
+       source: "docs"
+       path: "Monitoring > Statistics"
+     - title: "Statistics: Stats View"
+       link: "monitoring/statistics/stats-view"
+       source: "docs"
+       path: "Monitoring > Statistics"
+     - title: "What are Operations"
+       link: "client-api/operations/what-are-operations"
+       source: "docs"
+       path: "Client API > Operations"
+     - title: "Switch operation to another database"
+       link: "client-api/operations/how-to/switch-operations-to-a-different-database"
+       source: "docs"
+       path: "Client API > Operations > How to..."
+---
+
+import LanguageSwitcher from "@site/src/components/LanguageSwitcher";
+import LanguageContent from "@site/src/components/LanguageContent";
+
+import GetEssentialStatisticsCsharp from './content/_get-essential-statistics-csharp.mdx';
+
+<LanguageSwitcher supportedLanguages={frontMatter.supported_languages} />
+
+<LanguageContent language="csharp">
+   <GetEssentialStatisticsCsharp />
+</LanguageContent>

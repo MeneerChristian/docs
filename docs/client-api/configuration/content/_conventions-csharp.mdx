@@ -43,6 +43,7 @@ import ContentFrame from '@site/src/components/ContentFrame';
       [LoadBalanceBehavior](../../../client-api/configuration/conventions.mdx#loadbalancebehavior)  
       [LoadBalancerContextSeed](../../../client-api/configuration/conventions.mdx#loadbalancebehavior)  
       [LoadBalancerPerSessionContextSelector](../../../client-api/configuration/conventions.mdx#loadbalancebehavior)  
+      [MaxContextSizeToKeep](../../../client-api/configuration/conventions.mdx#maxcontextsizetokeep)  
       [MaxHttpCacheSize](../../../client-api/configuration/conventions.mdx#maxhttpcachesize)  
       [MaxNumberOfRequestsPerSession](../../../client-api/configuration/conventions.mdx#maxnumberofrequestspersession)  
       [Modify serialization of property name](../../../client-api/configuration/conventions.mdx#modify-serialization-of-property-name)  
@@ -50,6 +51,9 @@ import ContentFrame from '@site/src/components/ContentFrame';
       [OptimisticConcurrencyMode](../../../client-api/configuration/conventions.mdx#optimisticconcurrencymode)  
       [PreserveDocumentPropertiesNotFoundOnModel](../../../client-api/configuration/conventions.mdx#preservedocumentpropertiesnotfoundonmodel)  
       [ReadBalanceBehavior](../../../client-api/configuration/conventions.mdx#readbalancebehavior)  
+      [RegisterCustomQueryTranslator](../../../client-api/configuration/conventions.mdx#registercustomquerytranslator)  
+      [RegisterQueryMethodConverter](../../../client-api/configuration/conventions.mdx#registerquerymethodconverter)  
+      [RegisterQueryValueConverter](../../../client-api/configuration/conventions.mdx#registerqueryvalueconverter)  
       [RequestTimeout](../../../client-api/configuration/conventions.mdx#requesttimeout)  
       [ResolveTypeFromClrTypeName](../../../client-api/configuration/conventions.mdx#resolvetypefromclrtypename)  
       [SaveEnumsAsIntegers](../../../client-api/configuration/conventions.mdx#saveenumsasintegers)  
@@ -818,6 +822,21 @@ public char IdentityPartsSeparator { get; set; }
 </ContentFrame>
 <ContentFrame>
 
+### MaxContextSizeToKeep
+
+* Use the `MaxContextSizeToKeep` convention to set the maximum allocated memory of a JSON context that the client keeps in its context pool.  
+  When a context is released and its allocated memory exceeds this size, the context is disposed instead of being reused.
+
+* DEFAULT: 1 MB on 64-bit systems, 256 KB on 32-bit systems.
+
+```csharp
+// Syntax:
+public Size MaxContextSizeToKeep { get; set; }
+```
+
+</ContentFrame>
+<ContentFrame>
+
 ### MaxHttpCacheSize
 
 * Use the `MaxHttpCacheSize` convention to set the maximum HTTP cache size.  
@@ -1018,6 +1037,97 @@ public bool PreserveDocumentPropertiesNotFoundOnModel { get; set; }
 * Configure the **read request behavior** by setting the `ReadBalanceBehavior` convention.
 
 * Learn more in the dedicated [Read balance behavior](../../../client-api/configuration/load-balance/read-balance-behavior.mdx) article.
+
+</ContentFrame>
+<ContentFrame>
+
+### RegisterCustomQueryTranslator
+
+* Use the `RegisterCustomQueryTranslator` method to define how a specific member or method is translated when it is used in a LINQ query.  
+  The translator receives the `LinqPathProvider` and the expression, and returns a `LinqPathProvider.Result` describing the path and arguments to use in RQL.
+
+* Only one translator is kept per member or method. If a translator is already registered for the same member or method, the new one is ignored.
+
+* Call this method before `DocumentStore.Initialize()`.
+
+```csharp
+// Syntax:
+public void RegisterCustomQueryTranslator<T>(
+    Expression<Func<T, object>> member,
+    DocumentConventions.CustomQueryTranslator translator);
+```
+
+</ContentFrame>
+<ContentFrame>
+
+### RegisterQueryMethodConverter
+
+* Use the `RegisterQueryMethodConverter` method to translate method calls inside LINQ queries with a custom `QueryMethodConverter`.
+
+* Converters are called in the order they were registered, before RavenDB's built-in translation of method calls.  
+  The first converter whose `Convert` method returns `true` handles the call. If none does, the built-in translation is used.
+
+* Inside `Convert`, use `parameters.DocumentQuery` to add clauses to the query, and `parameters.VisitExpression` to translate a sub-expression.  
+  `Convert` is called for every method call in the query, so a converter that visits the same expression again must guard against infinite recursion.
+
+* Call this method before `DocumentStore.Initialize()`.
+
+```csharp
+// Syntax:
+public void RegisterQueryMethodConverter(QueryMethodConverter converter);
+```
+
+```csharp
+public class MyQueryMethodConverter : QueryMethodConverter
+{
+    public override bool Convert<T>(QueryMethodConverter.Parameters<T> parameters)
+    {
+        // Return true if this method call was handled
+        return false;
+    }
+}
+```
+
+</ContentFrame>
+<ContentFrame>
+
+### RegisterQueryValueConverter
+
+* Use the `RegisterQueryValueConverter` method to convert values of a custom type into the value used in the RQL query.  
+  The converter is called for values of type `T` that appear in query predicates.
+
+* Converters are matched by the type of the value. A converter registered for a derived type is tried before one registered for a base type (for example, `object`).
+
+* The `forRange` parameter is `true` when the value is used in a range comparison (such as `>`, `<`, or `Between`).  
+  Use it to return a different representation for range comparisons.
+
+* The overload with a `RangeType` parameter also sets the range type used for range queries and sorting for type `T`.  
+  Available range types: `RangeType.None`, `RangeType.Long`, `RangeType.Double`.
+
+* Call this method before `DocumentStore.Initialize()`.
+
+```csharp
+// Syntax:
+public void RegisterQueryValueConverter<T>(DocumentConventions.TryConvertValueForQueryDelegate<T> converter);
+
+public void RegisterQueryValueConverter<T>(
+    DocumentConventions.TryConvertValueToObjectForQueryDelegate<T> converter,
+    RangeType rangeType);
+```
+
+```csharp
+store.Conventions.RegisterQueryValueConverter<Duration>(
+    (string fieldName, Duration value, bool forRange, out object objValue) =>
+    {
+        if (forRange)
+            objValue = value.Ticks;
+        else
+            objValue = new TimeSpan(value.Ticks).ToString("c");
+
+        return true;
+    },
+    RangeType.Long);
+```
 
 </ContentFrame>
 <ContentFrame>

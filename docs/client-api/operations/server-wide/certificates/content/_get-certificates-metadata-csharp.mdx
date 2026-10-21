@@ -1,0 +1,56 @@
+import Admonition from '@theme/Admonition';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import CodeBlock from '@theme/CodeBlock';
+
+To get the metadata of client certificates use **GetCertificatesMetadataOperation**.  
+The result contains the certificate metadata only, without the certificate data itself.
+
+<Admonition type="note" title="">
+
+* The operation is a server-wide operation, so it is sent with `store.Maintenance.Server`.
+
+* Pass a certificate name to return only the certificates registered with that name.
+  When no name is passed, the metadata of all registered certificates is returned.
+
+</Admonition>
+
+## Syntax
+
+<TabItem value="get_certs_metadata_1" label="get_certs_metadata_1">
+<CodeBlock language="csharp">
+{`public GetCertificatesMetadataOperation(string name = null)
+`}
+</CodeBlock>
+</TabItem>
+
+| Parameters | | |
+| ------------- | ------------- | ----- |
+| **name** | string | Optional. Certificate name to filter by. When `null` or empty, all certificates are returned. |
+
+| Return Value | |
+| ------------- | ----- |
+| `CertificateMetadata[]` | Array of certificate metadata |
+
+`CertificateMetadata` includes, among others, the properties `Name`, `Thumbprint`, `SecurityClearance`, `Permissions`, `NotBefore`, `NotAfter`, `Disabled`, and `Usage`.
+
+## Example
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="Sync" label="Sync">
+<CodeBlock language="csharp">
+{`// Metadata of all registered certificates
+CertificateMetadata[] all = store.Maintenance.Server.Send(new GetCertificatesMetadataOperation());
+
+// Metadata of the certificates registered with the given name
+CertificateMetadata[] byName = store.Maintenance.Server.Send(new GetCertificatesMetadataOperation("my-client-cert"));
+`}
+</CodeBlock>
+</TabItem>
+<TabItem value="Async" label="Async">
+<CodeBlock language="csharp">
+{`CertificateMetadata[] all = await store.Maintenance.Server.SendAsync(new GetCertificatesMetadataOperation());
+`}
+</CodeBlock>
+</TabItem>
+</Tabs>

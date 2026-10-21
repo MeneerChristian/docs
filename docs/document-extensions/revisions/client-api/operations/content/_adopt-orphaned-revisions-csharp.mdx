@@ -1,0 +1,88 @@
+import Admonition from '@theme/Admonition';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import CodeBlock from '@theme/CodeBlock';
+
+<Admonition type="note" title="">
+
+* Orphaned revisions are revisions that belong to a deleted document but are not shown in the
+  [Revisions Bin](../../../../../studio/database/document-extensions/revisions/revisions-bin.mdx),
+  because the document has no "Delete Revision".
+
+* `AdoptOrphanedRevisionsOperation` adopts these revisions by creating the missing "Delete Revision" for the affected documents,
+  so that the revisions become visible in the Revisions Bin.
+
+* The operation runs as a database operation in the background and returns an `Operation` object.
+  Use `WaitForCompletion` or `WaitForCompletionAsync` to get the result.
+
+* The operation can be applied to all collections (default) or to a specified set of collections.
+
+* By default, the operation targets the [default database](../../../../../client-api/setting-up-default-database.mdx).  
+  To operate on a different database, see [switch operations to a different database](../../../../../client-api/operations/how-to/switch-operations-to-a-different-database.mdx).
+
+</Admonition>
+
+## Syntax
+
+<TabItem value="syntax_1" label="syntax_1">
+<CodeBlock language="csharp">
+{`public AdoptOrphanedRevisionsOperation();
+
+public AdoptOrphanedRevisionsOperation(AdoptOrphanedRevisionsOperation.Parameters parameters);
+`}
+</CodeBlock>
+</TabItem>
+
+| Parameter | Type | Description |
+| ------------- | ------------- | ----- |
+| **parameters** | `AdoptOrphanedRevisionsOperation.Parameters` | Specifies which collections to process. The parameterless constructor uses default parameters. |
+
+`AdoptOrphanedRevisionsOperation.Parameters`:
+
+| Property | Type | Description |
+| ------------- | ------------- | ----- |
+| **Collections** | `string[]` | Collections to adopt orphaned revisions from. When `null`, the operation applies to all collections. |
+| **ContinuationParameters** | `RevisionsOperationContinuationParameters` | Optional state from a previous, interrupted run, used to resume it. See [resume an interrupted operation](../../../../../document-extensions/revisions/client-api/operations/enforce-revisions-configuration.mdx#resume-an-interrupted-operation). |
+
+| Return Value | |
+| ------------- | ----- |
+| `Operation` | Operation object. Call `WaitForCompletion<AdoptOrphanedRevisionsResult>()` to get the result. |
+
+`AdoptOrphanedRevisionsResult` contains:
+
+| Property | Type | Description |
+| ------------- | ------------- | ----- |
+| **AdoptedCount** | `int` | Number of orphaned revisions that were adopted |
+
+## Example
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="Sync" label="Sync">
+<CodeBlock language="csharp">
+{`var parameters = new AdoptOrphanedRevisionsOperation.Parameters
+{
+    Collections = new[] { "Users" }
+};
+
+Operation operation = store.Operations.Send(new AdoptOrphanedRevisionsOperation(parameters));
+
+var result = operation.WaitForCompletion<AdoptOrphanedRevisionsResult>(TimeSpan.FromSeconds(30));
+Console.WriteLine($"Adopted: {result.AdoptedCount}");
+`}
+</CodeBlock>
+</TabItem>
+<TabItem value="Async" label="Async">
+<CodeBlock language="csharp">
+{`var parameters = new AdoptOrphanedRevisionsOperation.Parameters
+{
+    Collections = new[] { "Users" }
+};
+
+Operation operation = await store.Operations.SendAsync(new AdoptOrphanedRevisionsOperation(parameters));
+
+var result = await operation.WaitForCompletionAsync<AdoptOrphanedRevisionsResult>(TimeSpan.FromSeconds(30));
+Console.WriteLine($"Adopted: {result.AdoptedCount}");
+`}
+</CodeBlock>
+</TabItem>
+</Tabs>

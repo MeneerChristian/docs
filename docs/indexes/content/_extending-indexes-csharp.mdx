@@ -79,4 +79,35 @@ import CodeBlock from '@theme/CodeBlock';
 
 </Admonition>
 
+## Using `RavenMethodAttribute`
+
+* Apply `RavenMethodAttribute` to a custom extension method that you call in a map or reduce function.  
+* RavenDB then sends the invocation to the server as a regular static method call, instead of extension-method syntax, so the server can resolve it.  
+* The method body must still be available to the server, for example through [AdditionalSources](../../indexes/extending-indexes.mdx#including-additional-sources-from-client-code).  
+
+<TabItem value="ravenmethod" label="ravenmethod">
+<CodeBlock language="csharp">
+{`using Raven.Client.Documents.Indexes;
+
+public static class CompanyExtensions
+\{
+    [RavenMethod]
+    public static string NormalizeName(this string name) => name?.Trim().ToLowerInvariant();
+\}
+
+public class Companies_ByNormalizedName : AbstractIndexCreationTask<Company>
+\{
+    public Companies_ByNormalizedName()
+    \{
+        Map = companies => from company in companies
+                           select new
+                           \{
+                               Name = company.Name.NormalizeName()
+                           \};
+    \}
+\}
+`}
+</CodeBlock>
+</TabItem>
+
 

@@ -75,6 +75,15 @@ Besides the messages, the result includes, among others:
   `true` when the conversation holds more messages beyond the returned page.  
 
 <br />
+The `GetConversationMessages` methods send the `GetConversationMessagesOperation` maintenance operation.
+You can send it directly with `store.Maintenance.Send`:
+
+```csharp
+AiConversationMessagesResult result =
+    store.Maintenance.Send(new GetConversationMessagesOperation("Chats/1-A"));
+```
+
+<br />
 See [GetConversationMessages](../../../ai-integration/ai-agents/reading-conversation-history.mdx#conversation-history)
 and [AiConversationMessagesResult](../../../ai-integration/ai-agents/reading-conversation-history.mdx#conversation-history-classes)
 in the [Syntax](../../../ai-integration/ai-agents/reading-conversation-history.mdx#syntax) section.
@@ -294,6 +303,34 @@ var result = await store.AI.GetConversationMessagesAsync("Chats/1-A");
 | **conversationId** | `string` | The conversation document ID. The overload that takes only this ID returns the whole conversation at the default `Simple` detail level. |
 | **parameters** | `GetConversationMessagesOptions` | The `Before` and `After` boundaries, page size, and detail level. |
 | **token** | `CancellationToken` | Optional cancellation token. |
+
+| Return value | |
+|-----------|-------------|
+| `AiConversationMessagesResult` | The conversation's messages, in chronological order, with paging and usage metadata. |
+
+</TabItem>
+<TabItem value="GetConversationMessagesOperation" label="GetConversationMessagesOperation">
+
+The maintenance operation that reads AI agent conversation messages. The `GetConversationMessages` methods send it.
+Pass a conversation ID for the whole conversation, or a `GetConversationMessagesOptions` object for paging and detail options.
+
+```csharp
+public GetConversationMessagesOperation(string conversationId)
+public GetConversationMessagesOperation(GetConversationMessagesOptions parameters)
+```
+<br />
+Usage:
+
+```csharp
+AiConversationMessagesResult result =
+    store.Maintenance.Send(new GetConversationMessagesOperation("Chats/1-A"));
+```
+<br />
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| **conversationId** | `string` | The conversation document ID. |
+| **parameters** | `GetConversationMessagesOptions` | The `ConversationId` and the optional `Before`, `After`, `PageSize`, and `DetailLevel` settings. |
 
 | Return value | |
 |-----------|-------------|

@@ -1,0 +1,80 @@
+import Admonition from '@theme/Admonition';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import CodeBlock from '@theme/CodeBlock';
+
+<Admonition type="note" title="">
+
+* Use `GetEssentialStatisticsOperation` to retrieve a set of essential database statistics,
+  such as the number of documents, revisions, attachments, and indexes, along with basic information about each index.
+
+* The operation is a maintenance operation, so it is sent with `store.Maintenance`.
+
+* By default, the operation targets the [default database](../../../client-api/setting-up-default-database.mdx).  
+  To query a different database, see [switch operations to a different database](../../../client-api/operations/how-to/switch-operations-to-a-different-database.mdx).
+
+</Admonition>
+
+## Syntax
+
+<TabItem value="syntax_1" label="syntax_1">
+<CodeBlock language="csharp">
+{`public GetEssentialStatisticsOperation();
+`}
+</CodeBlock>
+</TabItem>
+
+| Return Value | |
+| ------------- | ----- |
+| `EssentialDatabaseStatistics` | Essential statistics of the database |
+
+`EssentialDatabaseStatistics`:
+
+| Property | Type | Description |
+| ------------- | ------------- | ----- |
+| **CountOfIndexes** | `int` | Total number of indexes in the database |
+| **CountOfDocuments** | `long` | Total number of documents |
+| **CountOfRevisionDocuments** | `long` | Total number of revision documents |
+| **CountOfDocumentsConflicts** | `long` | Total number of document conflicts |
+| **CountOfTombstones** | `long` | Total number of tombstones |
+| **CountOfConflicts** | `long` | Total number of conflicts |
+| **CountOfAttachments** | `long` | Total number of attachments |
+| **CountOfCounterEntries** | `long` | Total number of counter-group entries |
+| **CountOfTimeSeriesSegments** | `long` | Total number of time-series segments |
+| **Indexes** | `EssentialIndexInformation[]` | Basic information for each index |
+
+`EssentialIndexInformation`:
+
+| Property | Type | Description |
+| ------------- | ------------- | ----- |
+| **Name** | `string` | Index name |
+| **LockMode** | `IndexLockMode` | Index lock mode |
+| **Priority** | `IndexPriority` | Index priority |
+| **Type** | `IndexType` | Index type |
+| **SourceType** | `IndexSourceType` | Index source type |
+| **ArchivedDataProcessingBehavior** | `ArchivedDataProcessingBehavior?` | Archived data processing behavior of the index, if set |
+
+## Example
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="Sync" label="Sync">
+<CodeBlock language="csharp">
+{`EssentialDatabaseStatistics stats = store.Maintenance.Send(new GetEssentialStatisticsOperation());
+
+Console.WriteLine($"Documents: {stats.CountOfDocuments}");
+Console.WriteLine($"Revision documents: {stats.CountOfRevisionDocuments}");
+
+foreach (var index in stats.Indexes)
+{
+    Console.WriteLine($"{index.Name}: {index.Priority}");
+}
+`}
+</CodeBlock>
+</TabItem>
+<TabItem value="Async" label="Async">
+<CodeBlock language="csharp">
+{`EssentialDatabaseStatistics stats = await store.Maintenance.SendAsync(new GetEssentialStatisticsOperation());
+`}
+</CodeBlock>
+</TabItem>
+</Tabs>

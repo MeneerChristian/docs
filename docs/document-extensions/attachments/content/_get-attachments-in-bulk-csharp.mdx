@@ -1,0 +1,81 @@
+import Admonition from '@theme/Admonition';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import CodeBlock from '@theme/CodeBlock';
+
+To retrieve several attachments in one request use **GetAttachmentsOperation**.
+
+<Admonition type="note" title="">
+
+* The operation returns an enumerator of `AttachmentEnumeratorResult` items, in the order the server returns them.
+  Each item contains the attachment `Details` and a `Stream` with its binary content.
+
+* The streams are read from one shared response, so read (or dispose) the current `Stream` before calling `MoveNext()`.
+  Advancing the enumerator disposes the previous stream.
+
+* Use `AttachmentType.Document` for attachments of documents, or `AttachmentType.Revision` for attachments of revisions.
+
+* The operation is sent with `store.Operations`.
+
+</Admonition>
+
+## Syntax
+
+<TabItem value="get_attachments_bulk_1" label="get_attachments_bulk_1">
+<CodeBlock language="csharp">
+{`public GetAttachmentsOperation(IEnumerable<AttachmentRequest> attachments, AttachmentType type)
+`}
+</CodeBlock>
+</TabItem>
+
+| Parameters | | |
+| ------------- | ------------- | ----- |
+| **attachments** | `IEnumerable<AttachmentRequest>` | The attachments to retrieve. Each `AttachmentRequest` is built from a document ID and an attachment name. |
+| **type** | `AttachmentType` | `Document` or `Revision`. |
+
+| Return Value | |
+| ------------- | ----- |
+| `IEnumerator<AttachmentEnumeratorResult>` | Enumerator over the retrieved attachments |
+
+`AttachmentEnumeratorResult`:
+
+| Property | Type | Description |
+| ------------- | ------------- | ----- |
+| **Details** | `AttachmentDetails` | Attachment metadata: `Name`, `Hash`, `ContentType`, `Size`, `ChangeVector`, and `DocumentId` |
+| **Stream** | `Stream` | Binary content of the attachment |
+
+## Example
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="Sync" label="Sync">
+<CodeBlock language="csharp">
+{`var requests = new List<AttachmentRequest>
+{
+    new AttachmentRequest("users/1", "profile.png"),
+    new AttachmentRequest("users/2", "resume.pdf")
+};
+
+IEnumerator<AttachmentEnumeratorResult> attachments =
+    store.Operations.Send(new GetAttachmentsOperation(requests, AttachmentType.Document));
+
+while (attachments.MoveNext())
+{
+    AttachmentEnumeratorResult result = attachments.Current;
+
+    using (result.Stream)
+    {
+        Console.WriteLine($"{result.Details.DocumentId}/{result.Details.Name}: {result.Details.Size} bytes");
+        // Copy result.Stream to a file or other destination here
+    }
+}
+`}
+</CodeBlock>
+</TabItem>
+<TabItem value="Async" label="Async">
+<CodeBlock language="csharp">
+{`IEnumerator<AttachmentEnumeratorResult> attachments =
+    await store.Operations.SendAsync(new GetAttachmentsOperation(requests, AttachmentType.Document));
+`}
+</CodeBlock>
+</TabItem>
+</Tabs>

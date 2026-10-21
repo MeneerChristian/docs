@@ -1,0 +1,53 @@
+import Admonition from '@theme/Admonition';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import CodeBlock from '@theme/CodeBlock';
+
+To delete several attachments in one request use **DeleteAttachmentsOperation**.
+
+<Admonition type="note" title="">
+
+* The operation removes the references to the specified attachments from their documents, in a single bulk request.
+  The deletion rules for local and remote attachments are the same as for [deleting a single attachment](../../../document-extensions/attachments/delete-attachment.mdx).
+
+* For remote attachments, the binary data is not removed from the cloud provider.
+
+* The operation is sent with `store.Operations` and does not return a result.
+
+</Admonition>
+
+## Syntax
+
+<TabItem value="delete_attachments_bulk_1" label="delete_attachments_bulk_1">
+<CodeBlock language="csharp">
+{`public DeleteAttachmentsOperation(IEnumerable<AttachmentRequest> attachments)
+`}
+</CodeBlock>
+</TabItem>
+
+| Parameters | | |
+| ------------- | ------------- | ----- |
+| **attachments** | `IEnumerable<AttachmentRequest>` | The attachments to delete. Each `AttachmentRequest` is built from a document ID and an attachment name. |
+
+## Example
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="Sync" label="Sync">
+<CodeBlock language="csharp">
+{`var requests = new List<AttachmentRequest>
+{
+    new AttachmentRequest("users/1", "profile.png"),
+    new AttachmentRequest("users/2", "resume.pdf")
+};
+
+store.Operations.Send(new DeleteAttachmentsOperation(requests));
+`}
+</CodeBlock>
+</TabItem>
+<TabItem value="Async" label="Async">
+<CodeBlock language="csharp">
+{`await store.Operations.SendAsync(new DeleteAttachmentsOperation(requests));
+`}
+</CodeBlock>
+</TabItem>
+</Tabs>

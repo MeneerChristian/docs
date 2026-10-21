@@ -12,6 +12,7 @@ that inherits from `AbstractCountersIndexCreationTask` or `AbstractJavaScriptCou
 
 * In this page:  
   * [Syntax](../../../document-extensions/counters/indexing.mdx#syntax)  
+  * [AbstractMultiMapCountersIndexCreationTask](../../../document-extensions/counters/indexing.mdx#abstractmultimapcountersindexcreationtask)  
   * [AbstractJavaScriptCountersIndexCreationTask](../../../document-extensions/counters/indexing.mdx#section)  
   * [CounterNamesFor](../../../document-extensions/counters/indexing.mdx#section-1)  
   * [Querying the Index](../../../document-extensions/counters/indexing.mdx#querying-the-index)  
@@ -75,6 +76,67 @@ Examples of indexes using each method:
 </TabItem>
 </Tabs>  
 
+
+### `AbstractMultiMapCountersIndexCreationTask`
+
+Inherit from `AbstractMultiMapCountersIndexCreationTask` to define several maps in one index.  
+Each map is added with `AddMap<TSource>` for a specific document type, or with `AddMapForAll<TBase>` for a base type and all of its subclasses.  
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="MultiMap_syntax" label="MultiMap_syntax">
+<CodeBlock language="csharp">
+{`// To define a Multi-Map counters index inherit from:
+// ==================================================
+public abstract class AbstractMultiMapCountersIndexCreationTask : AbstractMultiMapCountersIndexCreationTask<object> \{ \}
+public abstract class AbstractMultiMapCountersIndexCreationTask<TReduceResult> \{ \}
+
+// Methods available in AbstractMultiMapCountersIndexCreationTask class:
+// ====================================================================
+
+// Set a map function for the counters with the specified name
+// that belong to documents of type \`TSource\`
+protected void AddMap<TSource>(string counter,
+    Expression<Func<IEnumerable<CounterEntry>, IEnumerable>> map);
+
+// Set a map function for the counters with the specified name
+// that belong to documents of type \`TBase\` or any type that inherits from \`TBase\`
+protected void AddMapForAll<TBase>(string counter,
+    Expression<Func<IEnumerable<CounterEntry>, IEnumerable>> map);
+`}
+</CodeBlock>
+</TabItem>
+</Tabs>
+
+Example:  
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="MultiMap_example" label="MultiMap_example">
+<CodeBlock language="csharp">
+{`private class MyMultiMapCounterIndex : AbstractMultiMapCountersIndexCreationTask
+{
+    public MyMultiMapCounterIndex()
+    {
+        AddMap<Company>("Likes", counters => from counter in counters
+                                             select new
+                                             {
+                                                 Likes = counter.Value,
+                                                 Name = counter.Name,
+                                                 User = counter.DocumentId
+                                             });
+
+        AddMap<Company>("Views", counters => from counter in counters
+                                             select new
+                                             {
+                                                 Views = counter.Value,
+                                                 Name = counter.Name,
+                                                 User = counter.DocumentId
+                                             });
+    }
+}
+`}
+</CodeBlock>
+</TabItem>
+</Tabs>
 
 ### `AbstractJavaScriptCountersIndexCreationTask`
 

@@ -455,6 +455,38 @@ For the `QueueSinkConfiguration` and `QueueSinkScript` property reference, see t
 [Sink task](../../../server/ongoing-tasks/queue-sink/kafka-queue-sink.mdx#sink-task)
 classes in the Syntax section.
 
+### Updating a Kafka sink task
+
+To change an existing sink task, send `UpdateQueueSinkOperation` with the task ID and the complete updated `QueueSinkConfiguration`.
+The task ID is returned in the `TaskId` property of the `AddQueueSinkOperationResult`.
+
+<ContentFrame>
+
+```csharp
+// Task ID returned when the sink task was added
+long taskId = addQueueSinkOperationResult.TaskId;
+
+var updatedConfig = new QueueSinkConfiguration
+{
+    Name = "KafkaSinkTaskName",
+    ConnectionStringName = "KafkaConStr",
+    BrokerType = QueueBrokerType.Kafka,
+    // Send every script the task should keep, including unchanged ones
+    Scripts = { queueSinkScript }
+};
+
+UpdateQueueSinkOperationResult updateResult =
+    store.Maintenance.Send(new UpdateQueueSinkOperation<QueueConnectionString>(taskId, updatedConfig));
+```
+
+</ContentFrame>
+
+Syntax:
+
+```csharp
+public UpdateQueueSinkOperation(long taskId, QueueSinkConfiguration configuration);
+```
+
 </Panel>
 
 <Panel heading="Configuration Options">

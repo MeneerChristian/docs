@@ -123,6 +123,18 @@ store.Maintenance.Send(new ConfigureTimeSeriesOperation(timeSeriesConfig));
 `}
 </CodeBlock>
 </TabItem>
+
+#### Set the raw policy for one collection:
+
+<TabItem value="rollup_and_retention_raw_policy" label="rollup_and_retention_raw_policy">
+<CodeBlock language="csharp">
+{`// Retain the raw entries of the "Companies" collection for five years
+store.Maintenance.Send(new ConfigureRawTimeSeriesPolicyOperation(
+    "Companies", new RawTimeSeriesPolicy(TimeValue.FromYears(5))));
+`}
+</CodeBlock>
+</TabItem>
+
 #### Retrieve rollup data:
 
 * Retrieving entries from a rollup time series is similar to getting the raw time series data.
@@ -261,6 +273,15 @@ public class TimeSeriesCollectionConfiguration
 <TabItem value="csharp" label="csharp">
 <CodeBlock language="csharp">
 {`public ConfigureTimeSeriesOperation(TimeSeriesConfiguration configuration);
+`}
+</CodeBlock>
+</TabItem>
+
+### The raw time series policy operation
+
+<TabItem value="csharp-raw-policy" label="csharp">
+<CodeBlock language="csharp">
+{`public ConfigureRawTimeSeriesPolicyOperation(string collection, RawTimeSeriesPolicy config);
 `}
 </CodeBlock>
 </TabItem>
