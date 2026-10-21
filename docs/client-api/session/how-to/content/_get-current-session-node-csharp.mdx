@@ -56,4 +56,18 @@ Console.WriteLine(serverNode.Url);
 </CodeBlock>
 </TabItem>
 
+## Store identifier
+
+The `StoreIdentifier` property from `Advanced` session operations returns a string that identifies
+the store and database the session works with. It is the document store's `Identifier`,
+followed by `;` and the database name.
+
+<TabItem value="store_identifier_1" label="store_identifier_1">
+<CodeBlock language="csharp">
+{`// Store identifier is '<store.Identifier>;<database name>'
+string storeIdentifier = session.Advanced.StoreIdentifier;
+`}
+</CodeBlock>
+</TabItem>
+
 

@@ -64,12 +64,25 @@ The following methods can be used when creating a bulk insert.
 | Signature | Description |
 | --------- | ----------- |
 | `void Abort()` | Abort the operation. |
+| `Task AbortAsync()` | Async version of `Abort()`. Kills the bulk insert operation on the server. If the operation has not started on the server yet, it does nothing. Writes after the abort fail with `BulkInsertAbortedException`. Throws `BulkInsertAbortedException` if the operation is not found on the server. |
 | `string Store(object entity, IMetadataDictionary metadata = null)` | Store the entity. The identifier is generated automatically on the client side and returned. Optional metadata can be provided for the stored entity. |
 | `void Store(object entity, string id, IMetadataDictionary metadata = null)` | Store the entity with an explicit `id`. Optional metadata can be provided for the stored entity. |
 | `Task<string> StoreAsync(object entity, IMetadataDictionary metadata = null)` | Store the entity asynchronously. The identifier is generated automatically on the client side and returned. Optional metadata can be provided for the stored entity. |
 | `Task StoreAsync(object entity, string id, IMetadataDictionary metadata = null)` | Store the entity asynchronously, with an explicit `id`. Optional metadata can be provided for the stored entity. |
 | `void Dispose()` | Dispose of the operation. |
 | `ValueTask DisposeAsync()` | Dispose of the operation asynchronously. |
+
+#### Example: abort a bulk insert
+
+```csharp
+using (var bulkInsert = store.BulkInsert())
+{
+    await bulkInsert.StoreAsync(new Employee { FirstName = "John", LastName = "Doe" });
+
+    if (shouldCancel)
+        await bulkInsert.AbortAsync();
+}
+```
 
 </ContentFrame>
 

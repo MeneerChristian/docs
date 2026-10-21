@@ -170,6 +170,40 @@ Supplier supplier = await asyncSession.LoadAsync<Supplier>(product.Supplier); //
 
 
 
+### Query with includes
+
+Includes can also be added to a query. Pass an `Action<IQueryIncludeBuilder<T>>` to the `Include` extension method on the query.
+The builder exposes `IncludeDocuments`, `IncludeCounter(s)`, `IncludeAllCounters`, `IncludeTimeSeries`, `IncludeRevisions` and `IncludeCompareExchangeValue`.
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="Sync" label="Sync">
+<CodeBlock language="csharp">
+{`// Query products and include their related Supplier documents in the same request
+List<Product> products = session
+    .Query<Product>()
+    .Where(x => x.Name == "Chai")
+    .Include(i => i.IncludeDocuments(x => x.Supplier))
+    .ToList();
+
+Supplier supplier = session.Load<Supplier>(products[0].Supplier); // this will not make server call
+`}
+</CodeBlock>
+</TabItem>
+<TabItem value="Async" label="Async">
+<CodeBlock language="csharp">
+{`// Query products and include their related Supplier documents in the same request
+List<Product> products = await asyncSession
+    .Query<Product>()
+    .Where(x => x.Name == "Chai")
+    .Include(i => i.IncludeDocuments(x => x.Supplier))
+    .ToListAsync();
+
+Supplier supplier = await asyncSession.LoadAsync<Supplier>(products[0].Supplier); // this will not make server call
+`}
+</CodeBlock>
+</TabItem>
+</Tabs>
+
 ## Load - multiple entities
 
 To load multiple entities at once, use one of the following `Load` overloads.

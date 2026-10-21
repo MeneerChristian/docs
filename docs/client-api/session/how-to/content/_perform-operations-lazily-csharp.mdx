@@ -297,6 +297,28 @@ IEnumerable<Product> products = lazyProducts.Value;
 </CodeBlock>
 </TabItem>
 
+### Execute all requests - explicitly (async)
+
+In an async session, call `ExecuteAllPendingLazyOperationsAsync` from `Advanced.Eagerly`.
+It executes ALL pending lazy requests held up by the session in a SINGLE server call, and returns a `Task<ResponseTimeInformation>`.
+
+<TabItem value="lazy_ExecuteAll_Explicit_Async" label="lazy_ExecuteAll_Explicit_Async">
+<CodeBlock language="csharp">
+{`// Define multiple lazy requests in an async session
+Lazy<Task<User>> lazyUser1 = asyncSession.Advanced.Lazily.LoadAsync<User>("users/1-A");
+Lazy<Task<User>> lazyUser2 = asyncSession.Advanced.Lazily.LoadAsync<User>("users/2-A");
+
+// Explicitly execute all pending lazy requests in a SINGLE server call
+await asyncSession.Advanced.Eagerly.ExecuteAllPendingLazyOperationsAsync();
+
+// ALL values are now available
+// No additional server calls are made when accessing the values
+User user1 = await lazyUser1.Value;
+User user2 = await lazyUser2.Value;
+`}
+</CodeBlock>
+</TabItem>
+
 
 
 

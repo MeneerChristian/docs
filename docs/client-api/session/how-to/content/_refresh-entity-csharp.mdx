@@ -38,4 +38,33 @@ Assert.Equal("Shmoe", employee.LastName);
 
 Refreshing a transient entity (not attached) or an entity that was deleted on server-side will result in a `InvalidOperationException`.
 
+## Async refresh
+
+To refresh an entity from an async session, use the `RefreshAsync` method from `Advanced` session operations.
+It accepts a single entity or a collection of entities.
+
+## Syntax
+
+<TabItem value="refresh_async_1" label="refresh_async_1">
+<CodeBlock language="csharp">
+{`Task RefreshAsync<T>(T entity, CancellationToken token = default);
+Task RefreshAsync<T>(IEnumerable<T> entities, CancellationToken token = default);
+`}
+</CodeBlock>
+</TabItem>
+
+## Async example
+
+<TabItem value="refresh_async_2" label="refresh_async_2">
+<CodeBlock language="csharp">
+{`Employee employee = await asyncSession.LoadAsync<Employee>("employees/1");
+
+// LastName changed to 'Shmoe' on the server
+
+await asyncSession.Advanced.RefreshAsync(employee);
+Assert.Equal("Shmoe", employee.LastName);
+`}
+</CodeBlock>
+</TabItem>
+
 

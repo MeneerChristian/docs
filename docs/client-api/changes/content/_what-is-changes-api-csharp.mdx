@@ -66,7 +66,6 @@ ISingleNodeDatabaseChanges Changes(string database, string nodeTag);
 
 ```csharp
 public interface IConnectableChanges<TChanges> : IDisposable
-    where TChanges : IDatabaseChanges
 {
     // returns state of the connection
     bool Connected { get; }
@@ -80,6 +79,22 @@ public interface IConnectableChanges<TChanges> : IDisposable
     //An action to take if an error occured in the connection to the server
     event Action<Exception> OnError;
 }
+```
+
+* **`Connected`** is `true` while the WebSocket connection to the server is open. It is a point-in-time check and does not wait.
+  Use `EnsureConnectedNow()` to wait until the connection is established.
+* **`OnError`** is raised when the connection to the server fails and cannot recover, when the server sends an error notification over the connection,
+  or when the initial connection attempt fails.  
+  A temporary disconnect is not reported through `OnError`, because the client reconnects automatically.
+  Use `ConnectionStatusChanged` to track those disconnects and reconnects.
+
+```csharp
+IDatabaseChanges changes = store.Changes();
+
+changes.OnError += ex => Console.WriteLine($"Changes API error: {ex.Message}");
+
+await changes.EnsureConnectedNow();
+Console.WriteLine($"Connected: {changes.Connected}");
 ```
 
 </Panel>

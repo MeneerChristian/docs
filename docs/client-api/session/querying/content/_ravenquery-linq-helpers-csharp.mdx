@@ -292,6 +292,7 @@ public static long? Counter(object documentInstance, string name)
 * The single-argument form reads a counter from the document being projected.
 * The other forms read a counter from the document identified by `docId`, or from `documentInstance`.
 * Translates to the `counter()` function.
+* Use it in a projection (`Select`) only. Inside a `Where` clause the counter name and alias are not translated, and the generated RQL filters on a field named `counter`.
 
 <Admonition type="note" title="">
 

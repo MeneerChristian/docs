@@ -55,6 +55,29 @@ using (var session = store.OpenAsyncSession(new SessionOptions
 * Similar to the single-node session,  
   any CRUD operations can be made on the cluster-wide session and the session will track them as usual.
 
+## Change the transaction mode of an open session
+
+* The mode can also be changed on an existing session with `Advanced.SetTransactionMode`.  
+  The new mode applies to the operations performed from that point on, for example the next `SaveChanges` call.
+
+```csharp
+using (var session = store.OpenSession())
+{
+    // Single-node mode (the default)
+    session.Store(new User { Name = "Jane" }, "users/1");
+    session.SaveChanges();
+
+    // Switch the same session to cluster-wide mode
+    session.Advanced.SetTransactionMode(TransactionMode.ClusterWide);
+    session.Advanced.ClusterTransaction
+        .CreateCompareExchangeValue("usernames/jane", "users/1");
+    session.SaveChanges();
+}
+```
+
+* Compare-exchange operations require the cluster-wide mode.  
+  Calling `SaveChanges` with pending compare-exchange operations while the session is in single-node mode throws an `InvalidOperationException`.
+
 ## Cluster-wide transaction vs. Single-node transaction
 
 <Admonition type="note" title="">

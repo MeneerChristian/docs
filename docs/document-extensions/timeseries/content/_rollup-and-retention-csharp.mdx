@@ -151,6 +151,13 @@ rollupData = session
     .TimeSeriesFor("companies/91-A", rollupPolicy.GetTimeSeriesName("StockPrices"))
     .Get(DateTime.MinValue, DateTime.MaxValue);
 
+// Or - use 'TimeSeriesRollupFor<TValues>' with the policy name.
+// Pass 'raw' explicitly so the raw series name is 'StockPrices'.
+// The result is typed: TimeSeriesRollupEntry<StockPrice>[]
+var typedRollupData = session
+    .TimeSeriesRollupFor<StockPrice>("companies/91-A", "By1WeekFor1Year", raw: "StockPrices")
+    .Get(DateTime.MinValue, DateTime.MaxValue);
+
 // The raw time series has 100 entries
 Assert.Equal(rawData.Length, 100);
 Assert.Equal(rawData[0].IsRollup, false);

@@ -176,6 +176,31 @@ Subscribe to the event:
 store.RequestExecutorCreated += RequestExecutorCreatedEvent;
 ```
 
+#### Example: track client-configuration changes and request count
+
+The request executor raises `ClientConfigurationChanged` when it fetches a newer client-configuration from the server.
+The event arguments are a tuple of the Raft command index and the new `ClientConfiguration`.
+The executor also exposes `NumberOfServerRequests`, a running count of requests it sent to the server.
+That count includes the client-configuration fetch, so a request can show up as two.
+
+```csharp
+store.RequestExecutorCreated += (sender, requestExecutor) =>
+{
+    requestExecutor.ClientConfigurationChanged += (_, change) =>
+    {
+        Console.WriteLine($"Client configuration changed at Raft index {change.RaftCommandIndex}");
+    };
+};
+
+using (var session = store.OpenSession())
+{
+    var before = session.Advanced.RequestExecutor.NumberOfServerRequests;
+    session.Load<User>("users/1");
+    var sent = session.Advanced.RequestExecutor.NumberOfServerRequests - before;
+    Console.WriteLine($"Requests sent by this session: {sent}");
+}
+```
+
 </ContentFrame>
 
 <ContentFrame>

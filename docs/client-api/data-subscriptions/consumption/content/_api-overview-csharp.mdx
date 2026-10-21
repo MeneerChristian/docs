@@ -12,6 +12,7 @@ import CodeBlock from '@theme/CodeBlock';
    * [SubscriptionBatch&lt;T&gt;](../../../../client-api/data-subscriptions/consumption/api-overview.mdx#subscriptionbatcht)  
    * [SubscriptionBatch&lt;T&gt;.Item](../../../../client-api/data-subscriptions/consumption/api-overview.mdx#subscriptionbatchtitem)  
    * [SubscriptionWorker&lt;T&gt;](../../../../client-api/data-subscriptions/consumption/api-overview.mdx#subscriptionworkert)  
+   * [Worker status](../../../../client-api/data-subscriptions/consumption/api-overview.mdx#worker-status)  
 
 </Admonition>
 ## Create the subscription worker
@@ -227,6 +228,8 @@ Using it outside this scope may cause unexpected behavior.
 |-----------------------------------|:--------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------| 
 | **AfterAcknowledgment**           | `AfterAcknowledgmentAction`     | Triggered after each time the server acknowledges the progress of batch processing.                                                                                             |
 | **OnSubscriptionConnectionRetry** | `Action<Exception>`             | Triggered when the subscription worker attempts to reconnect to the server after a failure.<br/>The event receives as a parameter the exception that interrupted the processing. |
+| **OnEstablishedSubscriptionConnection** | `Action`          | Triggered each time the worker connects to the server, on the first connection and on every reconnection. Use it to know the worker is connected without waiting for a batch. |
+| **OnStateChanged**                | `Action<AbstractSubscriptionWorker<SubscriptionBatch<T>, T>, SubscriptionWorkerStatus>` | Triggered on every change of [Status](../../../../client-api/data-subscriptions/consumption/api-overview.mdx#worker-status). Receives the worker and the new status. |
 | **OnDisposed**                    | `Action<SubscriptionWorker<T>>` | Triggered after the subscription worker is disposed.                                                                                                                            |
 
 <Admonition type="info" title="">
@@ -254,8 +257,60 @@ Using it outside this scope may cause unexpected behavior.
 | **CurrentNodeTag**            | `string` | The node tag of the current RavenDB server handling the subscription. |
 | **SubscriptionName**          | `string` | The name of the currently processed subscription.                     |
 | **WorkerId**                  | `string` | The worker ID.                                                        |
+| **Status**                    | `SubscriptionWorkerStatus` | What the worker is doing right now. See [Worker status](../../../../client-api/data-subscriptions/consumption/api-overview.mdx#worker-status). |
 
 </Admonition>
+
+## Worker status
+
+`Status` returns an immutable `SubscriptionWorkerStatus` snapshot, so the state and the exception that produced it always match.  
+Read it to check the worker's health, or subscribe to `OnStateChanged` to be notified of every change.
+
+```csharp
+public sealed class SubscriptionWorkerStatus
+{
+    public SubscriptionWorkerState State { get; }
+    public Exception Exception { get; }        // set for Retrying and Faulted, otherwise null
+    public DateTime SinceUtc { get; }          // when the worker entered its current state
+    public DateTime? FailingSinceUtc { get; }  // when the worker last lost the server; null while connected
+}
+```
+
+| SubscriptionWorkerState | Description |
+|-------------------------|-------------|
+| `NotStarted`            | The worker was created, but `Run` was not called yet. |
+| `Connecting`            | Opening a connection to the server. This is also the state while reconnecting. |
+| `WaitingForDocuments`   | Connected and waiting for the next batch. The worker is healthy and idle. |
+| `Processing`            | A batch was handed to the `Run` delegate and is not acknowledged yet. |
+| `Retrying`              | The connection failed and the worker is going to reconnect. `Exception` holds the failure. |
+| `Faulted`               | The worker gave up on a failure that reconnecting cannot fix. `Run` completes with that exception. Terminal. |
+| `Stopped`               | The worker was disposed, or the cancellation token passed to `Run` was cancelled. Terminal. |
+
+`SinceUtc` is not reset when the worker reaches the same state again, so a worker that keeps processing batches reports when its current batch started.  
+A worker that cannot reach the server alternates between `Connecting` and `Retrying`, so `SinceUtc` moves on every attempt.
+Use `FailingSinceUtc` to see how long the worker has been unable to reach the server.
+
+```csharp
+SubscriptionWorker<User> worker = store.Subscriptions.GetSubscriptionWorker<User>("users-subscription");
+
+worker.OnEstablishedSubscriptionConnection += () => Console.WriteLine("Connected to the server");
+
+worker.OnStateChanged += (sender, status) =>
+{
+    if (status.State == SubscriptionWorkerState.Faulted)
+        Console.WriteLine($"Subscription stopped: {status.Exception.Message}");
+};
+
+Task runTask = worker.Run(batch =>
+{
+    // process the batch
+});
+
+// Later, for example in a health check:
+SubscriptionWorkerStatus status = worker.Status;
+if (status.FailingSinceUtc != null)
+    Console.WriteLine($"Failing since {status.FailingSinceUtc:O}: {status.Exception?.Message}");
+```
 
 
 
