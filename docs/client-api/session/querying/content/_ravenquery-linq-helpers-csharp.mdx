@@ -312,7 +312,7 @@ public static long? Counter(object documentInstance, string name)
 <TabItem value="RQL" label="RQL">
 <CodeBlock language="sql">
 {`from 'Users' as u
-select { Name: u.Name, Downloads: counter(u, "Downloads") }
+select Name, counter(u, Downloads) as Downloads
 `}
 </CodeBlock>
 </TabItem>
