@@ -22,8 +22,14 @@ import CodeBlock from '@theme/CodeBlock';
   or [paused](../../../../../client-api/operations/maintenance/indexes/stop-index.mdx), resetting the index 
   will put it back to the **normal** running state on the local node where the action was performed.
 
+* **Reset modes** (`IndexResetMode`):  
+  * `InPlace` - the existing index is replaced by the newly rebuilt one.  
+  * `SideBySide` - the new index is built alongside the existing one.  
+  * If no mode is passed, the server's indexing `ResetMode` configuration is used (default `InPlace`).
+
 * In this page:
     * [Reset index](../../../../../client-api/operations/maintenance/indexes/set-index-priority.mdx#set-priority---single-index)
+    * [Reset index with mode](../../../../../client-api/operations/maintenance/indexes/reset-index.mdx#reset-index-with-mode)
     * [Syntax](../../../../../client-api/operations/maintenance/indexes/set-index-priority.mdx#syntax)
 
 </Admonition>
@@ -56,11 +62,38 @@ await store.Maintenance.SendAsync(resetIndexOp);
 
 
 
+## Reset index with mode
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="Sync" label="Sync">
+<CodeBlock language="csharp">
+{`// Pass the reset mode: InPlace or SideBySide
+var resetIndexOp = new ResetIndexOperation("Orders/Totals", IndexResetMode.SideBySide);
+
+store.Maintenance.Send(resetIndexOp);
+`}
+</CodeBlock>
+</TabItem>
+<TabItem value="Async" label="Async">
+<CodeBlock language="csharp">
+{`// Pass the reset mode: InPlace or SideBySide
+var resetIndexOp = new ResetIndexOperation("Orders/Totals", IndexResetMode.SideBySide);
+
+await store.Maintenance.SendAsync(resetIndexOp);
+`}
+</CodeBlock>
+</TabItem>
+</Tabs>
+
+
+
 ## Syntax
 
 <TabItem value="syntax" label="syntax">
 <CodeBlock language="csharp">
-{`public ResetIndexOperation(string indexName);
+{`// Available overloads:
+public ResetIndexOperation(string indexName);
+public ResetIndexOperation(string indexName, IndexResetMode indexResetMode);
 `}
 </CodeBlock>
 </TabItem>
@@ -68,6 +101,7 @@ await store.Maintenance.SendAsync(resetIndexOp);
 | Parameters | Type | Description |
 | - | - | - |
 | **indexName** | `string` | Name of an index to reset |
+| **indexResetMode** | `IndexResetMode` | Optional (second overload). `InPlace` or `SideBySide`. |
 
 
 

@@ -181,6 +181,23 @@ public Func<string, object, Task<string>> AsyncDocumentIdGenerator { get; set; }
 </ContentFrame>
 <ContentFrame>
 
+### BulkInsert.TimeSeriesBatchSize
+
+* Use the `BulkInsert.TimeSeriesBatchSize` convention to set the number of time series entries written in a single batch
+  when storing time series with a [bulk insert](../../../client-api/bulk-insert/how-to-work-with-bulk-insert-operation.mdx).
+
+* The value must be positive. Setting a value of `0` or less throws an `InvalidOperationException`.
+
+* DEFAULT: `1024`
+
+```csharp
+// Syntax (accessed via 'Conventions.BulkInsert'):
+public int TimeSeriesBatchSize { get; set; }
+```
+
+</ContentFrame>
+<ContentFrame>
+
 ### CreateHttpClient
 
 * Use the `CreateHttpClient` convention to modify the HTTP client your client application uses.
@@ -751,6 +768,21 @@ public Version HttpVersion { get; set; }
 </ContentFrame>
 <ContentFrame>
 
+### HttpVersionPolicy
+
+* Use the `HttpVersionPolicy` convention to set the HTTP version policy the client uses when communicating with the server.
+  It is available for .NET Core 3.1 and later targets.
+
+* DEFAULT: `null`. When not set, the policy of the underlying .NET HTTP client is used.
+
+```csharp
+// Syntax:
+public HttpVersionPolicy? HttpVersionPolicy { get; set; }
+```
+
+</ContentFrame>
+<ContentFrame>
+
 ### IdentityPartsSeparator
 
 * Use the `IdentityPartsSeparator` convention to customize the **default ID separator** for document IDs generated automatically by the 
@@ -928,6 +960,36 @@ public enum OptimisticConcurrencyMode
     Use `OptimisticConcurrencyMode` instead.
     </Admonition>    
     
+</ContentFrame>
+<ContentFrame>
+
+### UseOptimisticConcurrency
+
+<Admonition type="warning" title="">
+This convention is obsolete and will be removed in a future major version. Use [OptimisticConcurrencyMode](#optimisticconcurrencymode) instead.
+</Admonition>
+
+* `UseOptimisticConcurrency` is a boolean that maps to `OptimisticConcurrencyMode`:
+    * `true` maps to `OptimisticConcurrencyMode.Writes`.
+    * `false` maps to `OptimisticConcurrencyMode.None`.
+    * `OptimisticConcurrencyMode.WritesAndReads` cannot be represented by this convention.
+
+* Setting `UseOptimisticConcurrency` and `OptimisticConcurrencyMode` on the same conventions throws an `InvalidOperationException`.
+  Use `OptimisticConcurrencyMode` only.
+
+* DEFAULT: `false`
+
+```csharp
+// Obsolete:
+UseOptimisticConcurrency = true
+
+// Replacement:
+OptimisticConcurrencyMode = OptimisticConcurrencyMode.Writes
+
+// Syntax:
+[Obsolete] public bool UseOptimisticConcurrency { get; set; }
+```
+
 </ContentFrame>
 <ContentFrame>
 
@@ -1126,6 +1188,25 @@ public SessionPatchBehavior SessionPatchBehavior { get; set; }
 <br/>
     
 * Learn more about the [session patch API](../../../documents/patching-documents/patch-a-single-document/api-overview.mdx#session-api).
+
+</ContentFrame>
+<ContentFrame>
+
+### ShouldApplyPropertyNameConverter
+
+* Use the `ShouldApplyPropertyNameConverter` convention to decide, for each member, whether the `PropertyNameConverter` is applied.
+  Return `true` to apply the converter to the member, or `false` to keep the member's original name.
+
+* The convention has an effect only when `PropertyNameConverter` is set.
+  See [Modify serialization of property name](#modify-serialization-of-property-name).
+
+* DEFAULT: `DocumentConventions.DefaultShouldApplyPropertyNameConverter`.
+  It applies the converter to all members except those declared in types from namespaces that start with `System` or `Microsoft`.
+
+```csharp
+// Syntax:
+public Func<MemberInfo, bool> ShouldApplyPropertyNameConverter { get; set; }
+```
 
 </ContentFrame>
 <ContentFrame>

@@ -1,0 +1,40 @@
+---
+title: "RavenQuery LINQ Helpers"
+sidebar_label: RavenQuery LINQ Helpers
+description: "Use the static RavenQuery methods inside LINQ queries to load documents, read metadata, counters, time series, compare exchange values, and server time, and see the RQL each call translates to."
+sidebar_position: 19
+supported_languages: ["csharp"]
+see_also:
+     - title: "Project Query Results"
+       link: "client-api/session/querying/how-to-project-query-results"
+       source: "docs"
+       path: "Client API > Session > Querying"
+     - title: "Count Query Results"
+       link: "client-api/session/querying/how-to-count-query-results"
+       source: "docs"
+       path: "Client API > Session > Querying"
+     - title: "Compare Exchange overview"
+       link: "compare-exchange/overview"
+       source: "docs"
+       path: "Compare Exchange"
+     - title: "Time Series query overview and syntax"
+       link: "document-extensions/timeseries/querying/overview-and-syntax"
+       source: "docs"
+       path: "Document Extensions > Time Series > Querying"
+     - title: "RQL - Raven Query Language"
+       link: "querying/rql/what-is-rql"
+       source: "docs"
+       path: "Querying > RQL"
+---
+
+import LanguageSwitcher from "@site/src/components/LanguageSwitcher";
+import LanguageContent from "@site/src/components/LanguageContent";
+
+import RavenQueryLinqHelpersCsharp from './content/_ravenquery-linq-helpers-csharp.mdx';
+
+
+<LanguageSwitcher supportedLanguages={frontMatter.supported_languages} />
+
+<LanguageContent language="csharp">
+   <RavenQueryLinqHelpersCsharp />
+</LanguageContent>

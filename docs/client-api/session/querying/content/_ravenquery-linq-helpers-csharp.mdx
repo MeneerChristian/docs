@@ -1,0 +1,581 @@
+import Admonition from '@theme/Admonition';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import CodeBlock from '@theme/CodeBlock';
+
+<Admonition type="note" title="">
+
+* The static **`RavenQuery`** class provides helper methods for use **inside LINQ query expressions**.  
+  Each call is translated by the client into RQL (or the JavaScript used by RQL) and executed on the server.
+
+* These methods are **not** executable C# methods.  
+  They only exist so the LINQ provider can recognize them.  
+  Calling any of them directly, outside a LINQ query expression, throws a **`NotSupportedException`**.
+
+* Add the following namespace to use `RavenQuery`:  
+  `using Raven.Client.Documents.Queries;`
+
+* In this article:
+  * [Translation rules](../../../../client-api/session/querying/ravenquery-linq-helpers.mdx#translation-rules)
+  * [Load](../../../../client-api/session/querying/ravenquery-linq-helpers.mdx#load)
+  * [Id](../../../../client-api/session/querying/ravenquery-linq-helpers.mdx#id)
+  * [Raw](../../../../client-api/session/querying/ravenquery-linq-helpers.mdx#raw)
+  * [Metadata](../../../../client-api/session/querying/ravenquery-linq-helpers.mdx#metadata)
+  * [LastModified](../../../../client-api/session/querying/ravenquery-linq-helpers.mdx#lastmodified)
+  * [Counter](../../../../client-api/session/querying/ravenquery-linq-helpers.mdx#counter)
+  * [TimeSeries](../../../../client-api/session/querying/ravenquery-linq-helpers.mdx#timeseries)
+  * [Now](../../../../client-api/session/querying/ravenquery-linq-helpers.mdx#now)
+  * [Today](../../../../client-api/session/querying/ravenquery-linq-helpers.mdx#today)
+  * [CmpXchg](../../../../client-api/session/querying/ravenquery-linq-helpers.mdx#cmpxchg)
+  * [Include](../../../../client-api/session/querying/ravenquery-linq-helpers.mdx#include)
+
+</Admonition>
+
+## Translation rules
+
+* **Only inside LINQ queries**:  
+  `RavenQuery` methods are recognized when they appear in a LINQ expression over `session.Query<T>()`.  
+  They have no meaning on their own.
+
+* **Direct calls throw**:  
+  Every `RavenQuery` method body throws `NotSupportedException`.  
+  If you need the same result in client code, use the session API instead, for example `session.Load<T>(id)` or `session.Advanced.GetMetadataFor(entity)`.
+
+* **Scalar and document-level helpers**:  
+  `Now`, `Today`, `CmpXchg`, `Load`, `Id`, `Metadata`, `LastModified`, `Counter`, `TimeSeries`, `Raw`, and `Include` are translated to RQL functions or query clauses on the server.
+
+* **DocumentQuery alternatives**:  
+  For `DocumentQuery` and `AsyncDocumentQuery`, use the `RavenDocumentQuery` helpers `Now` and `Today` instead of `RavenQuery.Now` and `RavenQuery.Today`.
+
+## Load
+
+Signatures:
+
+<CodeBlock language="csharp">
+{`public static T Load<T>(string id)
+public static IEnumerable<T> Load<T>(IEnumerable<string> ids)
+`}
+</CodeBlock>
+
+* Loads a document by its identifier, or a collection of documents by their identifiers, within the query.
+* Translates to the `load()` function.
+
+<Admonition type="note" title="">
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="Query" label="Query">
+<CodeBlock language="csharp">
+{`var orders = session.Query<Order>()
+    .Select(o => new
+    {
+        o.Company,
+        // Load the Employee document referenced by o.Employee
+        Employee = RavenQuery.Load<Employee>(o.Employee)
+    })
+    .ToList();
+`}
+</CodeBlock>
+</TabItem>
+<TabItem value="RQL" label="RQL">
+<CodeBlock language="sql">
+{`from 'Orders' as o
+select { Company: o.Company, Employee: load(o.Employee) }
+`}
+</CodeBlock>
+</TabItem>
+</Tabs>
+
+</Admonition>
+
+<Admonition type="note" title="">
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="Query" label="Query">
+<CodeBlock language="csharp">
+{`var orders = session.Query<Order>()
+    .Select(o => new
+    {
+        // Load every Product document whose identifier is in o.ProductIds
+        Products = RavenQuery.Load<Product>(o.ProductIds)
+    })
+    .ToList();
+`}
+</CodeBlock>
+</TabItem>
+<TabItem value="RQL" label="RQL">
+<CodeBlock language="sql">
+{`from 'Orders' as o
+select { Products: load(o.ProductIds) }
+`}
+</CodeBlock>
+</TabItem>
+</Tabs>
+
+</Admonition>
+
+## Id
+
+Signature:
+
+<CodeBlock language="csharp">
+{`public static string Id(object documentInstance)
+`}
+</CodeBlock>
+
+* Returns the identifier of a document instance.
+* Translates to `id()` for the document being projected, and to `id(alias)` for a specific alias.
+
+<Admonition type="note" title="">
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="Query" label="Query">
+<CodeBlock language="csharp">
+{`var users = session.Query<User>()
+    .Select(u => new
+    {
+        Id = RavenQuery.Id(u),
+        u.Name
+    })
+    .ToList();
+`}
+</CodeBlock>
+</TabItem>
+<TabItem value="RQL" label="RQL">
+<CodeBlock language="sql">
+{`from 'Users'
+select id() as Id, Name
+`}
+</CodeBlock>
+</TabItem>
+</Tabs>
+
+</Admonition>
+
+## Raw
+
+Signatures:
+
+<CodeBlock language="csharp">
+{`public static T Raw<T>(string js)
+public static T Raw<T>(T path, string js)
+`}
+</CodeBlock>
+
+* Injects a JavaScript expression into the query as-is.  
+  The string is not validated by the client, so the expression must be valid for the server-side JavaScript engine.
+* The single-argument form takes a **constant** string.
+* The two-argument form appends the JavaScript to the translated `path` expression, as `path.js`.
+* Use `Raw` only when RQL and LINQ cannot express what you need. See [JavaScript Engine](../../../../server/kb/javascript-engine.mdx).
+
+<Admonition type="note" title="">
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="Query" label="Query">
+<CodeBlock language="csharp">
+{`var employees = session.Query<Employee>()
+    .Select(e => new
+    {
+        // Single-argument form: the JavaScript is used as the whole expression
+        Date = RavenQuery.Raw<DateTime>("new Date(Date.parse(e.Birthday))"),
+        // Two-argument form: 'e.FirstName' is followed by '.substr(0, 3)'
+        Name = RavenQuery.Raw(e.FirstName, "substr(0, 3)")
+    })
+    .ToList();
+`}
+</CodeBlock>
+</TabItem>
+<TabItem value="RQL" label="RQL">
+<CodeBlock language="sql">
+{`from 'Employees' as e
+select {
+    Date: new Date(Date.parse(e.Birthday)),
+    Name: e.FirstName.substr(0, 3)
+}
+`}
+</CodeBlock>
+</TabItem>
+</Tabs>
+
+</Admonition>
+
+## Metadata
+
+Signature:
+
+<CodeBlock language="csharp">
+{`public static IMetadataDictionary Metadata<T>(T instance)
+`}
+</CodeBlock>
+
+* Returns the metadata of a document instance as an `IMetadataDictionary`.
+* Translates to `getMetadata(alias)`.
+
+<Admonition type="note" title="">
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="Query" label="Query">
+<CodeBlock language="csharp">
+{`var users = session.Query<User>()
+    .Select(u => new
+    {
+        u.Name,
+        Metadata = RavenQuery.Metadata(u)
+    })
+    .ToList();
+
+// Read a metadata key from the projected dictionary
+var lastModified = users[0].Metadata.GetString(Constants.Documents.Metadata.LastModified);
+`}
+</CodeBlock>
+</TabItem>
+<TabItem value="RQL" label="RQL">
+<CodeBlock language="sql">
+{`from 'Users' as u
+select { Name: u.Name, Metadata: getMetadata(u) }
+`}
+</CodeBlock>
+</TabItem>
+</Tabs>
+
+</Admonition>
+
+## LastModified
+
+Signature:
+
+<CodeBlock language="csharp">
+{`public static DateTime LastModified<T>(T instance)
+`}
+</CodeBlock>
+
+* Returns the last-modified date of a document instance.
+* Translates to the `@last-modified` entry of the document metadata.
+
+<Admonition type="note" title="">
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="Query" label="Query">
+<CodeBlock language="csharp">
+{`var users = session.Query<User>()
+    .Select(u => new
+    {
+        u.Name,
+        LastModified = RavenQuery.LastModified(u)
+    })
+    .ToList();
+`}
+</CodeBlock>
+</TabItem>
+<TabItem value="RQL" label="RQL">
+<CodeBlock language="sql">
+{`from 'Users' as u
+select { Name: u.Name, LastModified: getMetadata(u)['@last-modified'] }
+`}
+</CodeBlock>
+</TabItem>
+</Tabs>
+
+</Admonition>
+
+## Counter
+
+Signatures:
+
+<CodeBlock language="csharp">
+{`public static long? Counter(string name)
+public static long? Counter(string docId, string name)
+public static long? Counter(object documentInstance, string name)
+`}
+</CodeBlock>
+
+* Returns the value of a counter.
+* The single-argument form reads a counter from the document being projected.
+* The other forms read a counter from the document identified by `docId`, or from `documentInstance`.
+* Translates to the `counter()` function.
+
+<Admonition type="note" title="">
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="Query" label="Query">
+<CodeBlock language="csharp">
+{`var users = session.Query<User>()
+    .Select(u => new
+    {
+        u.Name,
+        // Counter on the document instance
+        Downloads = RavenQuery.Counter(u, "Downloads")
+    })
+    .ToList();
+`}
+</CodeBlock>
+</TabItem>
+<TabItem value="RQL" label="RQL">
+<CodeBlock language="sql">
+{`from 'Users' as u
+select { Name: u.Name, Downloads: counter(u, "Downloads") }
+`}
+</CodeBlock>
+</TabItem>
+</Tabs>
+
+</Admonition>
+
+<Admonition type="note" title="">
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="Query" label="Query">
+<CodeBlock language="csharp">
+{`var users = session.Query<User>()
+    // Single-argument form: the counter is read from the projected document
+    .Select(u => RavenQuery.Counter("Downloads"))
+    .ToList();
+`}
+</CodeBlock>
+</TabItem>
+<TabItem value="RQL" label="RQL">
+<CodeBlock language="sql">
+{`from 'Users'
+select counter(Downloads) as Downloads
+`}
+</CodeBlock>
+</TabItem>
+</Tabs>
+
+</Admonition>
+
+## TimeSeries
+
+Signatures:
+
+<CodeBlock language="csharp">
+{`public static ITimeSeriesQueryable TimeSeries(string name)
+public static ITimeSeriesQueryable TimeSeries(object documentInstance, string name)
+public static ITimeSeriesQueryable TimeSeries(object documentInstance, string name, DateTime from, DateTime to)
+public static ITimeSeriesQueryable<T> TimeSeries<T>(string name) where T : new()
+public static ITimeSeriesQueryable<T> TimeSeries<T>(object documentInstance, string name) where T : new()
+public static ITimeSeriesQueryable<T> TimeSeries<T>(object documentInstance, string name, DateTime from, DateTime to) where T : new()
+`}
+</CodeBlock>
+
+* Starts a time series query on a document's time series, optionally limited to a date range.
+* The chained calls (`Where`, `GroupBy`, `Select`, and so on) define the time series query.
+* The generic overloads return entries typed as `T`.
+* Translates to a `declare timeseries` function that the query calls for each document.
+
+<Admonition type="note" title="">
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="Query" label="Query">
+<CodeBlock language="csharp">
+{`var users = session.Query<User>()
+    .Where(u => u.Age > 21)
+    .Select(u => RavenQuery.TimeSeries(u, "Heartrate")
+        .Where(ts => ts.Tag == "watches/fitbit")
+        .GroupBy("1 month")
+        .Select(g => new
+        {
+            Avg = g.Average(),
+            Max = g.Max()
+        })
+        .ToList())
+    .ToList();
+`}
+</CodeBlock>
+</TabItem>
+<TabItem value="RQL" label="RQL">
+<CodeBlock language="sql">
+{`// Simplified: the generated function body follows the chained calls
+declare timeseries __timeSeriesQueryFunction0(u) {
+    from u.Heartrate ... where Tag == 'watches/fitbit' group by '1 month' select ...
+}
+from 'Users' as u
+where Age > 21
+select __timeSeriesQueryFunction0(u)
+`}
+</CodeBlock>
+</TabItem>
+</Tabs>
+
+</Admonition>
+
+For the full time series syntax, see [time series query overview](../../../../document-extensions/timeseries/querying/overview-and-syntax.mdx).
+
+## Now
+
+Signatures:
+
+<CodeBlock language="csharp">
+{`public static DateTime Now()
+public static DateTime Now(string offset)
+`}
+</CodeBlock>
+
+* Returns the current UTC date and time on the server.
+* The `offset` form adds an offset and floor-rounds the result to the smallest unit given.  
+  Format: `[+|-]Ny[Nmo][Nd][Nh][Nm][Ns]`, with units in descending order, for example `"+1y6mo"`, `"-2hours30minutes"`, `"15d"`.
+* Translates to `now()` or `now($parameter)`.
+
+<Admonition type="note" title="">
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="Query" label="Query">
+<CodeBlock language="csharp">
+{`var hires = session.Query<Employee>()
+    .Where(e => e.HiredAt <= RavenQuery.Now())
+    .ToList();
+`}
+</CodeBlock>
+</TabItem>
+<TabItem value="RQL" label="RQL">
+<CodeBlock language="sql">
+{`from 'Employees'
+where HiredAt <= now()
+`}
+</CodeBlock>
+</TabItem>
+</Tabs>
+
+</Admonition>
+
+<Admonition type="note" title="">
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="Query" label="Query">
+<CodeBlock language="csharp">
+{`var recentHires = session.Query<Employee>()
+    // Server time minus 30 days, floor-rounded to the day
+    .Where(e => e.HiredAt >= RavenQuery.Now("-30d"))
+    .ToList();
+`}
+</CodeBlock>
+</TabItem>
+<TabItem value="RQL" label="RQL">
+<CodeBlock language="sql">
+{`from 'Employees'
+where HiredAt >= now($p0)
+`}
+</CodeBlock>
+</TabItem>
+</Tabs>
+
+</Admonition>
+
+## Today
+
+Signature:
+
+<CodeBlock language="csharp">
+{`public static DateTime Today()
+`}
+</CodeBlock>
+
+* Returns the start of the current UTC day (midnight) on the server.
+* Translates to `today()`.
+
+<Admonition type="note" title="">
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="Query" label="Query">
+<CodeBlock language="csharp">
+{`var hiredThisYear = session.Query<Employee>()
+    .Where(e => e.HiredAt >= RavenQuery.Today())
+    .ToList();
+`}
+</CodeBlock>
+</TabItem>
+<TabItem value="RQL" label="RQL">
+<CodeBlock language="sql">
+{`from 'Employees'
+where HiredAt >= today()
+`}
+</CodeBlock>
+</TabItem>
+</Tabs>
+
+</Admonition>
+
+## CmpXchg
+
+Signature:
+
+<CodeBlock language="csharp">
+{`public static T CmpXchg<T>(string key)
+`}
+</CodeBlock>
+
+* Loads a [compare exchange](../../../../compare-exchange/overview.mdx) value by its key, and returns its value typed as `T`.
+* Translates to the `cmpxchg()` function.
+* A literal empty string key throws `NotSupportedException` during query translation.
+
+<Admonition type="note" title="">
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="Query" label="Query">
+<CodeBlock language="csharp">
+{`var rooms = session.Query<RoomAssignment>()
+    .Select(x => new
+    {
+        x.RoomNumber,
+        // Read the compare exchange value whose key is the room number
+        CurrentNumberOfGuests = RavenQuery.CmpXchg<RoomDetails>(x.RoomNumber).CurrentNumberOfGuests
+    })
+    .ToList();
+`}
+</CodeBlock>
+</TabItem>
+<TabItem value="RQL" label="RQL">
+<CodeBlock language="sql">
+{`from 'RoomAssignments' as x
+select {
+    RoomNumber: x.RoomNumber,
+    CurrentNumberOfGuests: cmpxchg(x.RoomNumber).CurrentNumberOfGuests
+}
+`}
+</CodeBlock>
+</TabItem>
+</Tabs>
+
+</Admonition>
+
+## Include
+
+Signature:
+
+<CodeBlock language="csharp">
+{`public static object Include<T>(Expression<Func<T, string>> path)
+`}
+</CodeBlock>
+
+* Includes a related document in the query results, so it is loaded in the same request.
+* The result must be assigned to the discard symbol `_`. Any other assignment throws an `InvalidOperationException`.
+* When the path is a simple member access, the include is added as a regular `include` clause.  
+  Other expressions are translated into the projection.
+
+<Admonition type="note" title="">
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="Query" label="Query">
+<CodeBlock language="csharp">
+{`var query = session.Query<Address>()
+    .Select(a => new
+    {
+        // Include the State document referenced by StateId
+        _ = RavenQuery.Include<Address>(x => x.StateId),
+        a.StateId
+    });
+
+var addresses = query.ToList();
+`}
+</CodeBlock>
+</TabItem>
+<TabItem value="RQL" label="RQL">
+<CodeBlock language="sql">
+{`from 'Addresses'
+select StateId
+include StateId
+`}
+</CodeBlock>
+</TabItem>
+</Tabs>
+
+</Admonition>

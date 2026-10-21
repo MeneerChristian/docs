@@ -26,6 +26,11 @@ import ContentFrame from "@site/src/components/ContentFrame";
     * [Stream by prefix](../../querying/stream-query-results.mdx#stream-by-prefix)
         * [Stream results by prefix](../../querying/stream-query-results.mdx#stream-results-by-prefix)
         * [By prefix syntax](../../querying/stream-query-results.mdx#by-prefix-syntax)
+    * [Other streaming methods](../../querying/stream-query-results.mdx#other-streaming-methods)
+        * [Stream into a stream](../../querying/stream-query-results.mdx#stream-into-a-stream)
+        * [Convert a query to a stream](../../querying/stream-query-results.mdx#convert-a-query-to-a-stream)
+        * [Iterate a query asynchronously](../../querying/stream-query-results.mdx#iterate-a-query-asynchronously)
+        * [Load documents into a stream](../../querying/stream-query-results.mdx#load-documents-into-a-stream)
 
 </Admonition>
 
@@ -510,6 +515,160 @@ IEnumerator<StreamResult<T>> Stream<T>(IRawDocumentQuery<T> query, out StreamQue
 </ContentFrame>
     
 </Panel>    
+
+<Panel heading="Other streaming methods">
+
+<ContentFrame>
+
+### Stream into a stream
+
+* `StreamInto` feeds the query results directly into a `Stream`, without returning an enumerator.
+* Like the other streaming methods, the results are **not tracked** by the session.
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="Sync" label="Sync">
+```csharp
+using (var output = new MemoryStream())
+{
+    IDocumentQuery<Employee> query = session
+        .Advanced
+        .DocumentQuery<Employee>()
+        .WhereEquals(x => x.FirstName, "Robert");
+
+    // Results are written to 'output' as they arrive
+    session.Advanced.StreamInto(query, output);
+}
+```
+</TabItem>
+<TabItem value="Async" label="Async">
+```csharp
+using (var output = new MemoryStream())
+{
+    // Results are written to 'output' as they arrive
+    await asyncSession.Advanced.StreamIntoAsync(
+        asyncSession.Advanced.AsyncDocumentQuery<Employee>().WhereEquals(x => x.FirstName, "Robert"),
+        output);
+}
+```
+</TabItem>
+</Tabs>
+
+</ContentFrame>
+
+<ContentFrame>
+
+### Convert a query to a stream
+
+* `ToStream` and `ToStreamAsync` are LINQ extension methods that write the query results to a `Stream`.
+* They are available on `IQueryable<T>` and on `IDocumentQuery<T>` / `IAsyncDocumentQuery<T>`.
+* Add `using Raven.Client.Documents;` to use them.
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="Sync" label="Sync">
+```csharp
+using (var output = new MemoryStream())
+{
+    session.Query<Employee>()
+        .Where(x => x.FirstName == "Robert")
+        .ToStream(output);
+}
+```
+</TabItem>
+<TabItem value="Async" label="Async">
+```csharp
+using (var output = new MemoryStream())
+{
+    await asyncSession.Query<Employee>()
+        .Where(x => x.FirstName == "Robert")
+        .ToStreamAsync(output);
+}
+```
+</TabItem>
+<TabItem value="Syntax" label="Syntax">
+```csharp
+// Sync
+void ToStream<T>(this IQueryable<T> self, Stream stream);
+void ToStream<T>(this IDocumentQuery<T> self, Stream stream);
+
+// Async
+Task ToStreamAsync<T>(this IQueryable<T> self, Stream stream, CancellationToken token = default);
+Task ToStreamAsync<T>(this IAsyncDocumentQuery<T> self, Stream stream, CancellationToken token = default);
+```
+</TabItem>
+</Tabs>
+
+</ContentFrame>
+
+<ContentFrame>
+
+### Iterate a query asynchronously
+
+* `AsAsyncEnumerable` lets you iterate query results with `await foreach` in an async session.
+* The query is sent to the server as a single request, and the results are loaded before the iteration starts.
+  It is a convenient way to iterate results, but it does **not** stream them. Use `StreamAsync` for streaming.
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="Async" label="Async">
+```csharp
+IAsyncEnumerable<Employee> employees = asyncSession
+    .Query<Employee>()
+    .Where(x => x.FirstName == "Robert")
+    .AsAsyncEnumerable();
+
+await foreach (Employee employee in employees)
+{
+    // Process the employee
+}
+```
+</TabItem>
+<TabItem value="Syntax" label="Syntax">
+```csharp
+IAsyncEnumerable<TSource> AsAsyncEnumerable<TSource>(this IQueryable<TSource> source);
+```
+</TabItem>
+</Tabs>
+
+</ContentFrame>
+
+<ContentFrame>
+
+### Load documents into a stream
+
+* `LoadIntoStream` and `LoadIntoStreamAsync` load documents by their IDs and write the response directly into a `Stream`.
+* The loaded documents are returned under the `Results` property of the JSON response.
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="Sync" label="Sync">
+```csharp
+var ids = new List<string> { "employees/1-A", "employees/4-A" };
+
+using (var output = new MemoryStream())
+{
+    session.Advanced.LoadIntoStream(ids, output);
+}
+```
+</TabItem>
+<TabItem value="Async" label="Async">
+```csharp
+var ids = new List<string> { "employees/1-A", "employees/4-A" };
+
+using (var output = new MemoryStream())
+{
+    await asyncSession.Advanced.LoadIntoStreamAsync(ids, output);
+}
+```
+</TabItem>
+<TabItem value="Syntax" label="Syntax">
+```csharp
+void LoadIntoStream(IEnumerable<string> ids, Stream output);
+Task LoadIntoStreamAsync(IEnumerable<string> ids, Stream output, CancellationToken token = default);
+```
+</TabItem>
+</Tabs>
+
+</ContentFrame>
+
+</Panel>
 
 <Panel heading="Stream by prefix">
 

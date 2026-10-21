@@ -67,4 +67,33 @@ session.SaveChanges();
 </CodeBlock>
 </TabItem>
 
+## Read Typed Metadata Values
+
+Besides the indexer, `IMetadataDictionary` provides typed accessors that return a value converted to the requested type:
+
+| Method | Return type | Description |
+| ------------- | ------------- | ----- |
+| **GetLong**(key) | `long` | Returns the value converted to `long`. |
+| **GetBoolean**(key) | `bool` | Returns the value converted to `bool`. |
+| **GetDouble**(key) | `double` | Returns the value converted to `double`. |
+| **GetObject**(key) | `IMetadataDictionary` | Returns the value as a nested metadata object. |
+| **GetObjects**(key) | `IMetadataDictionary[]` | Returns the value as an array of nested metadata objects. |
+
+* `GetLong`, `GetBoolean` and `GetDouble` convert the stored value using invariant culture. A value that cannot be converted throws an exception.
+* All accessors throw `KeyNotFoundException` when the key does not exist in the metadata.
+* `GetObject` and `GetObjects` throw when the value is not a metadata object or an array of them, respectively.
+
+```csharp
+var user = session.Load<User>("users/1-A");
+var metadata = session.Advanced.GetMetadataFor(user);
+
+long loginCount = metadata.GetLong("LoginCount");
+bool isVerified = metadata.GetBoolean("IsVerified");
+double score = metadata.GetDouble("Score");
+
+// Nested metadata: the value must be a metadata object or an array of them
+IMetadataDictionary address = metadata.GetObject("Address");
+IMetadataDictionary[] history = metadata.GetObjects("History");
+```
+
 

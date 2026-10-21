@@ -1,0 +1,111 @@
+import Admonition from '@theme/Admonition';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import CodeBlock from '@theme/CodeBlock';
+
+<Admonition type="note" title="">
+
+* Use `GetIndexStatisticsOperation` to get statistics for a **single index**.
+
+* The statistics are returned by the server node selected by the [client configuration](../../../../../client-api/configuration/load-balance/overview.mdx#client-logic-for-choosing-a-node).
+
+* To get statistics for all indexes in the database, use [GetIndexesStatisticsOperation](../../../../../client-api/operations/maintenance/indexes/get-indexes-statistics.mdx).
+
+* In this page:
+    * [Get statistics for an index](../../../../../client-api/operations/maintenance/indexes/get-index-statistics.mdx#get-statistics-for-an-index)
+    * [Syntax](../../../../../client-api/operations/maintenance/indexes/get-index-statistics.mdx#syntax)
+
+</Admonition>
+## Get statistics for an index
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="Sync" label="Sync">
+<CodeBlock language="csharp">
+{`// Define the get index statistics operation, pass index name
+var getIndexStatsOp = new GetIndexStatisticsOperation("Orders/Totals");
+
+// Execute the operation by passing it to Maintenance.Send
+IndexStats stats = store.Maintenance.Send(getIndexStatsOp);
+
+var entries = stats.EntriesCount;
+var state = stats.State;
+var status = stats.Status;
+var isStale = stats.IsStale;
+`}
+</CodeBlock>
+</TabItem>
+<TabItem value="Async" label="Async">
+<CodeBlock language="csharp">
+{`// Define the get index statistics operation, pass index name
+var getIndexStatsOp = new GetIndexStatisticsOperation("Orders/Totals");
+
+// Execute the operation by passing it to Maintenance.SendAsync
+IndexStats stats = await store.Maintenance.SendAsync(getIndexStatsOp);
+
+var entries = stats.EntriesCount;
+var state = stats.State;
+var status = stats.Status;
+var isStale = stats.IsStale;
+`}
+</CodeBlock>
+</TabItem>
+</Tabs>
+
+
+
+## Syntax
+
+<TabItem value="syntax" label="syntax">
+<CodeBlock language="csharp">
+{`public GetIndexStatisticsOperation(string indexName)
+`}
+</CodeBlock>
+</TabItem>
+
+| Parameters | Type | Description |
+| - | - | - |
+| **indexName** | `string` | Name of the index to get statistics for |
+
+| Return value of `store.Maintenance.Send(getIndexStatsOp)` | Description |
+| - | - |
+| `IndexStats` | The statistics of the index. See `IndexStats` below. |
+
+<TabItem value="syntax_2" label="syntax_2">
+<CodeBlock language="csharp">
+{`public sealed class IndexStats
+\{
+    public string Name \{ get; set; \}
+    public int MapAttempts \{ get; set; \}
+    public int MapSuccesses \{ get; set; \}
+    public int MapErrors \{ get; set; \}
+    public int? MapReferenceAttempts \{ get; set; \}
+    public int? MapReferenceSuccesses \{ get; set; \}
+    public int? MapReferenceErrors \{ get; set; \}
+    public long? ReduceAttempts \{ get; set; \}
+    public long? ReduceSuccesses \{ get; set; \}
+    public long? ReduceErrors \{ get; set; \}
+    public double MappedPerSecondRate \{ get; set; \}
+    public double ReducedPerSecondRate \{ get; set; \}
+    public int MaxNumberOfOutputsPerDocument \{ get; set; \}
+    public Dictionary<string, CollectionStats> Collections \{ get; set; \}
+    public DateTime? LastQueryingTime \{ get; set; \}
+    public IndexState State \{ get; set; \}
+    public IndexPriority Priority \{ get; set; \}
+    public DateTime CreatedTimestamp \{ get; set; \}
+    public DateTime? LastIndexingTime \{ get; set; \}
+    public bool IsStale \{ get; set; \}
+    public IndexLockMode LockMode \{ get; set; \}
+    public IndexType Type \{ get; set; \}
+    public IndexRunningStatus Status \{ get; set; \}
+    public long EntriesCount \{ get; set; \}
+    public int ErrorsCount \{ get; set; \}
+    public bool IsInvalidIndex \{ get; \}
+    public MemoryStats Memory \{ get; set; \}
+    public IndexingPerformanceBasicStats LastBatchStats \{ get; set; \}
+    // Also includes: ReduceOutputCollection, ReduceOutputReferencePattern,
+    // PatternReferencesCollectionName, SearchEngineType, ArchivedDataProcessingBehavior,
+    // SourceType, ReferencedCollections
+\}
+`}
+</CodeBlock>
+</TabItem>

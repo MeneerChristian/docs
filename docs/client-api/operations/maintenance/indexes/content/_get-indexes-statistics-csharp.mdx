@@ -1,0 +1,61 @@
+import Admonition from '@theme/Admonition';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import CodeBlock from '@theme/CodeBlock';
+
+<Admonition type="note" title="">
+
+* Use `GetIndexesStatisticsOperation` to get statistics for **all indexes** in the database.
+
+* The statistics are returned by the server node selected by the [client configuration](../../../../../client-api/configuration/load-balance/overview.mdx#client-logic-for-choosing-a-node).
+
+* To get statistics for a single index, use [GetIndexStatisticsOperation](../../../../../client-api/operations/maintenance/indexes/get-index-statistics.mdx).
+
+* In this page:
+    * [Get statistics for all indexes](../../../../../client-api/operations/maintenance/indexes/get-indexes-statistics.mdx#get-statistics-for-all-indexes)
+    * [Syntax](../../../../../client-api/operations/maintenance/indexes/get-indexes-statistics.mdx#syntax)
+
+</Admonition>
+## Get statistics for all indexes
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="Sync" label="Sync">
+<CodeBlock language="csharp">
+{`// Define the get indexes statistics operation
+var getIndexesStatsOp = new GetIndexesStatisticsOperation();
+
+// Execute the operation by passing it to Maintenance.Send
+IndexStats[] stats = store.Maintenance.Send(getIndexesStatsOp);
+
+// stats contains one IndexStats entry per index in the database
+`}
+</CodeBlock>
+</TabItem>
+<TabItem value="Async" label="Async">
+<CodeBlock language="csharp">
+{`// Define the get indexes statistics operation
+var getIndexesStatsOp = new GetIndexesStatisticsOperation();
+
+// Execute the operation by passing it to Maintenance.SendAsync
+IndexStats[] stats = await store.Maintenance.SendAsync(getIndexesStatsOp);
+
+// stats contains one IndexStats entry per index in the database
+`}
+</CodeBlock>
+</TabItem>
+</Tabs>
+
+
+
+## Syntax
+
+<TabItem value="syntax" label="syntax">
+<CodeBlock language="csharp">
+{`public GetIndexesStatisticsOperation()
+`}
+</CodeBlock>
+</TabItem>
+
+| Return value of `store.Maintenance.Send(getIndexesStatsOp)` | Description |
+| - | - |
+| `IndexStats[]` | A list of `IndexStats` classes, one per index. See the properties in [GetIndexStatisticsOperation](../../../../../client-api/operations/maintenance/indexes/get-index-statistics.mdx#syntax). |
