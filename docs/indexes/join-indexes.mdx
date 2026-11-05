@@ -1,0 +1,55 @@
+---
+title: "Join Indexes"
+sidebar_label: Join Indexes
+description: "Keep the result of a JOIN between two Corax indexes in an index of its own, so that a join query reads precomputed lists instead of running the joined sub-query every time. Storage modes, the auto join index, limits and settings."
+sidebar_position: 31
+supported_languages: ["csharp"]
+see_also:
+     - title: "Join Indexes"
+       link: "client-api/session/querying/how-to-join-indexes"
+       source: "docs"
+       path: "Client API > Session > Querying"
+     - title: "RQL JOIN"
+       link: "querying/rql/what-is-rql"
+       source: "docs"
+       path: "Querying > RQL"
+     - title: "Corax Search Engine"
+       link: "indexes/search-engine/corax"
+       source: "docs"
+       path: "Indexes > Search Engine"
+     - title: "Creating and Deploying Indexes"
+       link: "indexes/creating-and-deploying"
+       source: "docs"
+       path: "Indexes"
+     - title: "Index Administration"
+       link: "indexes/index-administration"
+       source: "docs"
+       path: "Indexes"
+     - title: "Query Timings"
+       link: "client-api/session/querying/debugging/query-timings"
+       source: "docs"
+       path: "Client API > Session > Querying > Debugging"
+     - title: "Configuration: Join Options"
+       link: "server/configuration/join-configuration"
+       source: "docs"
+       path: "Server > Configuration"
+     - title: "Configuration: Query Options"
+       link: "server/configuration/query-configuration"
+       source: "docs"
+       path: "Server > Configuration"
+     - title: "Indexes List View"
+       link: "studio/database/indexes/indexes-list-view"
+       source: "docs"
+       path: "Studio > Database > Indexes"
+---
+
+import LanguageSwitcher from "@site/src/components/LanguageSwitcher";
+import LanguageContent from "@site/src/components/LanguageContent";
+
+import JoinIndexesCsharp from './content/_join-indexes-csharp.mdx';
+
+<LanguageSwitcher supportedLanguages={frontMatter.supported_languages} />
+
+<LanguageContent language="csharp">
+   <JoinIndexesCsharp />
+</LanguageContent>

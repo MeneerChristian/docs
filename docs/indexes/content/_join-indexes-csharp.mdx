@@ -1,0 +1,769 @@
+import Admonition from '@theme/Admonition';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import CodeBlock from '@theme/CodeBlock';
+import Panel from "@site/src/components/Panel";
+import ContentFrame from "@site/src/components/ContentFrame";
+
+<Admonition type="note" title="">
+
+* A join index keeps the result of a [JOIN](../../client-api/session/querying/how-to-join-indexes.mdx) between two Corax indexes up to date,  
+  so a query that joins them reads precomputed lists instead of running the joined sub-query every time.  
+
+* The answer is the same as the answer of the normal join of the same two indexes.  
+  A query that the join index cannot answer is read as the normal join.  
+  You can add or drop a join index without changing a query.
+
+* A join index is created like any other index, and it can only be used by JOIN queries.
+
+* Join indexes are supported only by the **Corax** search engine, and not in sharded databases.
+
+* In this article:
+  * [What a join index is](../../indexes/join-indexes.mdx#what-a-join-index-is)
+  * [When to use a join index](../../indexes/join-indexes.mdx#when-to-use-a-join-index)
+  * [Limitations](../../indexes/join-indexes.mdx#limitations)
+  * [Defining a join index](../../indexes/join-indexes.mdx#defining-a-join-index)
+  * [Creating a join index in Studio](../../indexes/join-indexes.mdx#creating-a-join-index-in-studio)
+  * [Joins on a field and on the id of the main document](../../indexes/join-indexes.mdx#joins-on-a-field-and-on-the-id-of-the-main-document)
+  * [Declared fields and their kinds](../../indexes/join-indexes.mdx#declared-fields-and-their-kinds)
+  * [Groupings](../../indexes/join-indexes.mdx#groupings)
+  * [Storage modes](../../indexes/join-indexes.mdx#storage-modes)
+  * [How a join query is served](../../indexes/join-indexes.mdx#how-a-join-query-is-served)
+  * [Statistics and counters](../../indexes/join-indexes.mdx#statistics-and-counters)
+  * [Auto join index](../../indexes/join-indexes.mdx#auto-join)
+  * [Configuration](../../indexes/join-indexes.mdx#configuration)
+  * [Small machines and containers](../../indexes/join-indexes.mdx#small-machines-and-containers)
+  * [Cluster, version and license](../../indexes/join-indexes.mdx#cluster-version-and-license)
+  * [Managing a join index](../../indexes/join-indexes.mdx#managing-a-join-index)
+
+</Admonition>
+
+<Panel heading="What a join index is">
+
+A join index is an index whose definition is a join: an **outer index**, an **inner index**, and the **join key**.  
+The outer index is the index of the main query, and the inner index is the index of the joined sub-query.
+
+The join key is one of the following:
+
+* The field of the outer index that holds the **id of the inner document** (`on o.A = id(i)`).
+* A **field of the outer index** whose value is matched with a **field of the inner index** (`on o.A = i.B`).
+* The **id of the outer document** matched with a field of the inner index (`on id(o) = i.B`).  
+  See [Joins on a field and on the id of the main document](../../indexes/join-indexes.mdx#joins-on-a-field-and-on-the-id-of-the-main-document).
+
+For each key, the join index keeps what a query can reach through the inner index, so that a query only reads the lists for the conditions it asks for.
+
+* It has no maps of its own. Its lists are computed from the two indexes it joins, and it is updated in the background after each batch that either of them commits.
+* It is stored in its own environment, on each node of the cluster. The lists are never replicated: every node builds its own.
+* It cannot be queried directly. A query that reads it with `from index` is refused with the message  
+  `The join index '<name>' answers JOINs of the indexes it joins. It is not queried directly.`  
+  It is used only by a JOIN of the two indexes it joins.
+* It is an index like any other for management: it has a state, a priority, a lock mode, statistics and errors, it can be reset, and it is included in backup and restore.
+  See [Managing a join index](../../indexes/join-indexes.mdx#managing-a-join-index).
+* Each join query is still answered from the two indexes. A join index is used only when its state matches the state of the indexes that the query reads, so the answer never comes from an older state.
+
+</Panel>
+
+<Panel heading="When to use a join index">
+
+A join without a join index runs the sub-query again for every query, and a write to a joined document costs nothing extra.  
+A join index moves cost from the queries to the writes: every change of either index is work for the join index.  
+Use a join index when the same join runs often, and its sub-query matches many documents.
+
+* Compare a join index with the alternative that filters documents by the content of related documents in an index, which is `LoadDocument`.  
+  A `LoadDocument` index makes every index entry that reads a changed document stale. A join index updates the lists of the keys the change touched.
+* The conditions on the joined index that a join index serves are equalities, groupings, `and`, `not`, and (when the score of the join does not matter) ranges, prefixes, `or` and text search over the declared fields.
+  See [Shapes that are served](../../indexes/join-indexes.mdx#shapes-that-are-served).
+* The cost of a join index is paid when the indexes change: each refresh reads the changed documents and updates the lists it affects, and every node does this for its own copy.  
+  Use a join index when the reads are more frequent than the changes that the join index has to follow.
+
+#### Measured numbers
+
+The numbers below are from benchmarks, not from a production system.  
+They were measured on one development Mac (Apple silicon) in a Docker VM, one container at a time, with the server and the client in one process.
+Values are medians (with the range in brackets where it is known). Treat differences of a few percent as noise.
+The numbers come from earlier builds of this work, and they were not repeated on the final version.
+They are not numbers of a production-like host.
+
+**A change of one document that many entries read** (1,000,000 outer entries, 100,000 of them read the changed company, 15 samples):
+
+| | Time until the index is not stale | Native memory above the start |
+|---|---|---|
+| Join, storage mode `Expanded` | 31 ms [29 to 78] | 36 MB [35 to 37] |
+| Join, storage mode `Indirect` | 6 ms [5 to 14] | 0 MB |
+| Index that calls `LoadDocument` | 797 ms [779 to 913] | 129 MB [124 to 135] |
+
+With the same change and 100,000 outer entries (10,000 of them read the company), the times are 8 ms (`Expanded`), 6 ms (`Indirect`) and 84 ms (`LoadDocument`).  
+For the `LoadDocument` index, the managed memory of the whole test process was 336 MB [330 to 341], which includes the benchmark itself.
+
+**A join query** (1,000,000 outer entries, a page of 20, the number of matched documents counted):
+
+| Query | Server join (no join index) | Join, `Expanded` | Join, `Indirect` |
+|---|---|---|---|
+| A sub-query that matches 6,328 documents | 2.03 ms [2.02 to 2.04] | 0.58 ms [0.54 to 0.72] | 0.67 ms [0.64 to 0.71] |
+| A broad sub-query (about 10,000 matches), 1 outer entry per key | 12.2 ms [11.5 to 13.8] | 0.33 ms [0.30 to 0.45] | 0.66 ms [0.61 to 0.77] |
+| The same, 100 outer entries per key | 1.16 ms [1.07 to 1.21] | 0.50 ms [0.44 to 0.57] | 0.63 ms [0.58 to 0.67] |
+| A sub-query that matches a document that 100,000 entries read | 0.52 to 0.60 ms | 0.54 ms [0.52 to 0.59] | 1.58 ms [1.57 to 1.68] |
+
+The last row shows that a join index does not make every join faster: where the server join is already cheap, the join index is level with it, and in the storage mode `Indirect` it can be slower.
+
+**Where a join index costs** (1,000,000 outer entries, busy time of the thread that refreshes the join index, 15 samples):
+
+| Work | `Expanded` | `Indirect` |
+|---|---|---|
+| Build of the lists, 1,000,000 keys | 6.46 s [6.15 to 6.71] | 7.81 s [7.68 to 8.45] |
+| Build of the lists, 3 keys per entry over 100,000 keys (30 rows per key) | 6.99 s [6.95 to 7.06] | 4.05 s [4.04 to 4.08] |
+| Insert of 100,000 outer documents | 1,098 ms [971 to 1,180] | 774 ms [715 to 962] |
+| Update of 100,000 outer documents that keep their keys | 569 ms [481 to 667] | 853 ms [675 to 1,301] |
+| Change of 100,000 inner documents, 1 row per key | 1,230 ms [1,127 to 1,579] | 1,271 ms [1,066 to 1,702] |
+| Change of 100,000 inner documents, 30 rows per key | 5,755 ms [5,689 to 5,917] | 827 ms [793 to 908] |
+
+A reader that arrives during a big refresh does not wait for it: it is read as the normal join. In a measurement with a query rate of 20 per second during the refresh after a change of one company that 1,000,000 entries read (storage mode `Expanded`), 42 of 47 and 88 of 92 reader queries were read as the normal join (95th percentile 171 to 182 ms).  
+For the same change, an index that calls `LoadDocument` answers the queries from its stale state.
+
+Not measured: the first query after a change or after a restart with a cold resident cache, a read-heavy workload while outer writes arrive, scored queries during outer writes (how often `BehindTimeout` happens), joins on keys of several million values, ids longer than 128 bytes, the cost of ordering by a joined field with `Indirect`, a mixed-version cluster, and sharded databases (not supported).
+
+</Panel>
+
+<Panel heading="Limitations">
+
+The following limits apply to the current version. The creation of a join index checks the limits that it can check, and refuses the definition with the reason.
+
+| Limit | Details |
+|---|---|
+| Join keys | The join is on `id()` of the inner document (`on o.A = id(i)`), on a field (`on o.A = i.B`), or on the id of the outer document (`on id(o) = i.B`). For a join on the id of the inner document, the outer field is indexed with the default indexing or with `FieldIndexing.Key`, without a custom analyzer, because the join compares lowercased ids. For a join on a field, both fields are indexed the same way (both with the default indexing, both with `FieldIndexing.Exact`, or both with `FieldIndexing.Key`), without a custom analyzer. For a join on the id of the outer document, the inner field is indexed with the default indexing or with `FieldIndexing.Key` (not `Exact`), without a custom analyzer. |
+| Keys per document | An outer or an inner document holds at most 256 keys. More than that puts the join index in the error state. For a join on a field, an inner key longer than 128 bytes puts the join index in the error state, and an outer key longer than 128 bytes never matches. An entry of the inner index holds at most 32 terms in one declared field. |
+| Not served | A join on several fields, a chain of joins, a `where` condition that compares a field of the main document with a field of a joined document, and a join that projects the joined documents are read as the normal join. |
+| Corax only | Both indexes must use the Corax search engine. A Lucene index is refused. |
+| Map indexes | Each side is a static map index, an auto map index or a JavaScript map index. Map-reduce indexes are refused. |
+| One entry per document | Each side creates at most one entry for a document. |
+| Documents only | An index that loads other documents (`LoadDocument`), or reads compare-exchange values, counters or time series is refused. |
+| Inner fields | A declared inner field must be indexed. A field declared as `Text` must be analyzed. The inner index must not have boosted fields. |
+| Size of the declaration | At most 8 declared fields and 4 groupings. A grouping value is at most 128 bytes. |
+| Sharding | A join index is not supported in a sharded database. Creating one is refused with `[ShardedDatabase] A join index is not supported for a sharded database.` |
+| Sides by name | Both sides of a join index that you create are named indexes. A side bound by collection is refused (only an [auto join index](../../indexes/join-indexes.mdx#auto-join) is bound this way). The outer and the inner index must be different indexes. |
+| Not queryable | A join index cannot be queried directly. |
+| Name | The name of a join index follows the rules of the name of a static index (at most 206 characters). |
+| Storage mode `Indirect` | It is not released: it needs the setting `Join.IndirectEnabled`, and it is refused for a join on the id of the outer document. See [Storage modes](../../indexes/join-indexes.mdx#storage-modes). |
+
+</Panel>
+
+<Panel heading="Defining a join index">
+
+A join index is declared with `AbstractJoinCreationTask<TOuter, TInner>`, in the same way as an index is declared with `AbstractIndexCreationTask`.  
+`TOuter` and `TInner` are the entry types of the two indexes: their properties are the fields of the indexes.  
+The name of the join index is the name of the class, with `_` replaced by `/`.  
+The two indexes must exist before the join index is created, because the join index is checked against them when it is put.
+
+##### The outer and the inner index used in the examples:
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="Orders_ByFreight" label="Orders_ByFreight">
+```csharp
+public class Orders_ByFreight : AbstractIndexCreationTask<Order, Orders_ByFreight.Entry>
+{
+    public class Entry
+    {
+        public string Company { get; set; }
+        public decimal Freight { get; set; }
+        public string ShipCountry { get; set; }
+    }
+
+    public Orders_ByFreight()
+    {
+        Map = orders => from order in orders
+                        select new Entry
+                        {
+                            Company = order.Company,
+                            Freight = order.Freight,
+                            ShipCountry = order.ShipTo.Country
+                        };
+
+        SearchEngineType = Raven.Client.Documents.Indexes.SearchEngineType.Corax;
+    }
+}
+```
+</TabItem>
+<TabItem value="Companies_ByName" label="Companies_ByName">
+```csharp
+public class Companies_ByName : AbstractIndexCreationTask<Company, Companies_ByName.Entry>
+{
+    public class Entry
+    {
+        public string Name { get; set; }
+        public string Country { get; set; }
+    }
+
+    public Companies_ByName()
+    {
+        Map = companies => from company in companies
+                           select new Entry
+                           {
+                               Name = company.Name,
+                               Country = company.Address.Country
+                           };
+
+        // 'Name' is an analyzed field, so that it can be declared with the kind 'Text'
+        Index(x => x.Name, FieldIndexing.Search);
+
+        SearchEngineType = Raven.Client.Documents.Indexes.SearchEngineType.Corax;
+    }
+}
+```
+</TabItem>
+</Tabs>
+
+##### The join index:
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="Task" label="AbstractJoinCreationTask">
+```csharp
+public class Orders_ByFreight_WithCompany : AbstractJoinCreationTask<Orders_ByFreight.Entry, Companies_ByName.Entry>
+{
+    public Orders_ByFreight_WithCompany()
+    {
+        UseOuterIndex<Orders_ByFreight>();
+        UseInnerIndex<Companies_ByName>();
+
+        // The field of the outer index that holds the id of the joined document: on o.Company = id(c)
+        JoinOn(x => x.Company);
+
+        // A field of the inner index that sub-queries filter by (JoinFieldKind.Exact is the default kind)
+        AddField(x => x.Country);
+        AddField(x => x.Name, JoinFieldKind.Text);
+
+        // An equality that is kept as a list of its own. The value is the term as it is indexed.
+        AddGrouping(x => x.Country, "france");
+    }
+}
+
+// The two indexes first, then the join index
+new Orders_ByFreight().Execute(store);
+new Companies_ByName().Execute(store);
+new Orders_ByFreight_WithCompany().Execute(store);
+```
+</TabItem>
+<TabItem value="Definition" label="PutIndexesOperation">
+```csharp
+// The same join index, sent with PutIndexesOperation
+store.Maintenance.Send(new PutIndexesOperation(new IndexDefinition
+{
+    Name = "Orders/ByFreight/WithCompany",
+    Join = new JoinDefinition
+    {
+        OuterIndex = "Orders/ByFreight",
+        OuterField = "Company",
+        InnerIndex = "Companies/ByName",
+        Fields =
+        {
+            new JoinField { Field = "Country", Kind = JoinFieldKind.Exact },
+            new JoinField { Field = "Name", Kind = JoinFieldKind.Text }
+        },
+        Groupings =
+        {
+            new JoinGrouping { Field = "Country", Value = "france" }
+        }
+    }
+}));
+```
+</TabItem>
+<TabItem value="Json" label="Definition JSON">
+```json
+{
+    "Name": "Orders/ByFreight/WithCompany",
+    "Join": {
+        "OuterIndex": "Orders/ByFreight",
+        "OuterField": "Company",
+        "InnerIndex": "Companies/ByName",
+        "Fields": [
+            { "Field": "Country", "Kind": "Exact" },
+            { "Field": "Name", "Kind": "Text" }
+        ],
+        "Groupings": [
+            { "Field": "Country", "Value": "france" }
+        ]
+    }
+}
+```
+</TabItem>
+</Tabs>
+
+* `UseOuterIndex` and `UseInnerIndex` name the two indexes, by type or by name (`UseOuterIndex("Orders/ByFreight")`).
+* `JoinOn` names the field of the outer index that the query joins on.  
+  With one argument, the join is on the id of the inner document.  
+  With two arguments, it is a join on a field of the inner index.  
+  `JoinOnId` joins the id of the outer document with a field of the inner index.  
+  See [Joins on a field and on the id of the main document](../../indexes/join-indexes.mdx#joins-on-a-field-and-on-the-id-of-the-main-document).
+* `AddField` declares a field of the inner index that a query can filter by. `AddGrouping` declares an equality that is kept as a list of its own.
+* `IndexCreation.CreateIndexes` also creates the join index. It puts the join index after the indexes of the same call, whatever the order of the classes.
+* A join index definition has no maps, no reduce and no fields of its own. Its only content is the `Join` section, which has these properties:
+
+| Property | Meaning |
+|---|---|
+| `OuterIndex`, `InnerIndex` | The names of the two indexes. |
+| `OuterField` | The field of the outer index that holds the key. It is `id()` for a join on the id of the outer document (the constant `JoinDefinition.OuterIdKey`). |
+| `InnerField` | The field of the inner index that the key is matched with. Empty for a join on the id of the inner document. |
+| `StorageMode` | `Auto` (the default, not written to the JSON), `Expanded` or `Indirect`. See [Storage modes](../../indexes/join-indexes.mdx#storage-modes). The creation task has no method for it: set it in the `JoinDefinition`. |
+| `Fields` | The declared fields of the inner index, each with a `Kind` (at most 8). |
+| `Groupings` | The groupings, each with a `Field` and a `Value` (at most 4). |
+
+A definition that is not valid is refused when it is put, with one error for each problem. The error has a code (`JoinValidationCode`), for example `IndexMissing`, `UnsupportedSearchEngine`, `FieldNotIndexed`, `FieldKindMismatch`, `LimitExceeded` or `ShardedDatabase`.  
+The client checks the rules that need no server, and throws a `JoinValidationException` for them when the definition is created.
+
+</Panel>
+
+<Panel heading="Creating a join index in Studio">
+
+Join indexes are listed with the other indexes in the [Indexes List View](../../studio/database/indexes/indexes-list-view.mdx), and they have their own form.
+
+1. Open the **Indexes** view of the database and click **New join index**.
+2. In the **Definition** section, set:
+   * **Index name**, for example `Orders/WithCompany`.
+   * **Outer index**: the index of the query that holds the JOIN.
+   * **Inner (joined) index**: the index of the joined documents.
+   * **Outer field**: the field of the outer index that holds the key of the joined documents.  
+     Check **Join on the id of the outer document** to join `id(o)` instead. The form then needs an inner field.
+   * **Inner field** (optional): leave it empty to join on the id of the inner documents.
+   * **Storage mode**: **Auto (the server chooses)**, **Expanded** or **Indirect**.  
+     **Indirect** needs the setting `Join.IndirectEnabled` on the server.
+3. Add the **declared fields of the inner index** (at most 8) with their **Kind**, and the **groupings** (at most 4) with a field and a value.
+4. Click **Save**.
+
+The form checks the definition before it is sent, with the rules of the server: a name, two different indexes, a key, no duplicates, the limits above, and that **Indirect** is not for a join on the id of the outer document.
+
+After the join index is created:
+
+* The list of indexes shows its type (**Join**, or **Auto Join**) and the usual index state. Its **Edit** button opens the join index form. The **Query** button and the **Entries** count are not shown for a join index.
+* The pending reason (or **Ready**) of a join index is shown in the **Join State** row of the indexes in the database statistics view, and the reason that a join index is in the error state is shown in the join index statistics of its form.
+* The details of the join index show its **Join index statistics**: the state (ready, pending with the reason, or the error state), the two indexes, the size on disk, the joins that were served and those that were read as usual (by the reason), the refreshes, the builds and their reasons, the queries that waited, and, for the storage mode `Indirect`, the resident cache.
+* A join index has no terms. The terms view says that it answers the JOINs of the indexes it joins and that its entries are not queried directly.
+* An [auto join index](../../indexes/join-indexes.mdx#auto-join) can be viewed, but not edited.
+* When you run a JOIN with `include timings()` in the [Query view](../../studio/database/queries/query-view.mdx), the timings say whether each join was served by a join index or read as usual, and why.
+* The form says that join indexes are not supported for a sharded database.
+
+</Panel>
+
+<Panel heading="Joins on a field and on the id of the main document">
+
+A join on a field, `on o.A = i.B`, matches an outer document with the inner documents whose field `B` has the value of its field `A`. Many outer documents and many inner documents may share a value. Declare it with the two keys:
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="Task" label="AbstractJoinCreationTask">
+```csharp
+public class Orders_ByFreight_WithCompanyCountry : AbstractJoinCreationTask<Orders_ByFreight.Entry, Companies_ByName.Entry>
+{
+    public Orders_ByFreight_WithCompanyCountry()
+    {
+        UseOuterIndex<Orders_ByFreight>();
+        UseInnerIndex<Companies_ByName>();
+
+        // on o.ShipCountry = c.Country, the same as JoinOn("ShipCountry", "Country")
+        // Both fields are indexed with the default indexing.
+        JoinOn(x => x.ShipCountry, x => x.Country);
+
+        AddField(x => x.Country);
+    }
+}
+```
+</TabItem>
+<TabItem value="RQL" label="RQL">
+```sql
+from index "Orders/ByFreight" as o
+join (from index "Companies/ByName" where Country = "france") as c on o.ShipCountry = c.Country
+where o.Freight > 50
+select o.Freight
+```
+</TabItem>
+</Tabs>
+
+In the definition, the inner key is the `InnerField` of the `JoinDefinition`. It is empty for a join on `id()` of the inner document.
+
+* Both keys are indexed the same way: both with the default indexing, both with `FieldIndexing.Exact`, or both with `FieldIndexing.Key`, and neither with a custom analyzer. The creation of the join index refuses another combination and names the field.
+* With the default indexing, keys match without case.
+* An outer document can hold several keys in an array field, and an inner document can hold several keys in its field. A document holds at most 256 keys.
+* A document whose key field is missing, null or an empty array holds no key, and it matches nothing. An empty string is a key like any other.
+
+##### Join on the id of the main document
+
+`on id(o) = i.B` matches the id of the outer document with a field of the inner index.  
+One outer entry is created for each document, and many inner entries may name it. Declare it with `JoinOnId`:
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="Task" label="AbstractJoinCreationTask">
+```csharp
+public class Orders_ByCompany : AbstractIndexCreationTask<Order, Orders_ByCompany.Entry>
+{
+    public class Entry
+    {
+        public string Company { get; set; }
+        public string ShipCountry { get; set; }
+    }
+
+    public Orders_ByCompany()
+    {
+        Map = orders => from order in orders
+                        select new Entry
+                        {
+                            Company = order.Company,
+                            ShipCountry = order.ShipTo.Country
+                        };
+
+        SearchEngineType = Raven.Client.Documents.Indexes.SearchEngineType.Corax;
+    }
+}
+
+public class Companies_ByName_WithOrders : AbstractJoinCreationTask<Companies_ByName.Entry, Orders_ByCompany.Entry>
+{
+    public Companies_ByName_WithOrders()
+    {
+        UseOuterIndex<Companies_ByName>();
+        UseInnerIndex<Orders_ByCompany>();
+
+        // on id(c) = o.Company. The outer index needs no field for the key.
+        JoinOnId(x => x.Company);
+
+        AddField(x => x.ShipCountry);
+    }
+}
+```
+</TabItem>
+<TabItem value="RQL" label="RQL">
+```sql
+from index "Companies/ByName" as c
+join (from index "Orders/ByCompany" where ShipCountry = "france") as o on id(c) = o.Company
+```
+</TabItem>
+</Tabs>
+
+* The inner field is indexed with the default indexing or with `FieldIndexing.Key`, because the id of the outer document is lowercased.
+* The join index is served for the query only when the query does not project the joined documents (`select o.Freight` reads the joined alias per row, and is read as the normal join).
+* A join on the id of the outer document is always stored in the mode `Expanded`.  
+  See [Storage modes](../../indexes/join-indexes.mdx#storage-modes).
+
+</Panel>
+
+<Panel heading="Declared fields and their kinds">
+
+Each declared field is a field of the inner index. Its kind says how the join index keeps it:
+
+| Kind | Inner field | Use |
+|---|---|---|
+| `Exact` | One term per entry, compared as indexed (default, exact or key indexing). | Equality, and the order of a first page by this field on a join on the id (see below). |
+| `Long` | A numeric field. | Ranges on the field. |
+| `Text` | An analyzed field with several terms per entry. | `search()` on the field, when the score of the join does not matter. |
+
+The kind must fit the field in the inner index. A `Text` field that is not analyzed, or an `Exact` or `Long` field that has several terms per entry, is refused with the name of the field.
+
+</Panel>
+
+<Panel heading="Groupings">
+
+A grouping is an equality with a fixed value, such as `Country = "france"`. The join index keeps the outer entries that match it as a list of their own, so the condition is read without any work per query.  
+The value is the term as it is indexed (with the default indexing, in lower case), and it is at most 128 bytes. A grouping needs a field with one term per entry.
+
+</Panel>
+
+<Panel heading="Storage modes">
+
+A join index stores, for every condition that a query can ask on the joined side (a term of a declared field, a grouping), a list. What the list holds depends on the storage mode of the join index.
+
+| Mode | The lists hold | A change of one inner document |
+|---|---|---|
+| `Expanded` | The **outer entries** of the keys that match. | Rewrites the lists of every outer entry that reads the document. |
+| `Indirect` | The **keys** that have an inner entry with the condition. Each outer entry holds the keys it reads, and a query reads the outer rows of the keys from the outer index. | Updates the lists of the keys it belongs to, and nothing of the outer rows. |
+
+The cost of `Expanded` grows with the number of outer entries per key, and the cost of `Indirect` does not.  
+The storage mode is set in the `StorageMode` property of the definition: `Auto` (the default), `Expanded` or `Indirect`.
+
+<Admonition type="warning" title="Indirect is not released">
+
+The storage mode `Indirect` is opt-in. It is allowed only while the setting [Join.IndirectEnabled](../../server/configuration/join-configuration.mdx#joinindirectenabled) is `true`, which is `false` by default.  
+With the default settings every join index is `Expanded`, even when its definition says `Auto`.
+
+</Admonition>
+
+##### What `Indirect` costs and gains
+
+The measured numbers are in [Measured numbers](../../indexes/join-indexes.mdx#measured-numbers). In short (1,000,000 outer entries):
+
+* A change of one document that 100,000 entries read: 6 ms with `Indirect`, 31 ms with `Expanded`.
+* A change of 100,000 inner documents at 30 rows per key: 827 ms with `Indirect`, 5,755 ms with `Expanded` (6.96 times faster), and 118 MB of native memory against 275 MB.
+* An update of 100,000 outer documents that keep their keys is slower with `Indirect`: 853 ms against 569 ms (1.50 times). In a measurement with 1 to 100 rows per key, the ratio was 1.31 to 1.41 at every size.
+* A query on a condition that matches a document that 100,000 entries read: 1.58 ms with `Indirect`, 0.54 ms with `Expanded`.
+* An `Indirect` join index keeps a **resident cache** in native memory, per key, of the outer entry ids of the key.  
+  The cache is part of the feature: without it, a read of every key was 38 to 330 times slower in a measurement.  
+  The cache is limited by [Join.ResidentCacheMaxMemoryInMb](../../server/configuration/join-configuration.mdx#joinresidentcachemaxmemoryinmb), for all join indexes of the server together, and it is dropped when the server is low on memory.
+* The cache is small: 69 bytes per key and 4.5 bytes per outer entry (derived from a fit of the measurements). 72.5 MB for 1,000,000 keys with one outer entry each, 6.71 MB at 30 rows per key and 5.17 MB at 100 rows per key.
+* An `Indirect` file is a different file format. A file of the other mode is never read: it is built again.
+* A query that orders by a field of the joined documents is not served from an `Indirect` file. It is read as the normal join (`KindNotServed:OrderByIndirect`).
+* `Indirect` stores keys of at most 128 bytes: an inner document whose id is longer than 128 bytes is a join index error for a join on the id of the inner document.
+
+##### The Auto rule
+
+When the definition says `Auto` (the default) and [Join.StorageModeDefault](../../server/configuration/join-configuration.mdx#joinstoragemodedefault) says `Auto` (the default), the server chooses the mode **when the lists are built**:
+
+* It chooses `Indirect` when **all** of the following are true:
+  * [Join.IndirectEnabled](../../server/configuration/join-configuration.mdx#joinindirectenabled) is `true`.
+  * The join is not on the id of the outer document.
+  * The outer entries per distinct key are **30 or more** ([Join.AutoIndirectMinRowsPerKey](../../server/configuration/join-configuration.mdx#joinautoindirectminrowsperkey)).
+  * The resident cache that the join index would need fits the budget of the caches that is left. The estimate is 69 bytes per key plus 4.5 bytes per outer entry.
+  * The server is not in low memory, and the available memory minus the estimated cache is not below [Join.AutoMinimumAvailableMemoryInMb](../../server/configuration/join-configuration.mdx#joinautominimumavailablememoryinmb).
+* Otherwise it chooses `Expanded`.
+* A join index that was built keeps its mode. The rule runs again only when the lists are built again, after a reset for example. An explicit `Expanded` or `Indirect` in the definition is never overridden by the rule.
+
+Why 30 and not 10: with 1,000,000 outer entries, a change of 100,000 inner documents (cell C) was a tie up to 5 rows per key, 1.21 times faster with `Indirect` at 10 rows per key (the smallest effect), 1.91 times at 30 and 6.44 times at 100.
+An insert of outer documents was faster with `Indirect` at every size (1.32 to 1.64 times). The update that keeps the keys of one-key entries stays about 1.3 times slower with `Indirect` at every size, which is accepted only where the other cells win clearly.  
+The threshold is a point on a grid, and the true crossover for a change of inner documents lies between 5 and 10 rows per key.
+
+| Rows per key | Insert of outer, `Expanded` / `Indirect` (ms) | Update of outer, keys kept, `Expanded` / `Indirect` (ms) | Change of inner, `Expanded` / `Indirect` (ms) |
+|---|---|---|---|
+| 1 | 981 / 744 | 518 / 729 | 1,147 / 1,083 |
+| 10 | 854 / 601 | 491 / 644 | 1,007 / 831 |
+| 30 | 809 / 510 | 517 / 699 | 407 / 213 |
+| 100 | 785 / 479 | 499 / 662 | 232 / 36 |
+
+The table is the median of 15 samples (busy time of the refresh thread, 1,000,000 outer entries, one key per entry, a join on the id of the inner document).
+
+Limits of this evidence: it is one data set (one key per outer entry, a join on the id of the inner document, 1,000,000 outer entries, in one process, on one development machine).  
+Entries with several keys were not swept over the number of rows per key, and a workload that is dominated by updates that keep the keys of one-key entries prefers `Expanded` at every size.
+
+</Panel>
+
+<Panel heading="How a join query is served">
+
+A query that joins an outer index and an inner index is looked up against the join indexes of the two indexes, by the outer index, the inner index, the outer field and the inner field (none for a join on `id()` of the inner document).
+
+```sql
+from index "Orders/ByFreight" as o
+join (from index "Companies/ByName" where Country = "france") as c on o.Company = id(c)
+where o.Freight > 50
+select o.Freight
+```
+
+1. The join index is opened together with the query, before the two indexes are read.
+2. If the join index holds the state of both indexes as the query reads them, the join is answered from its lists.  
+   Otherwise the query waits for the join index to catch up, for up to [Join.QueryWaitInMs](../../server/configuration/join-configuration.mdx#joinquerywaitinms)
+   (or [Join.QueryWaitForNonStaleInMs](../../server/configuration/join-configuration.mdx#joinquerywaitfornonstaleinms) when the query waits for non-stale results).  
+   If it still does not match, the query is read as the normal join.
+3. A query that the join index answers returns the same rows, the same order, the same total and the same scores as the normal join of the two indexes.
+
+##### Why a join is read as the normal join
+
+The normal join (the server join) is always correct, and it is the fallback. It is used when the join index cannot give the same answer:
+
+* The join index is not current (it is being built, it is behind the indexes, or the indexes were reset).
+* The shape of the query is not one that the join index keeps lists for (a condition on a field that is not declared, a sub-query with `limit`, and so on).
+* The join index or one of the indexes is in error, disabled or missing.
+
+The server join holds the keys of every document that its sub-query matches.  
+Its memory is bounded by [Query.JoinMaxKeysMemoryInMb](../../server/configuration/query-configuration.mdx#queryjoinmaxkeysmemoryinmb),
+see [Memory used by a join](../../client-api/session/querying/how-to-join-indexes.mdx#memory-used-by-a-join).
+
+A join that a join index serves does not hold the keys of its sub-query.
+The one exception is the check of an `and` or a `not` over outer rows with several documents (see [Outer rows with several documents](../../indexes/join-indexes.mdx#outer-rows-with-several-documents)):
+it scans the sub-query for the keys of those rows, and it holds only those keys. Their number is limited by `Join.MaxResidualRows` (or `Join.MaxResidualKeys`), not by `Query.JoinMaxKeysMemoryInMb`.
+
+##### Shapes that are served
+
+* Equality on a declared field, a grouping, `and` and `not` of such conditions. For `and` and `not` over outer rows with several documents, see [Outer rows with several documents](../../indexes/join-indexes.mdx#outer-rows-with-several-documents).
+* Conditions on the outer index, its ordering and paging, and the fields of the outer index in `select`.
+* A left join (`left join`).
+* Ranges on `Long` fields, prefixes, `or` and text search on declared fields, when the score of the join does not matter.
+* On a join on the id of the inner document, a first page ordered by one field of the joined alias that is declared as `Exact`, when the joined alias has no conditions of its own and every joined document has the field.
+
+##### Outer rows with several documents
+
+An outer row is joined with several inner documents when its key has several inner documents, or when it holds several keys that have inner documents (an array of ids on a join on the id of the inner document, or an array of keys on a join on a field). The join index answers these rows with the following limits:
+
+* `and` and `not`: on a join on a field, each such outer row is checked against the inner index one row at a time. A query that needs more of these checks than [Join.MaxResidualRows](../../server/configuration/join-configuration.mdx#joinmaxresidualrows) allows
+  (or [Join.MaxResidualKeys](../../server/configuration/join-configuration.mdx#joinmaxresidualkeys) for an `Indirect` join index) is read as the normal join (`KindNotServed:GroupResidual`).  
+  On a join on the id of the inner document, an `and` or a `not` over an outer row with an array of ids is read as the normal join (`GroupResidual`).
+* Score: when the score of the join is used, an outer row with several keys that have inner documents is read as the normal join (`KindNotServed:ScoresMultiKey`). On a join on the id of the inner document, the same applies to an outer row with several ids. A row with one key and many inner documents has one score, and is served.
+* Order: a first page ordered by a field of the joined alias is read as the normal join on a join on a field, whatever the rows hold (`KindNotServed:OrderByMultiKey`). On a join on the id of the inner document it is read as the normal join when an outer row holds several ids.
+
+##### Shapes that are read as the normal join
+
+These queries are read as the normal join, and they are not counted as fallbacks:
+
+* A join on several fields, a chain of joins, a `where` condition that compares a field of the main document with a field of a joined document, and a join that projects the joined documents (a `select` of a field of the joined alias, or of the alias itself).
+
+These queries are read as the normal join, and the reason is counted:
+
+* When the score of the join is used (the query orders by `score()` or returns scores), `or`, ranges, prefixes and text search are read as the normal join.
+* A condition on a field that is not declared in the join index. It is counted as a fallback with the reason `KindNotServed:UndeclaredField:<field>`.
+* A sub-query with a `filter`, `limit`, `offset`, `group by`, `distinct` or `load`.
+* An `order by` on a field of the joined alias that is not served as above.
+
+##### Fallbacks
+
+A query that the join index was asked for and that the server reads as the normal join is counted by its reason. The answer is the same in both cases.
+
+| Reason | Meaning |
+|---|---|
+| `Disabled` | The join index is disabled. |
+| `IndexMissing` | One of the two indexes is missing, so the join index is pending. |
+| `Faulted` | The join index is in error. |
+| `Building` | The join index is being built. |
+| `SnapshotUnavailable` | A snapshot of the join index or of one of the indexes could not be opened. |
+| `EnvironmentChanged` | One of the indexes was reset or replaced, and the join index is not yet built for it. |
+| `BehindTimeout` | The join index did not catch up within the wait. |
+| `Ahead` | The join index holds a newer state than the indexes that the query reads. |
+| `Failed` | Serving failed, and the normal join answered. |
+| `KindNotServed:FieldJoin` | A join on a field was asked, and the same two indexes have a join index on the same outer field that joins on another field or on the id. It is counted on that join index. Without such a join index, nothing is counted. |
+| `KindNotServed:GroupResidual` | An `and` or a `not` over outer rows with several documents needs more checks against the inner index than the limit allows, or it is on a join on the id of the inner document with an array of ids. |
+| `KindNotServed:ScoresMultiKey` | The score of the join is used, and an outer row has several keys (or several ids) that have inner documents. |
+| `KindNotServed:OrderByMultiKey` | The first page is ordered by a field of the joined alias, on a join on a field, or on a join on the id where an outer row has several ids. |
+| `KindNotServed:OrderByIndirect` | The query is ordered by a field of the joined documents, and the join index is in the storage mode `Indirect`. |
+| `KindNotServed:<detail>` | The shape of the query is not served. The detail names the part: for example `Or`, `Range`, `Method:search`, `Atom`, `In`, `Between`, `FieldNotIndexed:<field>`, `OrderBy:<field>`, `OrderedWhere`, `OrderByMissingValues`, `ScoresDiffer`, `ValueType`, `UndeclaredField:<field>`, or `SubQueryFilter`, `SubQueryLimit`, `SubQueryGroupBy`, `SubQueryDistinct`, `SubQueryLoad`. |
+
+</Panel>
+
+<Panel heading="Statistics and counters">
+
+Query timings (`include timings()`) show the counters of the join part:
+
+| Counter | Meaning |
+|---|---|
+| `JoinIndexServed` | The join was answered from the join index. |
+| `JoinIndexGeneration` | The generation of the join index that answered. |
+| `JoinOrdered` | The page was answered in the order of the joined field. |
+| `JoinVerifiedRows` | The outer rows that an `and` or a `not` checked against the inner index, because they have several documents. |
+| `JoinVerifiedKeys` | The distinct keys of those rows. |
+| `JoinFallback:<reason>` | The join index was asked and the join was read as usual, for the reason given. |
+| `AutoJoinSkippedMemory`, `AutoJoinSkippedResidentMemory`, `AutoJoinSkippedClusterVersion` | An [auto join index](../../indexes/join-indexes.mdx#auto-join) was not created for the query, because of the memory gate, the memory of its resident cache, or the cluster version. |
+| `AutoJoinNotEligible:<reason>` | No join index could answer the join, for the reason given. |
+
+The statistics of a join index are in `IndexStats.Join` (`JoinIndexStats`), returned by `GetIndexStatisticsOperation`. The property is set only for join indexes:
+
+| Property | Meaning |
+|---|---|
+| `OuterIndex`, `InnerIndex` | The two indexes that are joined. |
+| `PendingReason` | Why the join index cannot read the indexes now (one is missing, disabled or in error). Null when it can. |
+| `RefusedReason` | Why the join index went to the error state: an index it joins is in a definition that a join index cannot read. It is enabled again by itself when the indexes are valid again. Null when it did not refuse. |
+| `OuterBatches`, `InnerBatches` | The batches of each index that the join index was told about. |
+| `Refreshes`, `NoOpRefreshes`, `Builds` | Refreshes that changed the lists, refreshes that found nothing to do, and builds from scratch. |
+| `IdsProcessed`, `ListUpdates` | Changed documents read by the refreshes, and lists changed by them. |
+| `LastRefreshBreakdown` | How long the phases of the last refresh took. |
+| `RebuildsByReason` | How many times the lists were built again, by the reason (for example `EnvironmentChanged`, `CollectionsChanged`, `TooManyChanges`, `InnerChangesTooCostly`). |
+| `Served`, `FallbackTotal`, `Fallbacks` | Joins answered by the join index, joins read as usual after the join index was asked, and those by reason. |
+| `QueryWaits`, `QueryWaitTotalInMs`, `QueryWaitMaxInMs` | Queries that waited for the join index to catch up, and how long they waited. |
+| `ResidentBytes`, `ResidentKeys` | The native memory that the resident cache of an `Indirect` join index holds, and the number of key lists in it. 0 for a join index without a cache. |
+| `ResidentHits`, `ResidentMisses`, `ResidentEpochMisses` | Key lists read from the cache, key lists read from the outer index, and reads whose outer snapshot was not the state of the cache. |
+| `ResidentEvictions`, `ResidentWarmUpKeys`, `ResidentInvalidations`, `ResidentLowMemoryDrops` | Lists evicted to make room, lists loaded by the warm-up, how many times the cache was cleared, and how many times a low memory notification dropped the lists. |
+| `ResidentPatchesApplied`, `ResidentPatchEpochMismatches`, `ResidentPatchesTooLarge`, `ResidentPatchesIdTooLarge`, `ResidentPartialDrops` | How the refreshes updated the cache, and why a refresh cleared it instead. |
+
+A join index that cannot be kept consistent goes to the error state and raises an alert (`Indexing_JoinRefused`). Queries are then read as the normal join.
+
+</Panel>
+
+<Panel heading="Auto join index">
+
+An **auto join index** is a join index (`IndexType.AutoJoin`) that the server creates by itself from a JOIN query. It is an auto index: it can be viewed but not edited, and its name starts with `Auto/`.
+
+<Admonition type="warning" title="Off by default">
+
+The auto join index is **off by default**. [Join.AutoEnabled](../../server/configuration/join-configuration.mdx#joinautoenabled) is `false`, so only join indexes that you put explicitly serve JOINs.  
+An auto join index builds a structure of its own from the first query that could use it, which is why it is opt-in.
+
+</Admonition>
+
+When `Join.AutoEnabled` is `true`:
+
+* A JOIN query on two Corax indexes that **no join index can answer**, and that a join index could answer, asks the server to create an auto join index.
+  The definition is derived from the JOIN: the two indexes, the keys, and the declared fields that the sub-query uses.
+* The query that creates the join index is **always read as the normal join**. It does not wait for the build, unless it asked to wait for non-stale results.
+  Such a query waits for the build for its own timeout, or for [Join.AutoBuildWaitForNonStaleInMs](../../server/configuration/join-configuration.mdx#joinautobuildwaitfornonstaleinms) (15 seconds) when it has none.
+  Later queries are answered by the join index when it is current.
+* A join that a join index could not answer is not eligible: a join on several fields, a join that projects the joined documents, a chain, a sub-query that is not served, a rule of the definition that is not met.  
+  The reason is counted (`AutoJoinNotEligible:<reason>` in the timings).
+* A cluster node creates the auto join index only when every node knows the command (cluster version `72_002`). Each node builds its own lists.
+* A query that asks for different fields can create a widened join index, with a name that has a hash of the fields at the end. The number of join indexes that one join key can create is not capped.
+
+##### The memory gate
+
+An auto join index is created **only when the memory allows it**. The query is not affected when it does not:
+
+| Gate | Rule |
+|---|---|
+| Size of the build | The estimated memory of the build is [Join.AutoBuildMemoryBaseInMb](../../server/configuration/join-configuration.mdx#joinautobuildmemorybaseinmb) (192 MB) plus [Join.AutoBuildMemoryPerEntryInBytes](../../server/configuration/join-configuration.mdx#joinautobuildmemoryperentryinbytes) (8 bytes) for every document of the collections of the two indexes. The join index is not built when the estimate is more than [Join.AutoMaxBuildMemoryInMb](../../server/configuration/join-configuration.mdx#joinautomaxbuildmemoryinmb) (512 MB, or half of the memory when that is less). |
+| Memory left | The join index is not built when the available memory minus the estimate would be below [Join.AutoMinimumAvailableMemoryInMb](../../server/configuration/join-configuration.mdx#joinautominimumavailablememoryinmb) (an eighth of the memory, at most 2,560 MB). |
+| Resident cache | For a join index that would be `Indirect`, the expected resident cache is also taken from the available memory, and from the budget of the caches. |
+
+With the defaults, the estimate is 192 MB plus 8 bytes for each document, so the gate refuses a build from about 42 million documents in the collections of the two indexes ((512 MB - 192 MB) / 8 bytes, derived from the defaults).  
+A creation that failed is not tried again for 30 seconds.
+
+An auto join index is stored with the auto indexes of the database (its name starts with `Auto/`), so the cluster handles it like an unused auto index:
+a query that reads it marks it as queried and takes it out of the idle state, and when no node has queried it for [Indexing.TimeToWaitBeforeMarkingAutoIndexAsIdleInMin](../../server/configuration/indexing-configuration.mdx#indexingtimetowaitbeforemarkingautoindexasidleinmin) (30 minutes by default)
+it is marked idle. An idle auto join index that is still not queried after [Indexing.TimeToWaitBeforeDeletingAutoIndexMarkedAsIdleInHrs](../../server/configuration/indexing-configuration.mdx#indexingtimetowaitbeforedeletingautoindexmarkedasidleinhrs) (72 hours by default) is deleted.
+A later JOIN that could use it creates it again.
+
+</Panel>
+
+<Panel heading="Configuration">
+
+The settings are under the keys `Join.*`. They are server-wide or per database, except `Join.ResidentCacheMaxMemoryInMb`, which is server-wide only.  
+The list of keys, their defaults, and the defaults that depend on the memory of the machine are in [Configuration: Join Options](../../server/configuration/join-configuration.mdx).
+
+| Group | Keys |
+|---|---|
+| Refresh and build | `Join.MaxIdsPerCommit`, `Join.MaxUnindexedIdsPerCommit`, `Join.MaxInnerListChangesPerOuterEntry`, `Join.MaxQueuedListChanges`, `Join.MinQueuedListChanges`, `Join.MaxQueuedListChangesInBuild`, `Join.MinAtomEntriesForDirectWrite`, `Join.MaxEmptyTermRatio`, `Join.MinTermsForEmptyRatio`, `Join.RefreshWindowInMs` |
+| Queries | `Join.MaxResidualRows`, `Join.MaxResidualKeys`, `Join.QueryWaitInMs`, `Join.QueryWaitForNonStaleInMs` |
+| Storage mode | `Join.StorageModeDefault` (`Auto`), `Join.IndirectEnabled` (`false`), `Join.AutoIndirectMinRowsPerKey` (`30`), `Join.ResidentCacheMaxMemoryInMb` (server-wide only) |
+| Auto join index | `Join.AutoEnabled` (`false`), `Join.AutoMinimumAvailableMemoryInMb`, `Join.AutoMaxBuildMemoryInMb`, `Join.AutoBuildMemoryBaseInMb`, `Join.AutoBuildMemoryPerEntryInBytes`, `Join.AutoBuildWaitForNonStaleInMs` |
+
+The memory bound of a join that no join index serves is a query setting: [Query.JoinMaxKeysMemoryInMb](../../server/configuration/query-configuration.mdx#queryjoinmaxkeysmemoryinmb).
+
+</Panel>
+
+<Panel heading="Small machines and containers">
+
+Several defaults of the join index are derived from the memory of the machine, or from the memory limit of the container the server runs in, so that a join index does not plan with memory that the machine does not have.  
+The derived defaults are listed in [Defaults that depend on the memory](../../server/configuration/join-configuration.mdx#defaults-that-depend-on-the-memory).  
+At 1 GB of memory:
+
+* The queue of list changes of a refresh is never shorter than 65,536 changes (8 MiB, derived), instead of 1,048,576 (128 MiB) from 16 GB on.
+  A shorter queue applies the changes to the lists more often.  
+  In a measurement in a container of 1 GB, a queue of 65,536 changes cost +1.4 percent at 10 rows per key and -3.7 percent at 20 rows per key against a queue of 1,048,576 changes, which is inside the spread of the runs.
+* The queue of the build of the lists is at most 524,288 changes (64 MiB) instead of 1,048,576.
+* The resident cache of the `Indirect` join indexes may hold 64 MB together, instead of 256 MB.
+* An auto join index is built only if at least 128 MB would remain available after the build.
+* The memory bound of a join that the server reads itself is 128 MB ([Query.JoinMaxKeysMemoryInMb](../../server/configuration/query-configuration.mdx#queryjoinmaxkeysmemoryinmb)).
+
+What was measured on a small host (a container with 2 CPUs and 1 GB of memory, no swap, 100,000 outer entries):
+
+* With the `Indirect` mode, the resident cache ended empty at every number of rows per key, and the query was slower than with `Expanded` at every size:
+  5.07 ms against 0.42 ms at 1 row per key, 0.86 against 0.42 ms at 10, 0.52 against 0.42 ms at 30 and 0.46 against 0.42 ms at 100.  
+  The cause is not isolated. This is one reason that the [Auto rule](../../indexes/join-indexes.mdx#the-auto-rule) requires that the cache fits, and that `Indirect` is not released.
+* With a smaller data set (20,000 outer entries), the cache was fully resident, and it held 1.45, 0.22 and 0.10 MB for 1, 10 and 100 rows per key.
+* A data set of 1,000,000 outer entries was not usable in that container with the test harness that was used, so there are no numbers for it.
+* A refresh in that container saw about 40 MB of available memory, and its queue was limited to 75,568 to 114,640 list changes.
+
+Recommendations for small hosts:
+
+* Keep [Join.AutoEnabled](../../server/configuration/join-configuration.mdx#joinautoenabled) off, and create the join indexes that you need explicitly.
+* Keep the storage mode `Expanded` unless the outer entries share their keys (30 rows per key or more) and the resident cache fits.
+* Narrow the sub-queries of joins that the server reads itself, or raise [Query.JoinMaxKeysMemoryInMb](../../server/configuration/query-configuration.mdx#queryjoinmaxkeysmemoryinmb) only when memory is left.
+
+</Panel>
+
+<Panel heading="Cluster, version and license">
+
+* A join index definition is part of the database record. A cluster accepts it only when every node runs a version that knows the join index command (cluster command version `72_002`). Until then, creating a join index is refused.
+* A node that does not know the join index type cannot read a database record that contains a join index. Upgrade all the nodes of the cluster before you create the first join index, and do not downgrade a node after a join index exists.
+* A join on a field uses the same record and the same command version as a join on `id()`. A node that does not know the `InnerField` of the definition reads the join index as a join on `id()`. Upgrade all the nodes before you create a join index on a field.
+* Each node builds and keeps the lists of its own join indexes. The lists are not replicated.
+* Join indexes count toward the license limit of the number of static indexes, and auto join indexes count toward the limit of the number of auto indexes.
+
+</Panel>
+
+<Panel heading="Managing a join index">
+
+A join index is managed like any other index: enable, disable, reset, set the priority and the lock mode, and delete it with the index operations.
+
+* A change to the definition that changes the join or the declared fields replaces the join index side by side. The old join index answers until the new one is built.
+* Resetting one of the two indexes resets the join index, which builds again when the index is back.
+* Deleting one of the two indexes makes the join index pending, and the joins that it serves are read as the normal join until the index is created again.
+* Large refreshes run in chunks of [Join.MaxIdsPerCommit](../../server/configuration/join-configuration.mdx#joinmaxidspercommit) changed documents.
+  The state between two chunks is a **partial generation**, and no query is served from it: the query compares it as behind the indexes, waits for the join index for up to the wait time, and is then read as the normal join (`BehindTimeout`).
+  For a join index in the storage mode `Indirect`, only a cut on the inner side counts as partial, because its lists do not depend on the outer index.
+
+</Panel>
