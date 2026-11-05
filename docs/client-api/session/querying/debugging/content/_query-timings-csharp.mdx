@@ -163,6 +163,35 @@ include timings()
 |------------------|-------------------------------------|---------------------------------------------------|
 | __DurationInMs__ | `long`                              | Total duration                                    |
 | __Timings__      | `IDictionary<string, QueryTimings>` | Dictionary with `QueryTimings` info per time part |
+| __Counters__     | `IDictionary<string, long>`         | Counters of the time part (for example, of a join) |
+
+
+
+## Timings of a join
+
+* When the query [joins another index](../../../../../client-api/session/querying/how-to-join-indexes.mdx),  
+  the timings contain a `Join` part with one child part for each joined alias. Each alias part has a child `Scan` part.
+
+* Each `QueryTimings` part also has a `Counters` dictionary.  
+  For a join, the counters are reported on these parts:
+
+| Counter                           | Part           | Description                                                   |
+|-----------------------------------|----------------|---------------------------------------------------------------|
+| __SourceMatches__                 | alias          | Number of entries that matched the joined sub-query           |
+| __ScanAllocatedManagedBytes__     | alias          | Managed memory allocated by reading the sub-query             |
+| __OuterMatchKeys__                | alias          | Number of join keys used to build the match of the main query |
+| __OuterMatchAllocatedManagedBytes__ | alias        | Managed memory allocated by building that match             |
+| __KeysEncoded__                   | alias          | `1` when the keys of the sub-query are held in an encoded form, else `0` |
+| __ScanHeldUnmanagedBytes__        | alias          | Native memory allocated by reading the sub-query. The keys it holds are bounded by [Query.JoinMaxKeysMemoryInMb](../../../../../server/configuration/query-configuration.mdx#queryjoinmaxkeysmemoryinmb) |
+| __RankSortAndFillMicroseconds__, __RankSortKeysMicroseconds__, __RankDocumentIdsMicroseconds__ | alias (only with `order by u.Field`) | Time spent ranking the joined keys by the order of the joined index |
+| __OuterQueryAllocatedManagedBytes__ | `Join`       | Managed memory allocated by the whole main query            |
+| __TotalAllocatedManagedBytes__    | `Join`         | Scan + main query                                             |
+
+* The `Query` part reports `AllocatedManagedBytes` and `HeldUnmanagedBytesPeak`:  
+  the managed memory allocated by the main query, and the unmanaged memory held by the query while it runs.
+
+* When a [join index](../../../../../indexes/join-indexes.mdx) exists for the join, the alias part also reports whether the join index served the join (`JoinIndexServed`), or why the join was read as usual (`JoinFallback:<reason>`).  
+  See [Statistics and counters](../../../../../indexes/join-indexes.mdx#statistics-and-counters).
 
 
 

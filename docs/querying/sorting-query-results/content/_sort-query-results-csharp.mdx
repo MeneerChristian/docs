@@ -712,6 +712,11 @@ order by score()
   In **RavenDB 7.2.6 and later**, when using the Corax search engine, an `exists()` condition   
   (`WhereExists()` in a `DocumentQuery`) contributes a constant score to each matching document.  
   A `where true` condition contributes no score.    
+* When the query [joins another index](../../../client-api/session/querying/how-to-join-indexes.mdx),  
+  the score of the joined query is added to the score of the main query,  
+  so it influences which documents come first.  
+  In RQL, `order by <joinAlias>.<field>` sorts by a field of the joined index (join by ID or by field value, inner or left; rows without a joined document come last),
+  and it can be combined with `order by score()`.
 * Learn more in [Corax: Scoring](../../../indexes/search-engine/corax.mdx#scoring).
 
 </Admonition>

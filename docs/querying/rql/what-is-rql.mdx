@@ -109,6 +109,7 @@ The following keywords and methods are available in RQL:
 - [DECLARE](../../querying/rql/what-is-rql.mdx#declare)
 - [FROM](../../querying/rql/what-is-rql.mdx#from)
     - [index](../../querying/rql/what-is-rql.mdx#query-an-index--from-index-index-name)
+- [JOIN](../../querying/rql/what-is-rql.mdx#join)
 - [GROUP BY](../../querying/rql/what-is-rql.mdx#group-by)
     - [array()](../../client-api/session/querying/how-to-perform-group-by-query.mdx#by-array-values)
 - [WHERE](../../querying/rql/what-is-rql.mdx#where)
@@ -275,6 +276,43 @@ from index "Employees/ByFirstName" where FirstName = "Laura"
 
 </ContentFrame>
    
+---
+
+## `join`
+
+The keyword `join` is used to combine the query on an index with a sub-query on another index (Corax only).  
+The score of the joined sub-query is added to the score of the main query.
+
+```sql
+from index "Orders/ByFreight" as o
+join (from index "Companies/ByName" where search(Name, "market cafe")) as c on o.Company = id(c)
+where o.Freight > 50
+order by score()
+select o.Freight, c.Name
+```
+
+* The main source must have an alias.
+* The condition is `<alias>.<field> = id(<joinAlias>)` (join by document ID),  
+  or `<alias>.<field> = <joinAlias>.<field>` (join by field value),  
+  or `id(<alias>) = <joinAlias>.<field>` (the id of the main document matched against a field of the joined documents; either side may come first).
+* Several field equalities joined by `and` form a composite key, for example `on o.Country = c.Country and o.Region = c.Region`.  
+  A composite key joins by field values only, so it cannot be combined with `id()`.
+* A row is returned once, even when several joined documents match it. For a join by field value, the joined alias holds the best-scoring match.
+* For `id(<alias>) = <joinAlias>.<field>`, the joined alias is the array of the joined documents whose field holds the id of the row. Only that one equality can be in the `on` clause. Selecting the joined alias is refused with an `InvalidQueryException` when the joined field keeps its case (`FieldIndexing.Exact`); use the default indexing or `FieldIndexing.Key`.
+* Repeat `join` to join several indexes. A join that starts from another join alias is a chained join.
+* The sub-query cannot use `limit` or `offset`.
+* `left join (...) as <joinAlias> on ...` keeps the rows that have no joined document. `boost <number or $parameter>` after the `on` clause sets how much the joined score counts.
+* `order by <joinAlias>.<field>` orders the results by a field of the joined index. This works for a join by document ID and a join by field value, inner or left (rows without a joined document come last). `order by score()` can be combined with it.  
+  Only one join can order the results, and `order by` on a joined field is not available for a composite key or for a join that is part of a chain.
+* The `where` clause can use fields of a join alias (`where c.Name = "x" or o.Freight > 50`) and compare a field of the main document with a field of a joined document (`where o.Freight > c.Limit`, joins by document ID only).
+* `matches(<joinAlias>)` in the `where` clause of the main query combines joins with `or`, for example `where matches(c) or matches(e)`. It cannot be used in the sub-query of a join.
+* `select <joinAlias>.<field>` projects a field of the joined document. With `id(<alias>) = <joinAlias>.<field>`, it projects the array of the values of that field, and `select <joinAlias>` projects the array of the joined documents. A row with no joined document has an empty array in a `left join`, and it is not returned by a `join`.
+* Facets over a join are computed over the rows that the join keeps.
+* The keys of the sub-query that the server holds while it reads the join are bounded by the setting [Query.JoinMaxKeysMemoryInMb](../../server/configuration/query-configuration.mdx#queryjoinmaxkeysmemoryinmb). A sub-query that matches more documents than fit fails with an error that names the setting.
+* Joins are not supported in sharded databases and with Lucene indexes.
+
+Learn more in [Join indexes](../../client-api/session/querying/how-to-join-indexes.mdx) and in [Join indexes](../../indexes/join-indexes.mdx), which keep the join of two Corax indexes up to date.
+
 ---
     
 ## `where`

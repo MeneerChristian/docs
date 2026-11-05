@@ -239,6 +239,13 @@ The following Corax limitations currently apply.
 * [Including query explanations](../../client-api/session/querying/debugging/include-explanations.mdx) is not supported  
 * [Custom sorters](../../querying/sorting-query-results/custom-sorters/overview.mdx) are not supported.  
     
+#### Joins:
+
+* [Joins](../../client-api/session/querying/how-to-join-indexes.mdx) are supported only by Corax.  
+  Both the main index and the joined index must be Corax indexes.
+* Joins are not supported in suggestions, dynamic queries, collection queries, and sharded databases. They work in more-like-this queries.
+* `facet()` cannot target a field of a joined alias.
+
 #### Complex JSON properties:
 
 Complex JSON properties cannot currently be indexed and searched by Corax.  
@@ -277,6 +284,8 @@ If the `Orders/ByCompany` index uses Corax, running this query will fail.
   * The query uses [`boost()`](../../client-api/session/querying/text-search/boost-search-results.mdx).
   * The queried index boosts index entries.
   * The query uses vector search.
+  * The query [joins another index](../../client-api/session/querying/how-to-join-indexes.mdx).
+    The score of the joined sub-query is added to the score of the main query.
 
   By default, when the query specifies no other ordering, RavenDB orders scored results by score.  
   For term-based conditions, such as equality, `search()`, and `startsWith()`,  

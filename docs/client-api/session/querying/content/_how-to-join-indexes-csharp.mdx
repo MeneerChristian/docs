@@ -1,0 +1,1286 @@
+import Admonition from '@theme/Admonition';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import CodeBlock from '@theme/CodeBlock';
+import Panel from "@site/src/components/Panel";
+import ContentFrame from "@site/src/components/ContentFrame";
+
+<Admonition type="note" title="">
+
+* A `join` lets one query search two indexes at once:  
+  the main query runs on one index, and its results are matched with the results of a **sub-query on another index**.
+
+* The **score of the joined sub-query is added to the score of the main query**,  
+  so the joined query influences which documents rank at the top of the results.  
+  This is different from loading related documents, which does not affect the score.
+
+* A join is an inner join by default (rows without a match are dropped).  
+  A [left join](#left-join-and-boost) keeps every row, and `boost` sets how much the joined score counts.
+
+* Joins are supported only when the **Corax** search engine is used (both indexes must be Corax indexes).  
+  Dynamic (auto-index) queries cannot be joined.  
+  See [Known limits](#known-limits).
+
+* Every entry that matches the sub-query is used. The sub-query result is not truncated.
+
+* A join is read by the server when the query runs, and a write to a joined document costs nothing extra.  
+  A [join index](../../../../indexes/join-indexes.mdx) keeps the result of a join up to date, so that a query that runs often reads precomputed lists.  
+  The answer is the same with or without a join index.
+
+* The memory that the server join holds is bounded. See [Memory used by a join](#memory-used-by-a-join).
+
+* In this article:
+  * [Indexes used in the examples](#indexes-used-in-the-examples)
+  * [Join syntax](#join-syntax)
+  * [What the C# client supports](#what-the-c-client-supports)
+  * [Join by document ID](#join-by-document-id)
+  * [Join by field value](#join-by-field-value)
+  * [Join the id of the main document with a field](#join-the-id-of-the-main-document-with-a-field)
+  * [Join on several fields](#join-on-several-fields)
+  * [Index the join fields the same way](#index-the-join-fields-the-same-way)
+  * [Join several indexes and chain joins](#join-several-indexes-and-chain-joins)
+  * [Scoring and ordering](#scoring-and-ordering)
+  * [Order by a field of the joined index](#order-by-a-field-of-the-joined-index)
+  * [Conditions on the joined alias, OR and NOT](#conditions-on-the-joined-alias-or-and-not)
+  * [Compare fields of the joined documents](#compare-fields-of-the-joined-documents)
+  * [Left join and boost](#left-join-and-boost)
+  * [Project fields of the joined document](#project-fields-of-the-joined-document)
+  * [Facets over a join](#facets-over-a-join)
+  * [Where joins can be used](#where-joins-can-be-used)
+  * [Known limits](#known-limits)
+  * [Memory used by a join](#memory-used-by-a-join)
+  * [Query timings and memory counters](#query-timings-and-memory-counters)
+  * [Performance](#performance)
+  * [Syntax](#syntax)
+
+</Admonition>
+
+<Panel heading="Indexes used in the examples">
+
+The examples use the Northwind sample data and these Corax indexes.  
+The chained and multi-join examples also use `Employees_ByName`, a Corax index over `Employee` that indexes `FirstName`, `LastName`, and `ReportsTo` (with `LastName` as a `Search` field).
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="Orders_ByFreight" label="Orders_ByFreight">
+```csharp
+public class Orders_ByFreight : AbstractIndexCreationTask<Order>
+{
+    public Orders_ByFreight()
+    {
+        Map = orders => from order in orders
+                        select new
+                        {
+                            order.Company,
+                            order.Employee,
+                            order.Freight,
+                            ShipCountry = order.ShipTo.Country
+                        };
+
+        SearchEngineType = Raven.Client.Documents.Indexes.SearchEngineType.Corax;
+    }
+}
+```
+</TabItem>
+<TabItem value="Companies_ByName" label="Companies_ByName">
+```csharp
+public class Companies_ByName : AbstractIndexCreationTask<Company>
+{
+    public Companies_ByName()
+    {
+        Map = companies => from company in companies
+                           select new
+                           {
+                               company.Name,
+                               Country = company.Address.Country
+                           };
+
+        Index(x => x.Name, FieldIndexing.Search);
+        SearchEngineType = Raven.Client.Documents.Indexes.SearchEngineType.Corax;
+    }
+}
+```
+</TabItem>
+</Tabs>
+
+</Panel>
+
+<Panel heading="Join syntax">
+
+* The main source must have an alias (`as o`).  
+  The C# client generates one when you do not set it.
+
+* The join condition (`on`) is an equality between a field of the main source and either
+  the ID of the joined document (`id(c)`) or a field of the joined index entry (`c.Country`).
+
+* The two sides of the equality can be written in either order (`o.Company = id(c)` or `id(c) = o.Company`).
+
+* The `on` clause can hold several equalities of fields joined by `and` ([Join on several fields](#join-on-several-fields)).
+
+* The sub-query cannot use `limit` or `offset`.
+
+* A query that cannot be parsed (a missing alias, an `on` clause that is not an equality, `limit` in the sub-query)
+  reaches the client as a `RavenException` whose message names the server-side `ParseException`, like every other RQL that cannot be parsed (for example `JOIN requires an alias`, `A JOIN requires an alias for the main document`).
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="RQL" label="RQL">
+```sql
+from index "Orders/ByFreight" as o
+join (from index "Companies/ByName" where search(Name, "market cafe")) as c on o.Company = id(c)
+where o.Freight > 50
+order by score()
+select o.Freight, c.Name
+```
+</TabItem>
+</Tabs>
+
+The RQL clause order is:  
+`from`, `join`, `group by`, `where`, `order by`, `load`, `filter`, `select`, `limit`, `include`.
+
+</Panel>
+
+<Panel heading="What the C# client supports">
+
+| Feature | RQL | `DocumentQuery` / `AsyncDocumentQuery` | LINQ method syntax (`Query<T>().Join(...)`) | LINQ query syntax (`from ... join ...`) |
+|---------|-----|----------------------------------------|---------------------------------------------|------------------------------------------|
+| Join by document ID | yes | yes | yes | yes |
+| Join by field value | yes | yes (field names or expressions) | yes (expressions only) | yes |
+| Several inner joins | yes | yes | yes | yes |
+| Chained joins | yes | yes (a source that is itself joined) | yes (a source that is itself joined) | no (the key of the second join is read as a field of the main index and the query fails) |
+| `left join` | yes | yes (`left: true`) | yes (`left: true`) | yes (`join ... into x from c in x.DefaultIfEmpty()`) |
+| `boost` | yes | yes (`boost: 0.5`) | yes (`boost: 0.5`) | no |
+| The alias of a join | `as c` | `JoinAlias("c")` after `Join` (default: `j`, `j1`, ... by position) | no (`j`, `j1`, ...) | the range variable (`join c in ...`) |
+| Conditions on a field of the alias in `where` (`and`, `or`, `not`, parentheses) | yes | yes: `WhereEquals("c.Name", ...)`, `WhereIn`, `WhereBetween`, `Search`, ..., `Not`, `OpenSubclause` | no | yes: `where c.Name == "x" \|\| g.Size > 3` |
+| `matches(alias)` | yes | `WhereMatches("c")` | no | `where RavenQuery.Matches(c)` |
+| `order by <alias>.<field>` | yes | `OrderBy("c.Field")`, `OrderByDescending`, with `OrderByScore` before or after | no | `orderby c.Field`; `.OrderByScore()` after the query puts `score()` first |
+| `select <alias>.<field>` (projection of the joined document) | yes | `SelectFields<T>(new QueryData(fields, projections))` with `"c.Name"` in `fields` | no | `select new { g.Name, c.Name }` (a type with a constructor or an initializer, or an anonymous type) |
+| `select id(c)` (the ID of the joined document, `null` when the row has none) | yes (`select id(c) as CompanyId`) | no | no | no |
+| `select c` (the whole joined document) | yes | `SelectFields<Company>("c")` | no | no (`NotSupportedException`) |
+| A boost with a name of your choice (`boost $weight`) | **RQL only** | no (the client sends `$p<N>`) | no | no |
+| Facets over a field of the joined alias, `order by id(c)` | rejected by the server | no | no | no |
+
+* The LINQ query syntax names properties as well, so its examples use `Name` of the company (`Country` exists only in the index).
+* The expression overloads take the properties of the main document (or of the joined document).  
+  A property has to be the name of an indexed field, so a field that exists only in the index (such as `ShipCountry` in `Orders_ByFreight`) is joined with the field-name overload of `DocumentQuery`.
+* With a join, `select` and `SelectFields` of the main document, `OrderBy` of the main document's fields, `OrderByScore`, paging, and facets work as in a query without a join.
+* A field name that starts with the alias of a join and a dot (`"c.Name"`) is a field of the joined documents, in every method that takes a field name. Any other field name is a field of the main document.
+  Name the join with `JoinAlias` when the query uses it: without a name, the first join is `j`, the second `j1`, and so on.
+* `JoinAlias` names the **last** `Join` call, so it depends on the order of the calls: call it right after the `Join` it names, and before the next `Join`.  
+  A field name `j.Name` cannot be told apart from a nested property `j` of the main document, so the client refuses a default alias (`j`, `j1`, ...) that is also the name (in any case) of a public property or field of the main type: name the join with `JoinAlias` instead.
+  A name that you give with `JoinAlias` is not checked this way, so choose one that the main document does not use for a property.
+* The LINQ method syntax has no way to name the joined documents, so it cannot use them in `where`, `orderby` or `select`: use the LINQ query syntax or `DocumentQuery`.
+* A condition on a field of the joined alias in the LINQ query syntax has to use the range variable of the join (`where c.Name == "x"`); `c.Id` is not translated to `id(c)` (the query fails with an `InvalidQueryException`, `Field Id not found in Index ...`): use `DocumentQuery` or RQL for `id(c)`.
+* To use anything marked **RQL only**, write the query with `RawQuery` or `AsyncRawQuery`.
+
+</Panel>
+
+<Panel heading="Join by document ID">
+
+Use this form when a field of the main document holds the ID of the joined document.
+
+* The field of the main document can hold a **list of IDs**.  
+  The row is matched when any of them is the ID of a joined document, and its score is the sum of the scores of the distinct matched documents.  
+  To project the joined documents of a list, load the alias as a list: `load o.ProductIds as p[]`.
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="Query" label="Query">
+```csharp
+List<Order> orders = session
+    .Query<Order, Orders_ByFreight>()
+     // Define the sub-query on the other index
+    .Join(session.Query<Company, Companies_ByName>()
+            .Search(x => x.Name, "market cafe"),
+          // The field of the main document that holds the ID of the joined document
+          order => order.Company)
+    .Where(x => x.Freight > 50)
+    .ToList();
+
+// * Results contain the orders with freight above 50.
+// * The score of the company that matches "market cafe" is added to the score of the order,
+//   so orders of matching companies are ranked first.
+```
+</TabItem>
+<TabItem value="Query_async" label="Query_async">
+```csharp
+List<Order> orders = await asyncSession
+    .Query<Order, Orders_ByFreight>()
+    .Join(asyncSession.Query<Company, Companies_ByName>()
+            .Search(x => x.Name, "market cafe"),
+          order => order.Company)
+    .Where(x => x.Freight > 50)
+    .ToListAsync();
+```
+</TabItem>
+<TabItem value="DocumentQuery" label="DocumentQuery">
+```csharp
+List<Order> orders = session.Advanced
+    .DocumentQuery<Order, Orders_ByFreight>()
+    .Join(session.Advanced.DocumentQuery<Company, Companies_ByName>()
+            .Search(x => x.Name, "market cafe"),
+          order => order.Company)
+    .WhereGreaterThan(x => x.Freight, 50)
+    .ToList();
+```
+</TabItem>
+<TabItem value="Query_syntax" label="Query_syntax">
+```csharp
+// LINQ query syntax supports several joins (each one joins the main document) and `select o` only.
+List<Order> orders = (from o in session.Query<Order, Orders_ByFreight>()
+                      join c in session.Query<Company, Companies_ByName>()
+                                  .Search(x => x.Name, "market cafe")
+                          on o.Company equals c.Id
+                      where o.Freight > 50
+                      select o).ToList();
+```
+</TabItem>
+<TabItem value="RQL" label="RQL">
+```sql
+from index "Orders/ByFreight" as o
+join (from index "Companies/ByName" where search(Name, "market cafe")) as c on o.Company = id(c)
+where o.Freight > 50
+```
+</TabItem>
+</Tabs>
+
+</Panel>
+
+<Panel heading="Join by field value">
+
+Use this form when the main document and the joined document share a value (for example, a country).  
+The best score of the joined entries that share the value is used.  
+The field must be indexed in both indexes, and it can be multi-valued.  
+The join is a semi-join: a row of the main query is returned at most once, even when several joined documents have the value.  
+When a projection selects a field of the joined alias (`select c.Name`), the alias is the best scoring joined document with that value (ties: the document that was stored first).  
+The `on` clause can name the sides in either order (`o.ShipCountry = c.Country` or `c.Country = o.ShipCountry`).
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="DocumentQuery" label="DocumentQuery">
+```csharp
+List<Order> orders = session.Advanced
+    .DocumentQuery<Order, Orders_ByFreight>()
+     // Match the 'ShipCountry' field of the orders index
+     // with the 'Country' field of the companies index
+    .Join(session.Advanced.DocumentQuery<Company, Companies_ByName>()
+            .Search(x => x.Name, "market cafe"),
+          "ShipCountry",
+          "Country")
+    .WhereGreaterThan(x => x.Freight, 50)
+    .ToList();
+```
+</TabItem>
+<TabItem value="RQL" label="RQL">
+```sql
+from index "Orders/ByFreight" as o
+join (from index "Companies/ByName" where search(Name, "market cafe")) as c on o.ShipCountry = c.Country
+where o.Freight > 50
+```
+</TabItem>
+</Tabs>
+
+* `ShipCountry` exists only in the index, so the typed (`Query`) form is not shown:  
+  LINQ expressions have to name a property, and the field-name overload exists for `DocumentQuery` and `AsyncDocumentQuery`.
+
+</Panel>
+
+<Panel heading="Join the id of the main document with a field">
+
+Use this form when the **joined** documents hold the ID of the main document (the reverse of [Join by document ID](#join-by-document-id)):  
+`on id(<alias>) = <joinAlias>.<field>`. Either side can be written first (`on <joinAlias>.<field> = id(<alias>)`).
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="RQL" label="RQL">
+```sql
+// The companies that have an order that was shipped to France
+from index "Companies/ByName" as c
+join (from index "Orders/ByCompany" where ShipCountry = "france") as o on id(c) = o.Company
+```
+</TabItem>
+</Tabs>
+
+* Many joined documents can hold the ID of one main document. A row is returned once, even when several joined documents hold its ID.  
+  The joined field can hold a list of IDs.
+* With a projection, the joined alias is the **array** of the joined documents that hold the ID of the row: `select o.Freight` projects the array of the values of that field,
+  and `select o` projects the array of the joined documents. A row without a joined document has an empty array in a `left join`, and it is not returned by an inner `join`.
+* The condition is the only equality of the `on` clause: it cannot be combined with other equalities, and the other side must be a field of the joined alias
+  (`id(c) = c.Name`, `id(c) > o.Company` and `id(c) = 'companies/1-A'` are rejected).
+* The main query must be a query on an index (`from index`): `from Companies as c join ...` is rejected with `JOIN is supported only for queries on an index`.
+* A joined alias of this form cannot be used to join other documents (a chain).
+* Selecting the joined alias is refused with an `InvalidQueryException` when the joined field keeps its case (`FieldIndexing.Exact`).  
+  Index the field with the default indexing or with `FieldIndexing.Key`, because the ID of the main document is compared in lower case.
+* A [join index](../../../../indexes/join-indexes.mdx#joins-on-a-field-and-on-the-id-of-the-main-document) can serve this join when the query does not project the joined alias.
+
+</Panel>
+
+<Panel heading="Join on several fields">
+
+Join the documents on a tuple of values: write several equalities, joined by `and`, between fields of the main source and fields of the joined index.  
+A row matches when **the same joined index entry** holds every value of the tuple. An entry that has the first value and another entry that has the second one is not a match.
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="RQL" label="RQL">
+```sql
+from index "Orders/ByFreight" as o
+join (from index "Companies/ByName" where search(Name, "market cafe")) as c
+  on o.ShipCountry = c.Country and o.ShipCity = c.City
+where o.Freight > 50
+select o.Freight, c.Name
+```
+</TabItem>
+</Tabs>
+
+* The semantics are those of [Join by field value](#join-by-field-value), for the tuple:
+  * a row is returned at most once, whatever the number of joined entries that hold the tuple;
+  * the score of the joined side is the best score of the joined entries that hold the tuple, times the `boost`;
+  * a projection of a field of the alias (`select c.Name`) takes the best scoring joined entry that holds the tuple (ties: the entry that was indexed first);
+  * a [left join](#left-join-and-boost), `boost` and `matches(c)` work as with one field.
+* Every equality is between a field of the main source and a field of the joined index (`c.City`); either side can be written first, the same pair cannot be repeated.
+  Two or more equalities can use the same field of the main source. `id(c)` cannot be combined with other equalities, and `or` and the comparison operators are not allowed in the `on` clause.
+* A field that holds several values (an array) makes one tuple for every combination of the values of the fields, on both sides (at most 65,536 combinations per document).
+  A document that has no value for one of the fields (missing or `null`) is never matched.
+* The key fields follow [the same case and analyzer rules](#index-the-join-fields-the-same-way) as a join on one field, checked for every pair of fields.
+* RQL only: the C# `Join` overloads take a single key.
+* Not supported, and rejected with a message that names the reason: a chain of joins through a join on several fields (in either direction, and an equality that uses a field of another joined alias),
+  `order by c.Field` of such a join.
+* Cost: the sub-query side opens every matched joined entry and reads its fields once (one read per field).
+  The outer side first finds the documents that hold one of the values of the first field (the same lookup as a join on that field alone),
+  then opens each of those documents to read all the fields. Put the most selective field first in the `on` clause: it decides how many documents are opened.
+  The candidates are read before the rest of the query runs, so a `where` clause on the main source does not reduce this work (see [Performance](#performance)).
+
+</Panel>
+
+<Panel heading="Index the join fields the same way">
+
+A join compares the raw index terms of both sides, so the joined fields must be indexed the same way. The default indexing lowercases the terms, and `Exact` keeps their case:
+
+* **Join by document ID** (`on o.Field = id(c)`): the keys are the lowercased IDs of the joined documents.  
+  Index the foreign-key field with the default indexing. A field indexed `Exact` keeps its case, so the value `companies/8213-A` never matches the key `companies/8213-a`.  
+  A field with the default indexing is searched case-insensitively, like a document ID, and this is what the join compares.
+
+* **Join by field value** (`on o.Field = c.Field`): the keys are the terms of the joined field as they are stored.  
+  Index both fields the same way: both with the default indexing, or both `Exact`.  
+  The one mixed case that matches is a default-indexed outer field with an `Exact` joined field: the joined values `Abc` and `ABC` both find the outer value `abc`.
+
+* **Search-analyzed fields** are not join keys. The `Search` analyzer splits a value into tokens, and a key matches only when the whole value stays one token.  
+  `companies/8213-A` stays one token and matches the ID join, but `companies/lower-1` and `COMPANIES/mixed-case-3` are split and never match.  
+  Do not use Search-analyzed fields as join keys.
+
+A join that could never match is rejected with an `InvalidQueryException` instead of returning no rows. The message starts with `The JOIN with 'c' would never match:`.  
+The check probes how each field indexes the value `ÄbCZ1`, so the message shows what the field did with it.  
+For the `Orders_ByFreight` index with `Company` (first row) or `ShipCountry` (second and third row) indexed as named, the table shows what each case produces:
+
+| Join | The error message |
+|------|-------------------|
+| `on o.Company = id(c)` with `Company` indexed `Exact` | `The JOIN with 'c' would never match: the field 'Company' of the index 'Orders/ByFreight' is indexed Exact (the value 'ÄbCZ1' is indexed as 'ÄbCZ1'), but a join on id(c) compares the lowercased ids of the documents of 'c' ('ÄbCZ1' becomes 'äbcz1'). Index 'Company' with the default indexing (remove the Exact option or the custom analyzer) so that its terms are lowercased too, or index it with FieldIndexing.Key. A field with the default indexing is searched case-insensitively, like a document id (where Company = 'COMPANIES-8213-A' finds 'companies-8213-a'), and this is what a join on id(c) compares.` |
+| `on o.ShipCountry = c.Country` with an `Exact` outer field and a default-indexed joined field | `The JOIN with 'c' would never match: the field 'ShipCountry' of the index 'Orders/ByFreight' is indexed Exact (the value 'ÄbCZ1' is indexed as 'ÄbCZ1'), but the field 'Country' of the joined index 'Companies/ByName' is indexed with the default indexing ('ÄbCZ1' is indexed as 'äbcz1'), and a join compares the terms of both fields as they are. Index both fields the same way (both with the default indexing, or both Exact), or index them with FieldIndexing.Key.` |
+| `on o.ShipCountry = c.Country` with a `Search` outer field and an `Exact` joined field | `The JOIN with 'c' would never match: the field 'ShipCountry' of the index 'Orders/ByFreight' is indexed Search (the value 'ÄbCZ1' is indexed as 'äbcz1'), but the field 'Country' of the joined index 'Companies/ByName' is indexed Exact ('ÄbCZ1' is indexed as 'ÄbCZ1'), and a join compares the terms of both fields as they are. Index both fields the same way (both with the default indexing, or both Exact), or index them with FieldIndexing.Key.` |
+
+The same message is returned whether or not the query projects the joined alias, and also when the join sits under `matches()` and `or`.
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="Exact" label="Exact (rejected)">
+```csharp
+public class Orders_ByFreight : AbstractIndexCreationTask<Order>
+{
+    public Orders_ByFreight()
+    {
+        Map = orders => from order in orders
+                        select new
+                        {
+                            order.Company,
+                            order.Employee,
+                            order.Freight,
+                            ShipCountry = order.ShipTo.Country
+                        };
+
+        Index(x => x.Company, FieldIndexing.Exact);
+        SearchEngineType = Raven.Client.Documents.Indexes.SearchEngineType.Corax;
+    }
+}
+```
+</TabItem>
+<TabItem value="Default" label="Default (works)">
+```csharp
+public class Orders_ByFreight : AbstractIndexCreationTask<Order>
+{
+    public Orders_ByFreight()
+    {
+        Map = orders => from order in orders
+                        select new
+                        {
+                            order.Company,
+                            order.Employee,
+                            order.Freight,
+                            ShipCountry = order.ShipTo.Country
+                        };
+
+        SearchEngineType = Raven.Client.Documents.Indexes.SearchEngineType.Corax;
+    }
+}
+```
+</TabItem>
+</Tabs>
+
+To fix a rejected join on an ID, remove the `Exact` option (or the custom analyzer) from the foreign-key field, as in the second example.
+
+If the foreign key must stay `Exact`, use one of these recipes:
+
+* **Recipe 1: join field to field.** Add an `Exact` field that holds the document ID to the joined index: `DocId = MetadataFor(c)["@id"]` with `Index("DocId", FieldIndexing.Exact)` (`c` is the company in the map of `Companies_ByName`). Then join the two `Exact` fields with `on o.Company = c.DocId`. The rows, the scores and the projection of `c` (`select c.Name`) work with this recipe.
+
+* **Recipe 2: a second key copy.** Keep the `Exact` field, and add a default-indexed copy of the key to the outer index (`CompanyKey = order.Company`). Then join on the ID with `on o.CompanyKey = id(c)`. The rows and the scores work. Do not select fields of `c` through this copy: the projection loads the joined document by the join field (`load o.CompanyKey as c`), and `CompanyKey` exists only in the index, not in the stored document. Use recipe 1 when you project the joined document.
+
+#### Key fields
+
+Index a foreign-key field with `FieldIndexing.Key` to make the field a join key by declaration. A Key field holds a document ID or a reference to one: every value is a single lowercased term (an array gives one term per element), exactly as the default indexing stores a string, whatever the default analyzer of the index is.  
+A join on a Key field needs no further check: `on o.Company = id(c)` and a join between two Key fields always match, and `where Company = 'COMPANIES/8213-A'` finds `companies/8213-a`.  
+Fields with the default indexing keep working in joins, and `Key` is not required.
+
+```csharp
+public class Orders_ByFreight : AbstractIndexCreationTask<Order>
+{
+    public Orders_ByFreight()
+    {
+        Map = orders => from order in orders
+                        select new
+                        {
+                            order.Company,
+                            order.Employee,
+                            order.Freight
+                        };
+
+        Index(x => x.Company, FieldIndexing.Key);
+        SearchEngineType = Raven.Client.Documents.Indexes.SearchEngineType.Corax;
+    }
+}
+```
+
+The index is rejected when it is created, not at the first join query, if a Key field:
+
+* has an analyzer, suggestions, a term vector other than `No`, or spatial or vector options,
+* is set as the default of all the fields (`__all_fields`),
+* is in an index that does not use Corax.
+
+For example: `The field 'Company' of the index 'Orders/ByFreight' is indexed with FieldIndexing.Key, so it cannot have the analyzer 'StandardAnalyzer': a Key field is always one lowercased term. Remove the analyzer, or index the field with FieldIndexing.Search.`  
+Numbers, dates and objects in a Key field are handled like in a field with the default indexing. A Key field can be stored.  
+Changing the indexing of a field to `Key` changes the index definition, so the index is replaced and indexed again.  
+A cluster node of an older version cannot read an index definition that has a Key field.
+
+</Panel>
+
+<Panel heading="Join several indexes and chain joins">
+
+* **Several joins**: repeat `join`. The scores of independent joins are added together.
+
+* **Chained join**: a join whose condition starts from another join alias.  
+  The chain adds the scores of every index in it (for example, employee + manager).
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="DocumentQuery" label="DocumentQuery">
+```csharp
+// Two independent joins: the company and the employee of the order
+List<Order> orders = session.Advanced
+    .DocumentQuery<Order, Orders_ByFreight>()
+    .Join(session.Advanced.DocumentQuery<Company, Companies_ByName>()
+            .Search(x => x.Name, "market cafe"),
+          order => order.Company)
+    .Join(session.Advanced.DocumentQuery<Employee, Employees_ByName>()
+            .Search(x => x.LastName, "davolio"),
+          order => order.Employee)
+    .ToList();
+```
+</TabItem>
+<TabItem value="Query" label="Query">
+```csharp
+// Chained join: pass a source query that is itself joined.
+// The employees are joined with their managers, and the orders with those employees.
+var employeesOfManager = session.Query<Employee, Employees_ByName>()
+    .Join(session.Query<Employee, Employees_ByName>()
+            .Search(x => x.LastName, "fuller"),
+          employee => employee.ReportsTo);
+
+List<Order> orders = session.Query<Order, Orders_ByFreight>()
+    .Join(employeesOfManager, order => order.Employee)
+    .ToList();
+```
+</TabItem>
+<TabItem value="RQL" label="RQL">
+```sql
+from index "Orders/ByFreight" as o
+join (from index "Employees/ByName") as e on o.Employee = id(e)
+join (from index "Employees/ByName" where search(LastName, "fuller")) as m on e.ReportsTo = id(m)
+```
+
+A sub-query whose alias is joined on (here `e`) must have no alias or the same alias.
+</TabItem>
+</Tabs>
+
+</Panel>
+
+<Panel heading="Scoring and ordering">
+
+* Joined score = score of the main query + score of every joined query.  
+  A row that matches several keys of one join (a list field) adds the scores of the distinct matched keys, in a fixed order.
+
+* The total result count (`Statistics.TotalResults`) is the number of **rows of the main index** that the join keeps.  
+  A row counts once per join, even when several joined documents match it (the join is a semi-join).
+
+* A `where` clause that mentions one of two joins (`where matches(c)`) still ANDs the other join.  
+  To count the rows that match `c` whether or not they match `e`, make `e` a [left join](#left-join-and-boost).
+
+* `order by score()` returns the **best** matches first.  
+  `order by score() desc` returns the **weakest** matches first.
+
+* `order by` a field of the main query and paging work as usual. The total result count includes every match of the main query.
+
+* The score is returned only when you ask for it (see [get the resulting score](../../../../querying/sorting-query-results/sort-query-results.mdx#get-resulting-score)),  
+  but it always takes part in the ordering.
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="RQL" label="RQL">
+```sql
+from index "Orders/ByFreight" as o
+join (from index "Companies/ByName" where search(Name, "market cafe")) as c on o.Company = id(c)
+where o.Freight > 50
+order by score()
+limit 0, 20
+```
+</TabItem>
+</Tabs>
+
+</Panel>
+
+<Panel heading="Order by a field of the joined index">
+
+`order by <alias>.<field>` orders the results by a field of the joined index.  
+The joined index orders its entries, and the main query sorts by that order.
+
+* A join on the document ID (`on o.Field = id(<alias>)`) and a join on a field (`on o.ShipCountry = c.Country`) can be ordered this way, inner or left.
+* Ascending and descending order work, and so do `as long` and `as double`.
+* The fields of one join are next to each other in the `order by` list. Fields of the main query can come before or after them.
+* `order by score()` can come before, between or after the fields of the joined index (`order by score(), c.Country` and `order by c.Country, score() desc`).  
+  `score()` still sorts by the relevance (the score of the main query plus the scores of the joins), and the joined fields sort by the order of the joined index.
+* Only one join can order the results.
+* Rows that tie on every `order by` field can come in any order.
+
+**How a row gets its position**
+
+* A join on the ID: the row is at the position of the joined document in the order of the sub-query. Documents that sort the same (the same `Country`) share a position.
+* A join on a field: every value of the field is one position, the position of the first joined document in the order of the sub-query that has that value.  
+  A projection of the joined document (`select c.Name`) returns that document.
+* A row with several values in the join field (a list of IDs or a list of values) is at the lowest position (the minimum rank) of its values in the order that the joined index gives (ascending or descending).
+* A row of a **left join** without a joined document goes **last**, for ascending and for descending order alike ("unmatched last").  
+  The rows that are last keep the order of the other `order by` fields, and their projection of the joined alias is `null`.
+* `boost 0` does not change the order: the join adds nothing to the score, but it still orders.
+* The joined index can order up to 16,777,216 distinct values. A sub-query with more distinct values fails.
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="DocumentQuery" label="DocumentQuery">
+```csharp
+List<Order> orders = session.Advanced
+    .DocumentQuery<Order, Orders_ByFreight>()
+    .Join(session.Advanced.DocumentQuery<Company, Companies_ByName>()
+            .Search(x => x.Name, "market cafe"),
+          order => order.Company)
+    .JoinAlias("c")
+    .OrderByScore()                 // score(), then the field of the joined index
+    .OrderBy("c.Country")
+    .OrderBy(x => x.Freight, OrderingType.Long)
+    .ToList();
+// ... order by score(), c.Country, __alias_join.Freight as long
+// OrderByDescending("c.Country") orders descending, OrderBy("c.Rank", OrderingType.Long) orders as a number.
+```
+</TabItem>
+<TabItem value="Query" label="Query (query syntax)">
+```csharp
+List<Order> orders = (from o in session.Query<Order, Orders_ByFreight>()
+                      join c in session.Query<Company, Companies_ByName>()
+                                  .Search(x => x.Name, "market cafe") on o.Company equals c.Id
+                      orderby c.Name, o.Freight
+                      select o).ToList();
+
+// .OrderByScore() after the query puts score() before the other fields: order by score(), c.Name, ...
+// A score() that comes after the joined field needs DocumentQuery or RQL.
+```
+</TabItem>
+<TabItem value="RQL" label="RQL">
+```sql
+from index "Orders/ByFreight" as o
+join (from index "Companies/ByName" where search(Name, "market cafe")) as c on o.Company = id(c)
+order by c.Country, o.Freight as long
+select o.Freight, c.Name
+```
+</TabItem>
+</Tabs>
+
+A field that is analyzed (for example, `Name` indexed with `FieldIndexing.Search`) keeps one term per entry.  
+Its order is the order that the joined index gives that term, and rows that tie on it are in no defined order.
+
+These queries are rejected with an `InvalidQueryException`:
+
+| Query | The error message contains |
+|-------|----------------------------|
+| `order by c.Country, o.Freight as long, c.Name` | `the ORDER BY fields of 'c' have to follow each other` |
+| Two joins that both order the results | `ORDER BY joined fields of two joins` |
+| `order by id(c)` | `is not supported: only the fields of a joined index can be used in ORDER BY` |
+| `order by c.Nothing`, a field that the joined index does not index | `but that field is not indexed in the index` |
+| `order by` a field of a join that is itself joined by another join (a chain) | `a chain of joins` |
+| `order by c.Country` when the main index boosts its documents | `is not supported when the documents of the main index are boosted` |
+| `order by c.Country` with `matches(c)` of the same join in the `where` clause (`matches()` of another join is allowed) | `cannot be combined with matches(c) in the where clause` |
+
+</Panel>
+
+<Panel heading="Conditions on the joined alias, OR and NOT">
+
+The `where` clause of the main query can use the fields of a join alias next to the fields of the main document,  
+with `and`, `or`, `not`, parentheses, and every operator that a `where` clause supports  
+(`=`, `!=`, `in`, `between`, `>`, `<`, `startsWith`, `endsWith`, `search`, `exists`, parameters, ...).  
+The field types and analyzers are the ones of the **joined** index.
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="DocumentQuery" label="DocumentQuery">
+```csharp
+// Name the join with JoinAlias, then write the fields of the joined documents as "alias.Field".
+List<Order> orders = session.Advanced
+    .DocumentQuery<Order, Orders_ByFreight>()
+    .Join(session.Advanced.DocumentQuery<Company, Companies_ByName>(),
+          order => order.Company)
+    .JoinAlias("c")
+    .WhereEquals("ShipCountry", "France")
+    .AndAlso()
+    .WhereEquals("c.Country", "France")
+    .AndAlso()
+    .OpenSubclause()
+        .WhereGreaterThan("Freight", 50)
+        .OrElse()
+        .WhereEquals("c.Name", "Ernst Handel")
+    .CloseSubclause()
+    .ToList();
+// RQL:
+// from index 'Orders/ByFreight' as __alias_join
+// join (from index 'Companies/ByName') as c on __alias_join.Company = id(c)
+// where __alias_join.ShipCountry = $p0 and c.Country = $p1 and (__alias_join.Freight > $p2 or c.Name = $p3)
+```
+</TabItem>
+<TabItem value="Query" label="Query (query syntax)">
+```csharp
+// The range variable of the join is its alias.
+List<Order> orders = (from o in session.Query<Order, Orders_ByFreight>()
+                      join c in session.Query<Company, Companies_ByName>() on o.Company equals c.Id
+                      where o.Employee == "employees/1-A"
+                            && (o.Freight > 50 || c.Name == "Ernst Handel")
+                      select o).ToList();
+```
+</TabItem>
+<TabItem value="RQL" label="RQL">
+```sql
+from index "Placements" as p
+join (from index "Companies") as c on p.CompanyId = id(c)
+where p.Company = "Pizza Bakery" and c.Name = "Delivery Guy" and (p.Priority > 3 or c.Size > 100)
+```
+</TabItem>
+</Tabs>
+
+How a condition on an alias is run:
+
+* **ANDed with the rest of the `where` clause**: the condition is added to the `where` clause of the sub-query of the alias, and the join stays an inner join.  
+  `where c.Name = "x" and c.Size > 100` is one condition of one joined document. It has the score of the same condition written in the sub-query.  
+  A left join with such a condition filters (it becomes an inner join).
+* **Under `or`** (`where p.Status = "open" or c.Name = "x"`): the condition becomes `matches(...)` of a **virtual join**:  
+  a join of the same shape (the same `on` clause) whose sub-query is the sub-query of the alias AND the condition.  
+  A row without a matching joined document can still be returned through the other side of the `or`.  
+  The join of the alias itself does not filter when it is only used under `or`.
+* **A group** is the largest part of the `where` clause that uses only one alias, without `not`: `c.A = 1 or c.B = 2` is one group, and  
+  `c.A = 1 and (c.B = 2 or p.X = 1)` is two groups (`c.A = 1` and `c.B = 2`).  
+  Every group under `or` has its own virtual join and so its own score. The groups of one alias are **not** required to be satisfied by the same joined document  
+  (the conditions of one `and` are). For a join on the ID there is only one joined document, so this makes no difference.
+* **`!=` and `not`**: `c.Country != "nl"` is a condition of the joined document (it is run in the sub-query, where `!=` matches a document without `Country` too), so a row without a joined document does not satisfy it.
+  `not (c.Country = "nl")` is the complement of `c.Country = "nl"` over the rows of the main query, so it does return the rows without a joined document (see below). The two are different queries.
+* **`not`** over a condition on an alias is the complement over the rows of the main query: the rows that have **no** joined document that satisfies the condition,  
+  which includes the rows without any joined document. `where p.Priority >= 0 and not (c.Country = "nl")` returns the rows whose company is not Dutch **and** the rows without a company.  
+  This is `not matches(...)` of a virtual join, and `not (matches(c))` is allowed as well: the rows that are not joined with a document that the sub-query of `c` matched.  
+  RQL accepts `not` only after `and` / `or` (`where a and not (b)`), not at the start of the `where` clause (the server answers with a `RavenException`: `Method 'not' is not supported`).
+* **The score** of a row is the score of the outer conditions plus the score of every join (the join of the alias or a virtual join) that matched.  
+  A `not` adds no score.
+* **A parameter** (`$name`) works in a condition on an alias like anywhere else.
+* **A chain of joins** works: `where r.Level > 2` on `r` joined through `c` (`join ... as c on p.CompanyId = id(c) join ... as r on c.RegionId = id(r)`) means that the row has a `c` that leads to a matching `r`.  
+  A condition on `r` under `or` is a virtual join like `matches(f)` of a chain (see below), so it is rejected when a join on the path joins on a field instead of on the ID.
+* **In the projection** (`select c.Name`), the alias is the joined document that the conditions matched. In `p.Status = "open" or c.Country = "nl"` the alias is `null` for the rows whose company is not Dutch.
+* **`order by c.Field`** works with conditions on `c` that are ANDed with the rest, and with conditions under `or` or `not`. Under `or` or `not` the rows are the rows of the `where` clause, and they are ordered by the joined document of `c` that the row has (the join on the ID or on the field), whether or not that document satisfies the condition. A row without a joined document goes last, for ascending and for descending order alike.
+* **Facets**, paging and `Statistics.TotalResults` see the rows of the whole `where` clause.
+
+A condition has to use one alias: `c.Name = p.Name` (the main document and the alias) and `c.Name = e.Name` (two aliases) are rejected.  
+`id(c)` can be used (`id(c) in ("companies/1", "companies/2")`).
+
+**`matches()`**
+
+`matches(<alias>)` is the shorthand for "the row is joined with a document that the sub-query of that alias matched", the same as a condition that holds for every document of the sub-query.  
+Use it to combine whole sub-queries with `or`.
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="DocumentQuery" label="DocumentQuery">
+```csharp
+List<Order> orders = session.Advanced
+    .DocumentQuery<Order, Orders_ByFreight>()
+    .Join(session.Advanced.DocumentQuery<Company, Companies_ByName>()
+            .Search(x => x.Name, "market cafe"),
+          order => order.Company)
+    .JoinAlias("c")
+    .Join(session.Advanced.DocumentQuery<Employee, Employees_ByName>()
+            .Search(x => x.LastName, "davolio"),
+          order => order.Employee)
+    .JoinAlias("e")
+    .WhereMatches("c")
+    .OrElse()
+    .WhereMatches("e")
+    .OrderByScore()
+    .ToList();
+// ... where matches(c) or matches(e) order by score()
+```
+</TabItem>
+<TabItem value="Query" label="Query (query syntax)">
+```csharp
+List<Order> orders = (from o in session.Query<Order, Orders_ByFreight>()
+                      join c in session.Query<Company, Companies_ByName>()
+                                  .Search(x => x.Name, "market cafe") on o.Company equals c.Id
+                      join e in session.Query<Employee, Employees_ByName>()
+                                  .Search(x => x.LastName, "davolio") on o.Employee equals e.Id
+                      where RavenQuery.Matches(c) || RavenQuery.Matches(e)
+                      select o).OrderByScore().ToList();
+```
+</TabItem>
+<TabItem value="RQL" label="RQL">
+```sql
+from index "Orders/ByFreight" as o
+join (from index "Companies/ByName" where search(Name, "market cafe")) as c on o.Company = id(c)
+join (from index "Employees/ByName" where search(LastName, "davolio")) as e on o.Employee = id(e)
+where matches(c) or matches(e)
+order by score()
+select o.Freight, c.Name as CompanyName, e.LastName as EmployeeName
+```
+</TabItem>
+</Tabs>
+
+* `matches(c) and matches(e)` returns only the rows that match both joins.
+* `matches()` can be nested with other conditions, for example `where o.Freight > 50 and (matches(c) or matches(e))`.
+* A join that the `where` clause does not mention stays an inner join, and it is ANDed with the whole `where` clause.  
+  To keep rows without a match, use a [left join](#left-join-and-boost).
+* A row that is returned through one join has `null` for the alias of the other join in the projection.
+* The score of a row is the sum of the scores of the joins that matched.
+* `matches()` is allowed only in the `where` clause of the main query. It can be combined only with `and`, `or`, `not` after `and` / `or`, and parentheses.
+* `matches(c)` next to conditions on `c` (`matches(c) and c.Country = "fr"`) does not merge them: the conditions on `c` are a virtual join of their own.
+* `matches()` also works with a chain of joins, where a join is joined by a field of another join:
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="RQL" label="RQL">
+```sql
+from index "PlacementsListIndex" as p
+join (from index "CandidateListIndex") as c on p.CandidateId = id(c)
+join (from index "FileInfoTextIndex" where search(PlainTextContents, "java")) as f on c.CurriculumVitaeId = id(f)
+where search(p.Content, "java") or matches(f)
+select id()
+```
+</TabItem>
+</Tabs>
+
+  * `matches(f)` means that the row has a `c` that the sub-query of `c` matched, and that `c` leads to an `f` that the sub-query of `f` matched.
+  * `matches(c)` means that the row has a matched `c`. If `f` is also mentioned in the `where` clause, `f` is not required for `matches(c)`.  
+    If `f` is not mentioned, it stays an inner join of `c`: `c` has to lead to a matched `f`.
+  * The score of a row is the score of the outer conditions plus the scores along the chain of the joins that matched.
+  * In the projection, `c` is `null` for a row that did not match through `c`, and `f` is `null` for a row that did not match through `f`.
+  * `matches()` of a chained alias is rejected when a join on the path joins on a field instead of on the ID.
+  * A chain in which `k` of its aliases are mentioned by `matches()` or by a condition runs the sub-query of the first join of the chain `k` times (once for every alias, cut to the path of that alias), so mention only the aliases you need.
+
+These queries are rejected with an `InvalidQueryException`:
+
+| Query | The error message contains |
+|-------|----------------------------|
+| `where c.Name = o.Name`, when `c` is joined on a field | `ambiguous` (see [Compare fields of the joined documents](#compare-fields-of-the-joined-documents)) |
+| `where c.Name = e.Name`, when `c` and `e` are not joined through each other | `not joined through each other` |
+| `where matches(c) = true` | `can only be combined with 'and' and 'or'` |
+| `filter c.Name = "x"`, a field or `id(c)` of a join alias in the `filter` clause (it sees only the main document: use `where`) | `The filter clause cannot use the fields of 'c'` |
+| `where matches(o.Company)` | `expects the alias of a JOIN` |
+| `where matches(x)`, where `x` is not the alias of a join | `is not the alias of a JOIN` |
+| `matches(c)` in the `where` clause of a join sub-query | `cannot be used in the where clause of a JOIN sub-query` |
+| `order by c.Country` with `matches(c)` of the same join in the `where` clause (`matches()` of another join is allowed) | `cannot be combined with matches(c) in the where clause` |
+
+</Panel>
+
+<Panel heading="Compare fields of the joined documents">
+
+The `where` clause can compare a field of the main document with a field of a joined document, row by row,  
+with `=`, `!=`, `<`, `<=`, `>` and `>=`, and combine the comparison with other conditions using `and`, `or`, `not` and parentheses.  
+The examples use a `Placements` index (`CandidateId`, `Salary`, `Status`, `Start`) and a `Candidates` index (`MaxSalary`, `Name`, `Available`, `ManagerId`).
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="Compare_where" label="Compare_where">
+```sql
+// The placements that offer more than the candidate asks for
+from index 'Placements' as p
+join (from index 'Candidates') as c on p.CandidateId = id(c)
+where p.Salary > c.MaxSalary
+
+// Combined with other conditions
+from index 'Placements' as p
+join (from index 'Candidates') as c on p.CandidateId = id(c)
+where (p.Salary > c.MaxSalary and p.Status = 'open') or p.Start < c.Available
+```
+</TabItem>
+</Tabs>
+
+* **Only joins on the ID** (`on p.CandidateId = id(c)`) are supported, because every row then has at most one joined document.  
+  A comparison with the field of an alias that is joined on a field (`on p.Name = c.Name`) is rejected with an `InvalidQueryException` ("ambiguous"):
+  several joined documents can belong to one row, and it is not clear whether the comparison has to hold for one of them or for all of them.
+* **A chain of joins** works as well: when `f` is joined through `c` (`join ... as f on c.ManagerId = id(f)`), a field of `c` can be compared with a field of `f` (`where c.MaxSalary > f.Limit`),
+  and a field of the main document with a field of `f`. Every join on the way has to be a join on the ID.  
+  Two aliases that are not joined through each other (`c.Name = d.Name`) are rejected.
+* **A row without a joined document, or with a missing or `null` value on either side, never satisfies the comparison**, like a comparison with `NULL` in SQL.  
+  This holds for `!=` too: `p.Salary != c.MaxSalary` does not return a row whose candidate has no `MaxSalary`.  
+  `not (p.Salary > c.MaxSalary)` is the complement of `p.Salary > c.MaxSalary`, so it does return those rows.  
+  So `a != b` is **not** the same as `not (a = b)`: the first excludes the rows with a missing value or without a joined document, the second includes them.
+* **The types are compared strictly.**
+  * Two numbers are compared as numbers (as integers when both are whole numbers, otherwise as doubles). Dates are compared chronologically (the index stores them in a form that sorts in time order).
+  * Two texts are compared by their index terms, byte by byte. A field with the default indexing is stored in lower case, so the comparison is case-insensitive for it. An `Exact` field keeps the case.
+  * A number is never equal to, smaller than or larger than a text, so the comparison does not match such a row (`!=` included). The types of the fields are not known when the query is built (an index field has no declared type), so this is decided per row.
+* **The fields have to hold one value.** A field that holds an array (or an analyzed text with several terms) in a document that is compared makes the query fail with an `InvalidQueryException` that names the field and the alias (`The field 'Levels' of 'c' holds several values in one document ...`). The error is raised when the first such document is read, not when the query is parsed.
+* **A left join with a comparison filters**: the rows without a joined document are dropped, because they cannot satisfy the comparison. Under `or` the left join still scores and keeps its rows for the other side of the `or`.
+* `order by`, paging, projections of the alias (`select c.Name`) and facets work as they do with the other conditions on a joined alias.
+
+<Admonition type="info" title="Cost">
+The comparison reads the entry of the row and the entry of its joined document, so its cost grows with the number of rows that are looked at, not with the page size.  
+`limit 0, 20` has to evaluate every row that can still match, because the total number of results (`TotalResults`) and the order need all of them.  
+In an `and`, the other conditions are evaluated first and only the rows they match are compared, so put a selective condition next to the comparison.  
+The comparison uses a second scan of the sub-query of its alias (the sub-query runs once for the join and once for the comparison).
+</Admonition>
+
+</Panel>
+
+<Panel heading="Left join and boost">
+
+A plain `join` is an inner join: a row without a match in the sub-query is dropped.  
+A `left join` keeps every row of the rest of the query and adds the data of the joined document when there is one.  
+`boost` sets how much the joined score counts.  
+In C#, pass `left: true` and `boost: <number>` to `Join`. Both are optional and work with every `Join` overload
+(by ID or by field) of the LINQ method syntax (`Query<T>().Join(otherQuery, o => o.Key, left: true, boost: 0.5)`), `DocumentQuery` and `AsyncDocumentQuery`.  
+The LINQ query syntax (`from ... join ...`) writes a `left join` as the usual `join c in ... into x from c in x.DefaultIfEmpty()` and has no `boost`
+(the `boost` of the other forms is a property of the call, and the query syntax has no place for it).  
+The boost is sent as a query parameter (`$p<N>`). It must be a finite number that is not negative, otherwise the query is not sent. `DocumentQuery.Join` throws an `ArgumentOutOfRangeException`; the LINQ method syntax throws an `ArgumentException` (with the `ArgumentOutOfRangeException` as its inner exception) when the query is executed.  
+A boost parameter with a name of your choice is available in RQL only (`RawQuery`).
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="Query" label="Query">
+```csharp
+// Keep every order. Orders of a matching company rank higher.
+List<Order> orders = session
+    .Query<Order, Orders_ByFreight>()
+    .Join(session.Query<Company, Companies_ByName>()
+            .Search(x => x.Name, "market cafe"),
+          order => order.Company,
+          left: true)
+    .OrderByScore()
+    .ToList();
+// RQL:
+// from index 'Orders/ByFreight' as __alias_join
+// left join (from index 'Companies/ByName' where search(Name, $p0)) as j on __alias_join.Company = id(j)
+// order by score()
+
+// Keep every order, and weight the score of the company by 0.5.
+// The boost is sent as a query parameter ($p1).
+List<Order> weighted = session
+    .Query<Order, Orders_ByFreight>()
+    .Join(session.Query<Company, Companies_ByName>()
+            .Search(x => x.Name, "market cafe"),
+          order => order.Company,
+          left: true,
+          boost: 0.5)
+    .OrderByScore()
+    .ToList();
+
+// A left join with boost 0: every order is returned, and the join does not change the score.
+List<Order> unscoredLeft = session
+    .Query<Order, Orders_ByFreight>()
+    .Join(session.Query<Company, Companies_ByName>()
+            .Search(x => x.Name, "market cafe"),
+          order => order.Company,
+          left: true,
+          boost: 0)
+    .ToList();
+```
+</TabItem>
+<TabItem value="Query_async" label="Query_async">
+```csharp
+List<Order> orders = await asyncSession
+    .Query<Order, Orders_ByFreight>()
+    .Join(asyncSession.Query<Company, Companies_ByName>()
+            .Search(x => x.Name, "market cafe"),
+          order => order.Company,
+          left: true,
+          boost: 0.5)
+    .OrderByScore()
+    .ToListAsync();
+```
+</TabItem>
+<TabItem value="DocumentQuery" label="DocumentQuery">
+```csharp
+// Keep every order. Orders of a matching company rank higher.
+List<Order> orders = session.Advanced
+    .DocumentQuery<Order, Orders_ByFreight>()
+    .Join(session.Advanced.DocumentQuery<Company, Companies_ByName>()
+            .Search(x => x.Name, "market cafe"),
+          order => order.Company,
+          left: true)
+    .OrderByScore()
+    .ToList();
+
+// An inner join with a weight.
+List<Order> weighted = session.Advanced
+    .DocumentQuery<Order, Orders_ByFreight>()
+    .Join(session.Advanced.DocumentQuery<Company, Companies_ByName>()
+            .Search(x => x.Name, "market cafe"),
+          order => order.Company,
+          boost: 2)
+    .OrderByScore()
+    .ToList();
+
+// A left join on a field, by field names, with boost 0: the join neither filters nor scores.
+List<Order> unscored = session.Advanced
+    .DocumentQuery<Order, Orders_ByFreight>()
+    .Join(session.Advanced.DocumentQuery<Company, Companies_ByName>(),
+          "ShipCountry",
+          "Country",
+          left: true,
+          boost: 0)
+    .ToList();
+```
+</TabItem>
+<TabItem value="RQL" label="RQL">
+```sql
+// Keep every order. Orders of a matching company rank higher and show the company name.
+from index "Orders/ByFreight" as o
+left join (from index "Companies/ByName" where search(Name, "market cafe")) as c on o.Company = id(c)
+order by score()
+select o.Freight, c.Name
+
+// Only fetch the company name. The join does not filter and does not score.
+from index "Orders/ByFreight" as o
+left join (from index "Companies/ByName") as c on o.Company = id(c) boost 0
+select o.Freight, c.Name
+
+// An inner join with a weight, set with a parameter.
+from index "Orders/ByFreight" as o
+join (from index "Companies/ByName" where search(Name, "market cafe")) as c on o.Company = id(c) boost $weight
+order by score()
+```
+</TabItem>
+</Tabs>
+
+**Left join**
+
+* `left join` keeps every row of the rest of the query, so with a `where` clause on the main query the rows are the same as without the join.  
+  `Statistics.TotalResults` is the total of the main query.
+* A row that has a match gets: score of the main query + `boost` × score of the joined document.  
+  A row without a match keeps the score of the main query.
+* The projection of the alias (`c.Name`) is `null` when the row has no match.  
+  This is the case when the field is empty, when the document it points to is not matched by the sub-query, and when the sub-query matches nothing.
+* A left join with `boost 0` neither filters nor scores. It only fetches data.
+* A left join that nothing scores (no `order by score()`, no score in the projection, or `boost 0`) is cheap:  
+  it only reads the keys of the sub-query for the projection.
+* `matches(c)` or a condition on `c` (`where c.Name = 'x'`) in the `where` clause turns the left join into a filtering one: `matches(c)` makes it an ordinary referenced join, and a condition ANDed with the rest is added to the join, which then becomes an inner join. Under `or` the left join stays a left join (the condition is a virtual join).
+* A left join works with a join on the document ID and with a join on a field.
+* `order by c.Country` works with a left join: the rows without a joined document go last, whatever the direction (see [order by a field of the joined index](#order-by-a-field-of-the-joined-index)).
+* `left outer join` is not supported. Write `left join`. The parser answers with a `RavenException` (`ParseException`): `Expected end of query but got: left`.
+* A left join can be part of a chain of joins. Every level of a chain is evaluated relative to the join it hangs on: a chained join is the sub-query of its parent, so `left` means "optional" at that level.
+  * `p join c left join f` (`f` joined through `c`): every `p` that has a matching `c` is returned, and `f` is `null` when `c` has no matching `f`.
+  * `p left join c left join f`: every `p` is returned, `c` is `null` when there is no matching `c`, and `f` is `null` when `c` is `null` or `c` has no matching `f`.
+  * `p left join c join f` (an inner join below a left join): this is `p left join (c join f)`. Every `p` is returned, but `c` and `f` are both `null` unless `c` matches and leads to a matching `f`. The inner `f` only restricts which `c` count as a match, it never drops a `p`.
+  * The score of a row adds the score of `c`, including what `f` added to it, multiplied by the `boost` of `c`. The `boost` of `f` multiplies only the score of `f`.
+  * `matches(f)` or a condition on `f` in the `where` clause turns the whole path into a filter: the row needs a matching `c` that leads to a matching `f`, whether the joins on the path are left joins or not. Under `or` the condition is one more way to match, and `c` and `f` are `null` for a row that matched another way.
+
+**Boost**
+
+* `boost` follows the `on` clause of a `join` or a `left join`. It is a number or a parameter (`$weight`), and the default is `1`.
+* The joined score is multiplied by the boost before it is added to the score of the main query.
+* In `where matches(c) or matches(e)`, each join uses its own boost.
+* On an inner join, `boost 0` still filters, but the join adds nothing to the score.
+
+These queries are rejected. The parse errors reach the client as a `RavenException` whose message names the server-side `ParseException` and contains the text below, like every other RQL that cannot be parsed. The other errors are `InvalidQueryException`s:
+
+| Query | Exception | The error message contains |
+|-------|-----------|----------------------------|
+| `boost -1` (a literal or a parameter) | `InvalidQueryException` | `must be a number that is not negative` |
+| `boost` with a string or `null` | `InvalidQueryException` | `must be a number` |
+| `boost` without a value | `RavenException` | `Expected a number or a parameter after BOOST` |
+
+A left join that is scored costs the same as an inner join. A left join with `boost 0` does not score, so it costs less.
+
+</Panel>
+
+<Panel heading="Project fields of the joined document">
+
+Select fields of a join alias with `select <alias>.<field>`.
+
+* RavenDB loads the joined document by the join field of the main document (an implicit `load <join field> as <alias>`) and projects its fields.  
+  The join field must therefore be a field of the stored document. A copy of the key that exists only in the index cannot be used (see [Recipe 2](#index-the-join-fields-the-same-way)).
+* A join on a field projects the best scoring joined document that has the value of the row.
+* For a list of IDs, load the alias as a list: `load o.ProductIds as p[]`.
+* In a left join, the alias is `null` when the row has no joined document. In `matches(c) or matches(e)`, the alias of the join that did not match is `null`.
+
+Fields of chained and field-joined aliases can be projected in the same way.  
+In C#, project the fields with `SelectFields` of `DocumentQuery` (a field `"c.Name"` of the joined alias, with the name of the property that receives it)
+or with a `select new { ... }` of the LINQ query syntax. The whole joined document (`select c`) is projected with `SelectFields<Company>("c")` of `DocumentQuery`. The LINQ query syntax cannot project it (`select c` throws a `NotSupportedException`), and the LINQ method syntax cannot project the joined documents.
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="DocumentQuery" label="DocumentQuery">
+```csharp
+public class FreightAndCompany
+{
+    public decimal Freight { get; set; }
+    public string CompanyName { get; set; }
+}
+
+List<FreightAndCompany> rows = session.Advanced
+    .DocumentQuery<Order, Orders_ByFreight>()
+    .Join(session.Advanced.DocumentQuery<Company, Companies_ByName>()
+            .Search(x => x.Name, "market cafe"),
+          order => order.Company)
+    .JoinAlias("c")
+    .SelectFields<FreightAndCompany>(new QueryData(
+        fields: new[] { "Freight", "c.Name" },
+        projections: new[] { "Freight", "CompanyName" }))
+    .ToList();
+// ... select Freight, c.Name as CompanyName
+```
+</TabItem>
+<TabItem value="Query" label="Query (query syntax)">
+```csharp
+var rows = (from o in session.Query<Order, Orders_ByFreight>()
+            join c in session.Query<Company, Companies_ByName>()
+                        .Search(x => x.Name, "market cafe") on o.Company equals c.Id
+            select new { o.Freight, CompanyName = c.Name }).ToList();
+
+// A left join: CompanyName is null for an order without a company that matched.
+var allOrders = (from o in session.Query<Order, Orders_ByFreight>()
+                 join c in session.Query<Company, Companies_ByName>()
+                             .Search(x => x.Name, "market cafe") on o.Company equals c.Id into companies
+                 from c in companies.DefaultIfEmpty()
+                 select new { o.Freight, CompanyName = c.Name }).ToList();
+```
+</TabItem>
+<TabItem value="RQL" label="RQL">
+```sql
+from index "Orders/ByFreight" as o
+join (from index "Companies/ByName" where search(Name, "market cafe")) as c on o.Company = id(c)
+select o.Freight, c.Name as CompanyName
+```
+</TabItem>
+</Tabs>
+
+</Panel>
+
+<Panel heading="Facets over a join">
+
+A faceted query with a join computes the facets over the rows that the join keeps.  
+This works for value facets, range facets, aggregation facets (`sum`, `min`, `max`, `avg`), facets with a term limit, facets of multi-valued fields,
+and facet setup documents. A row is counted once per value, as in a query without a join.
+
+* An inner join keeps only the joined rows. A left join keeps every row, so its facets are those of the query without the join.
+* With several joins, the joins are ANDed (or ORed with `matches()`) exactly as in a query that returns documents.
+* `facet(c.Country)`, a facet over a field of the **joined** alias, is rejected with an `InvalidQueryException`:  
+  the message says that facets are computed over the fields of the main index and that a field of the JOIN alias `'c'` cannot be used in a facet.  
+  Facet a field of the main index.
+* In C#, a join written with `Query<T>().Join(...)` or with the LINQ query syntax can be followed by `AggregateBy(...)`, `AndAggregateBy(...)` or `AggregateUsing(<facet setup document ID>)`, and `Execute()`.
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="Query" label="Query">
+```csharp
+Dictionary<string, FacetResult> facets = session
+    .Query<Order, Orders_ByFreight>()
+    .Join(session.Query<Company, Companies_ByName>()
+            .Search(x => x.Name, "market cafe"),
+          order => order.Company)
+    .AggregateBy(x => x.ByField(y => y.Employee))
+    .AndAggregateBy(x => x.ByRanges(y => y.Freight < 50, y => y.Freight >= 50))
+    .Execute();
+
+// The counts are those of the orders of the companies that match "market cafe".
+```
+</TabItem>
+<TabItem value="RQL" label="RQL">
+```sql
+from index "Orders/ByFreight" as o
+join (from index "Companies/ByName" where search(Name, "market cafe")) as c on o.Company = id(c)
+select facet(Employee), facet(Freight < 50, Freight >= 50), facet(ShipCountry, sum(Freight), max(Freight))
+```
+</TabItem>
+</Tabs>
+
+</Panel>
+
+<Panel heading="Where joins can be used">
+
+Joins work in:
+
+* queries (including highlighting and `Count()`/paging shortcuts),
+* index-entries queries,
+* streaming queries,
+* faceted queries (see [Facets over a join](#facets-over-a-join)),
+* more-like-this queries (see below).
+
+In a **more-like-this** query (`where morelikethis(id() = 'jobs/1', ...)`) the join acts on the result of `morelikethis()` exactly as it acts on any other `where` match: the document to compare with and the more-like-this options (fields, stop words, minimum term frequency, ...) belong to the main index, the join keeps only the similar documents that have a joined document, the score is the more-like-this score plus the score of the joined document, and a left join, `boost`, `matches(c)`, conditions on the alias, `order by score()` and `order by c.Field` work as in a plain query. The default order is the best match first. Like any more-like-this query, `TotalResults` is the number of returned rows.  
+A join in a **suggestion** query is not supported and fails with an `InvalidQueryException`: `JOIN is not supported in suggestion queries (it works in queries, index entries queries, streaming and facets).`  
+A join in a query on a collection, a dynamic (auto-index) query, a patch or delete query, or a subscription is rejected with an `InvalidQueryException`: the message says that a join needs `FROM INDEX`.  
+Both the main index and every joined index must be Corax indexes. A Lucene index (main or joined) fails with an `InvalidQueryException` (`JOIN is supported only for Corax ...`), and the query is never answered without the join.  
+A **sharded database** rejects every query with a join, facets included, with a `NotSupportedInShardingException`: `JOIN is not supported in sharding as of yet: a shard can only join with the documents it holds itself.`
+
+<Admonition type="info" title="Conditions on the joined alias">
+`where c.Name = 'x'` in the main query is allowed. It is the same as the condition in the sub-query of `c` (see [Conditions on the joined alias, OR and NOT](#conditions-on-the-joined-alias-or-and-not)).
+</Admonition>
+
+</Panel>
+
+<Panel heading="Known limits">
+
+* **Chains of joins**: `order by` a field of a join that is part of a chain is rejected, and so is `order by` a field of a join of a chain that has `matches()` of another join of that chain in the `where` clause.
+* **Ordering by a joined field** (`order by c.Field`):
+  * works with a join on the ID and with a join on a field, inner or left, together with `order by score()` and fields of the main query;
+  * is rejected for a chain, for two joins that both order, for `matches(c)` of the same join in the `where` clause, when the documents of the main index are boosted,
+    for `order by id(c)`, and for a field the joined index does not index (see the [table](#order-by-a-field-of-the-joined-index));
+  * handles up to 16,777,216 distinct values in the joined index.
+* **More-like-this**: `morelikethis()` is rejected in the sub-query of a join (and in a condition on the fields of a join alias, such as `morelikethis(c.Name = 'x')`), because the document to compare with is a document of the main index. A query with a join can contain only one `morelikethis()`. `order by` is applied to more-like-this queries only when they have a join.
+* **No join** in suggestions, collection or dynamic queries, patch, delete and subscriptions, sharded databases, and Lucene indexes.
+  Intersect and explanations are not supported by Corax at all, with or without a join.
+* **Facets**: facets are computed over fields of the main index. `facet(c.Field)` is rejected.
+* **Conditions on the joined alias** in the main `where` clause (these limits come from the server and apply to every form): a condition that compares a field of the main document with a field of an alias (or of two aliases of one chain) needs joins on the ID (see [Compare fields of the joined documents](#compare-fields-of-the-joined-documents)), and A condition on the alias in a `where` clause of a join sub-query is not a condition on the main query.
+* **`not`**: RQL takes `not` only after `and` / `or`. Two groups of one alias under `not` are separate virtual joins (`not (c.A = 1) and not (c.B = 2)` is "no `c` with A = 1 and no `c` with B = 2").
+* **Join on several fields**: RQL only; not supported through a chain of joins or with `order by c.Field` of the join; the first field decides how many documents are opened (see [Join on several fields](#join-on-several-fields)).
+* **Join the id of the main document with a field** (`on id(o) = c.Field`): RQL only; the only equality of the `on` clause, the main query has to be a query on an index, and the joined alias cannot be used to join other documents (see [Join the id of the main document with a field](#join-the-id-of-the-main-document-with-a-field)).
+* **Memory**: the keys of the sub-query that the server holds are bounded by `Query.JoinMaxKeysMemoryInMb` (see [Memory used by a join](#memory-used-by-a-join)).
+* **Key fields**: a field indexed with `Search` is not a join key, and the key fields have to be indexed the same way on both sides (see [Index the join fields the same way](#index-the-join-fields-the-same-way)).
+* **C# client**: the LINQ method syntax (`Query<T>().Join(...)`) has no handle on the joined documents, so it cannot use them in `where`, `orderby` or `select` (use the LINQ query syntax or `DocumentQuery`).
+  The LINQ query syntax has no `boost`, no `id(c)`, no `select c` and no chained joins, and its `orderby` cannot put `score()` after a joined field. A boost parameter with a name of your choice, a facet over a field of the joined alias and `order by id(c)` are RQL only.
+
+</Panel>
+
+<Panel heading="Memory used by a join">
+
+A join that the server reads itself scans the sub-query and **holds one key in native memory for every document that the sub-query matches**, while the query runs.  
+The join without a [join index](../../../../indexes/join-indexes.mdx), and the join that a join index could not serve (the fallback), are read this way.
+
+* The memory is bounded by the server setting [Query.JoinMaxKeysMemoryInMb](../../../../server/configuration/query-configuration.mdx#queryjoinmaxkeysmemoryinmb).  
+  Its default is an eighth of the memory of the machine (or of its container limit), at most 512 MB: 128 MB at 1 GB of memory, 256 MB at 2 GB, 512 MB from 4 GB on.
+* The bound counts the bytes of every key plus 8 bytes for each key, so documents with long IDs hold more.  
+  In a measurement in a test process (not in a container), a matched document held about 42 bytes, and 4,000,000 matched documents held 168 MB.  
+  There was no managed allocation per key.
+* A join whose sub-query matches more documents than fit fails with an `InvalidQueryException`, and the server keeps serving.  
+  The message names the joined alias, the limit, the setting, and the number of documents that were matched when the limit was reached:  
+  `The keys of the JOIN sub-query of 'u' hold more than <limit> (setting Query.JoinMaxKeysMemoryInMb), the sub-query matched more than <n> documents; narrow the sub-query or raise the setting.`
+* To stay inside the bound, narrow the sub-query, or create a [join index](../../../../indexes/join-indexes.mdx) for the join.  
+  Raise the setting only when the server has the memory.
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="RQL" label="RQL">
+```sql
+// With a limit of 1 MB, a sub-query that matches 6,000 documents with long IDs fails
+from index 'Games' as g
+join (from index 'Users' where Kind = 'vip') as u on g.OwnerId = id(u)
+order by id()
+limit 0, 100000
+```
+</TabItem>
+</Tabs>
+
+</Panel>
+
+<Panel heading="Query timings and memory counters">
+
+When [`include timings()`](../../../../client-api/session/querying/debugging/query-timings.mdx) is used,
+the query timings contain a `Join` part. It has one child part for each joined alias (for example, `u`), and each alias part has a `Scan` child part.  
+The counters are reported on these parts:
+
+| Part | Counter | Description |
+|------|---------|-------------|
+| alias (`u`) | `SourceMatches` | Number of entries that matched the joined sub-query |
+| alias | `KeysEncoded` | `1` when the keys of the sub-query are held in an encoded form, else `0` |
+| alias | `ScanAllocatedManagedBytes` | Managed memory allocated by reading the sub-query |
+| alias | `ScanHeldUnmanagedBytes` | Native memory allocated by reading the sub-query (the keys it holds count against the [memory bound](#memory-used-by-a-join)) |
+| alias | `OuterMatchKeys` | Number of join keys used to build the match of the main query |
+| alias | `OuterMatchAllocatedManagedBytes` | Managed memory allocated by building that match |
+| alias (only with `order by u.Field`) | `RankSortAndFillMicroseconds`, `RankSortKeysMicroseconds`, `RankDocumentIdsMicroseconds` | Time spent ranking the joined keys by the order of the joined index |
+| `Join` | `OuterQueryAllocatedManagedBytes` | Managed memory allocated by the whole main query |
+| `Join` | `TotalAllocatedManagedBytes` | Scan + main query |
+| `Query` | `AllocatedManagedBytes` | Managed memory allocated by the main query |
+| `Query` | `HeldUnmanagedBytesPeak` | Unmanaged memory held by the query while it runs |
+
+</Panel>
+
+<Panel heading="Performance">
+
+The figures below are from benchmarks on one development Mac (Apple silicon), in a Docker VM, one container at a time, with the server and the client in one process.
+They are not production benchmarks.
+
+* At 1,000,000 outer documents, a page of 20, without a join index, the join of a sub-query that matches 6,328 documents took 2.03 ms (median, range 2.02 to 2.04 ms).  
+  A broader sub-query (about 10,000 matches) took 12.2 ms (range 11.5 to 13.8 ms) when every key had 1 outer row, and 1.16 ms (range 1.07 to 1.21 ms) when every key had 100 outer rows.
+* On a busy host with 16 clients, a plain ID join answered 239 queries per second at 16.8 ms of CPU per query, against 5,325 queries per second at 0.75 ms of CPU per query for an index that calls `LoadDocument` for the same data.  
+  The cost of a `LoadDocument` index is paid when a referenced document changes, which a join does not pay:
+  in a measurement with 1,000,000 outer documents, 100,000 of which read one company, a change of that company made the `LoadDocument` index current after 797 ms, and the join has no such cost, because the change is one document write.  
+  A [join index](../../../../indexes/join-indexes.mdx#measured-numbers) removes the per-query cost of the join and keeps a write cost of its own.
+* The cost grows with the number of keys that the sub-query matches and with the number of matched outer rows. It does not grow with the page size: `limit 0, 20` and `limit 1000, 20` cost the same.
+* An inner ID join with one join, whose `order by` uses only fields of the joined index, reads the first matching rows by walking the joined index in that order, instead of ranking every matched row, when `skip + take` is at most 10,000, the sub-query matches at least 8,192 documents, the joined field of the main index holds one value per document, and document scores are not returned. The total number of results is still exact, so every joined key is still resolved against the main index. Other joins (left joins, several joins, joins on a field, ordering by main fields too) use the ranking described above.
+* A selective outer `where` or a selective sub-query is the main lever, because it reduces the matched keys and rows.
+* A field join on a low-cardinality field is much cheaper than an ID join with a similar number of matching rows.
+* A [join on several fields](#join-on-several-fields) costs more than a join on its first field alone, because every candidate document is opened.
+  A first field that few documents hold makes it proportionally cheaper.
+
+</Panel>
+
+<Panel heading="Syntax">
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="RQL" label="RQL">
+```sql
+from index "<MainIndex>" as <alias>
+join (<sub-query on another index>) as <joinAlias> on <alias>.<field> = id(<joinAlias>)
+join (<sub-query>) as <joinAlias2> on <alias>.<field> = <joinAlias2>.<field>
+join (<sub-query>) as <chainAlias> on <joinAlias>.<field> = id(<chainAlias>)
+join (<sub-query>) as <joinAlias3> on <alias>.<field1> = <joinAlias3>.<field1> and <alias>.<field2> = <joinAlias3>.<field2>
+join (<sub-query>) as <joinAlias4> on id(<alias>) = <joinAlias4>.<field>
+```
+</TabItem>
+
+<TabItem value="Methods" label="Methods">
+```csharp
+// LINQ (join by document ID, then join by field value)
+IRavenQueryable<T> Join<T, TSource>(this IQueryable<T> self,
+    IQueryable<TSource> source,
+    Expression<Func<T, object>> outerKey,
+    bool left = false,
+    double? boost = null);
+
+IRavenQueryable<T> Join<T, TSource>(this IQueryable<T> self,
+    IQueryable<TSource> source,
+    Expression<Func<T, object>> outerKey,
+    Expression<Func<TSource, object>> joinedKey,
+    bool left = false,
+    double? boost = null);
+
+// DocumentQuery / AsyncDocumentQuery (also available with field names as strings)
+TSelf Join<TSource>(IDocumentQuery<TSource> source,
+    Expression<Func<T, object>> outerKey,
+    bool left = false,
+    double? boost = null);
+
+TSelf Join<TSource>(IDocumentQuery<TSource> source,
+    Expression<Func<T, object>> outerKey,
+    Expression<Func<TSource, object>> joinedKey,
+    bool left = false,
+    double? boost = null);
+```
+</TabItem>
+</Tabs>
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| **source** | query | The sub-query on the other index. A sub-query that is itself joined creates a chained join. |
+| **outerKey** | expression | The field of the main document. Without `joinedKey`, it holds the ID of the joined document. |
+| **joinedKey** | expression | Optional. The indexed field of the joined index to match `outerKey` against (join by field value). |
+| **left** | bool | Optional, default `false`. `true` makes it a left join: rows without a match are kept. |
+| **boost** | double? | Optional, default `1`. The factor applied to the score of the joined documents. A finite number that is not negative; it is sent as a query parameter. |
+
+</Panel>

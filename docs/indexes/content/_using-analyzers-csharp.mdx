@@ -385,6 +385,7 @@ store.Maintenance.Send(new PutIndexesOperation(indexDefinition));
 * The available **Indexing Behavior** values are:  
     * `FieldIndexing.Exact` 
     * `FieldIndexing.Search`
+    * `FieldIndexing.Key` - Corax only. Indexes the value of a document ID or of a reference to one as a single lowercased term, and cannot have an analyzer (see [Key fields](../../client-api/session/querying/how-to-join-indexes.mdx#key-fields)).
     * `FieldIndexing.No` - This behavior [disables field indexing](#disabling-indexing-for-index-field).
 
 * See the detailed explanation for each scenario below:
