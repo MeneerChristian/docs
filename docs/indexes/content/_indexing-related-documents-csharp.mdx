@@ -14,6 +14,11 @@ import CodeBlock from '@theme/CodeBlock';
 
 * The related documents that are loaded in the index definition can be either **Tracked** or **Not-Tracked**.
 
+* With **Corax**, a query can also filter by the content of related documents without `LoadDocument`,  
+  by [joining two indexes](../../client-api/session/querying/how-to-join-indexes.mdx).  
+  A change of a referenced document then does not make the index entries that read it stale.  
+  A [join index](../../indexes/join-indexes.mdx) keeps the result of such a join up to date for queries that run often.
+
 * In this page:
 
    * [What are related documents](../../indexes/indexing-related-documents.mdx#what-are-related-documents)

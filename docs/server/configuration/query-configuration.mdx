@@ -23,3 +23,19 @@ Maximum number of clauses that a Lucene query can process.
 - **Scope**: Server-wide only
 
 
+## Query.JoinMaxKeysMemoryInMb
+
+The most native memory (in MB) that the keys of one [JOIN](../../client-api/session/querying/how-to-join-indexes.mdx#memory-used-by-a-join) sub-query may hold while the server reads the join.  
+A join that is read by the server holds a key for every document that its sub-query matches, about 42 bytes for each matched document in one measurement (made in a test process, not in a container).  
+A join whose sub-query matches more documents than fit fails with an error that names this setting, and the server keeps serving.
+Narrow the sub-query or raise the limit.
+
+* The default is an eighth of the memory of the machine (or of its container limit), at most `512` MB:  
+  `128` MB at 1 GB of memory, `256` MB at 2 GB, and `512` MB from 4 GB on.
+* The limit applies to the keys that the server join holds.  
+  A join that a [join index](../../indexes/join-indexes.mdx) serves reads the lists of the join index instead of scanning the sub-query. Only the check of an `and` or a `not` over outer rows with several documents scans the sub-query for the keys of those rows; that scan is limited by `Join.MaxResidualRows` and `Join.MaxResidualKeys`, not by this setting.
+
+- **Type**: `int`
+- **Default**: `DefaultValueSetInConstructor`
+- **Minimum**: `1`
+- **Scope**: Server-wide only

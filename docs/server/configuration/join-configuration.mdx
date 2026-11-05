@@ -1,0 +1,453 @@
+---
+title: "Configuration: Join Options"
+sidebar_label: Join Configuration
+description: "Configure join indexes: refresh batching and memory limits, the storage mode of the lists, the resident cache, how long a query waits for a join index, and the memory gate of the auto join index."
+sidebar_position: 25
+---
+
+import Admonition from '@theme/Admonition';
+import Panel from "@site/src/components/Panel";
+import ContentFrame from "@site/src/components/ContentFrame";
+
+# Configuration: Join Options
+<Admonition type="note" title="">
+
+Use the configuration keys listed below to control how [join indexes](../../indexes/join-indexes.mdx) are built, refreshed and read.  
+Learn how to apply these keys in the [Configuration Overview](../../server/configuration/configuration-options.mdx) article.
+
+* Except for [Join.ResidentCacheMaxMemoryInMb](../../server/configuration/join-configuration.mdx#joinresidentcachemaxmemoryinmb),  
+  every key can be set server-wide or for a single database.  
+  A join index reads the keys when it is opened, so a change applies to the join indexes that are opened after it.
+
+* Some defaults are derived from the memory of the machine, or of the container limit if there is one.  
+  See [Defaults that depend on the memory](../../server/configuration/join-configuration.mdx#defaults-that-depend-on-the-memory).
+
+* The memory bound of the join that runs without a join index is a query setting: 
+  [Query.JoinMaxKeysMemoryInMb](../../server/configuration/query-configuration.mdx#queryjoinmaxkeysmemoryinmb).
+
+* On this page:  
+   * [Refresh and build](../../server/configuration/join-configuration.mdx#refresh-and-build)
+      * [Join.MaxIdsPerCommit](../../server/configuration/join-configuration.mdx#joinmaxidspercommit)
+      * [Join.MaxUnindexedIdsPerCommit](../../server/configuration/join-configuration.mdx#joinmaxunindexedidspercommit)
+      * [Join.MaxInnerListChangesPerOuterEntry](../../server/configuration/join-configuration.mdx#joinmaxinnerlistchangesperouterentry)
+      * [Join.MaxQueuedListChanges](../../server/configuration/join-configuration.mdx#joinmaxqueuedlistchanges)
+      * [Join.MinQueuedListChanges](../../server/configuration/join-configuration.mdx#joinminqueuedlistchanges)
+      * [Join.MaxQueuedListChangesInBuild](../../server/configuration/join-configuration.mdx#joinmaxqueuedlistchangesinbuild)
+      * [Join.MinAtomEntriesForDirectWrite](../../server/configuration/join-configuration.mdx#joinminatomentriesfordirectwrite)
+      * [Join.MaxEmptyTermRatio](../../server/configuration/join-configuration.mdx#joinmaxemptytermratio)
+      * [Join.MinTermsForEmptyRatio](../../server/configuration/join-configuration.mdx#joinmintermsforemptyratio)
+      * [Join.RefreshWindowInMs](../../server/configuration/join-configuration.mdx#joinrefreshwindowinms)
+   * [Queries](../../server/configuration/join-configuration.mdx#queries)
+      * [Join.MaxResidualRows](../../server/configuration/join-configuration.mdx#joinmaxresidualrows)
+      * [Join.MaxResidualKeys](../../server/configuration/join-configuration.mdx#joinmaxresidualkeys)
+      * [Join.QueryWaitInMs](../../server/configuration/join-configuration.mdx#joinquerywaitinms)
+      * [Join.QueryWaitForNonStaleInMs](../../server/configuration/join-configuration.mdx#joinquerywaitfornonstaleinms)
+   * [Storage mode](../../server/configuration/join-configuration.mdx#storage-mode)
+      * [Join.StorageModeDefault](../../server/configuration/join-configuration.mdx#joinstoragemodedefault)
+      * [Join.IndirectEnabled](../../server/configuration/join-configuration.mdx#joinindirectenabled)
+      * [Join.AutoIndirectMinRowsPerKey](../../server/configuration/join-configuration.mdx#joinautoindirectminrowsperkey)
+      * [Join.ResidentCacheMaxMemoryInMb](../../server/configuration/join-configuration.mdx#joinresidentcachemaxmemoryinmb)
+   * [Auto join index](../../server/configuration/join-configuration.mdx#auto-join)
+      * [Join.AutoEnabled](../../server/configuration/join-configuration.mdx#joinautoenabled)
+      * [Join.AutoMinimumAvailableMemoryInMb](../../server/configuration/join-configuration.mdx#joinautominimumavailablememoryinmb)
+      * [Join.AutoMaxBuildMemoryInMb](../../server/configuration/join-configuration.mdx#joinautomaxbuildmemoryinmb)
+      * [Join.AutoBuildMemoryBaseInMb](../../server/configuration/join-configuration.mdx#joinautobuildmemorybaseinmb)
+      * [Join.AutoBuildMemoryPerEntryInBytes](../../server/configuration/join-configuration.mdx#joinautobuildmemoryperentryinbytes)
+      * [Join.AutoBuildWaitForNonStaleInMs](../../server/configuration/join-configuration.mdx#joinautobuildwaitfornonstaleinms)
+   * [Defaults that depend on the memory](../../server/configuration/join-configuration.mdx#defaults-that-depend-on-the-memory)
+
+</Admonition>
+
+<Panel heading="Refresh and build">
+
+<ContentFrame>
+
+### Join.MaxIdsPerCommit
+
+A refresh of a join index applies at most this many changed documents in one commit.  
+With more changes, it commits what it applied and goes on in the next commit.
+
+- **Type**: `int`
+- **Default**: `50000`
+- **Minimum**: `1`
+- **Scope**: Server-wide or per database
+
+</ContentFrame>
+
+<ContentFrame>
+
+### Join.MaxUnindexedIdsPerCommit
+
+A refresh also reads the documents that were written after what an upstream index has consumed.  
+They have a limit of their own, so that a bulk load that is ahead of the index does not make the join index build its lists again and again.
+
+- **Type**: `int`
+- **Default**: `1000000`
+- **Minimum**: `1`
+- **Scope**: Server-wide or per database
+
+</ContentFrame>
+
+<ContentFrame>
+
+### Join.MaxInnerListChangesPerOuterEntry
+
+A change of the inner documents of a join on a field moves the outer entries of the keys it changes in and out of the lists.  
+When a refresh still has to make more such changes than this number for each outer entry that has a key, the lists are built again, which is cheaper.  
+The rebuild is counted under the reason `InnerChangesTooCostly` in the [statistics](../../indexes/join-indexes.mdx#statistics-and-counters) of the join index.  
+`0` turns this off.
+
+- **Type**: `int`
+- **Default**: `30`
+- **Minimum**: `0`
+- **Scope**: Server-wide or per database
+
+</ContentFrame>
+
+<ContentFrame>
+
+### Join.MaxQueuedListChanges
+
+The most list changes that a refresh queues before it applies them. A queued change takes about 128 bytes.  
+The queue is also limited to a quarter of the available memory, and it is never shorter than [Join.MinQueuedListChanges](../../server/configuration/join-configuration.mdx#joinminqueuedlistchanges).  
+A list that is changed by many small flushes is rewritten each time, so a short queue costs time.
+
+- **Type**: `int`
+- **Default**: `4194304`
+- **Minimum**: `1024`
+- **Scope**: Server-wide or per database
+
+</ContentFrame>
+
+<ContentFrame>
+
+### Join.MinQueuedListChanges
+
+The shortest queue of list changes that a refresh uses when little memory is available.  
+A shorter queue applies the changes to the lists more often.
+
+* The default is `1048576` changes (128 MiB) from 16 GB of memory on,  
+  and 1/128 of the memory of the machine (or of its container limit) below that: `65536` changes (8 MiB) at 1 GB.  
+* The value is computed in the constructor of the configuration category from the total physical memory.
+
+- **Type**: `int`
+- **Default**: `DefaultValueSetInConstructor`
+- **Minimum**: `1024`
+- **Scope**: Server-wide or per database
+
+</ContentFrame>
+
+<ContentFrame>
+
+### Join.MaxQueuedListChangesInBuild
+
+The same for the build of the lists from the two indexes: the list changes that the build queues in native memory before it applies them.  
+The queue is also limited to a quarter of the available memory.
+
+* The default is `1048576` changes (128 MiB) from 2 GB of memory on,  
+  and a sixteenth of the memory of the machine (or of its container limit) below that: `524288` changes (64 MiB) at 1 GB.  
+* The value is computed in the constructor of the configuration category from the total physical memory.
+
+- **Type**: `int`
+- **Default**: `DefaultValueSetInConstructor`
+- **Minimum**: `1024`
+- **Scope**: Server-wide or per database
+
+</ContentFrame>
+
+<ContentFrame>
+
+### Join.MinAtomEntriesForDirectWrite
+
+The build, and a refresh that moves outer entries into and out of the atoms of a join on a field
+(a term of a declared field, a grouping, or any), write the list of an atom with at least this many outer entries by one update,  
+instead of queueing every entry for it. The smaller atoms are queued.  
+`0` queues every atom.
+
+- **Type**: `int`
+- **Default**: `1`
+- **Minimum**: `0`
+- **Scope**: Server-wide or per database
+
+</ContentFrame>
+
+<ContentFrame>
+
+### Join.MaxEmptyTermRatio
+
+The terms of the lists are never removed.  
+When this share of the terms of a field has no list, the lists are built again.
+
+- **Type**: `float`
+- **Default**: `0.5`
+- **Scope**: Server-wide or per database
+
+</ContentFrame>
+
+<ContentFrame>
+
+### Join.MinTermsForEmptyRatio
+
+The empty term ratio ([Join.MaxEmptyTermRatio](../../server/configuration/join-configuration.mdx#joinmaxemptytermratio)) is checked only for a field with at least this many terms.
+
+- **Type**: `long`
+- **Default**: `100000`
+- **Scope**: Server-wide or per database
+
+</ContentFrame>
+
+<ContentFrame>
+
+### Join.RefreshWindowInMs
+
+The batches of the two indexes that arrive within this time (in milliseconds) are brought to the lists by one refresh.  
+A query that finds the join index behind does not wait for the end of the window.  
+`0` refreshes after every batch.  
+The index throttling of the definition ([Indexing.Throttling.TimeIntervalInMs](../../server/configuration/indexing-configuration.mdx#indexingthrottlingtimeintervalinms)) takes precedence.
+
+- **Type**: `int`
+- **Default**: `0`
+- **Scope**: Server-wide or per database
+
+</ContentFrame>
+
+</Panel>
+
+<Panel heading="Queries">
+
+<ContentFrame>
+
+### Join.MaxResidualRows
+
+An `and` or a `not` in the sub-query of a join on a field checks, one by one, the outer entries whose key has several inner entries.  
+A query that may have more such outer entries than this is read as the normal join (fallback reason `GroupResidual`).
+
+- **Type**: `long`
+- **Default**: `100000`
+- **Scope**: Server-wide or per database
+
+</ContentFrame>
+
+<ContentFrame>
+
+### Join.MaxResidualKeys
+
+The same for a join index in the storage mode `Indirect`: an `and` or a `not` in the sub-query of a join on a field checks the keys whose group has several inner entries against the inner index.  
+A query that may have more such keys than this is read as the normal join.
+
+- **Type**: `long`
+- **Default**: `20000`
+- **Scope**: Server-wide or per database
+
+</ContentFrame>
+
+<ContentFrame>
+
+### Join.QueryWaitInMs
+
+How long a query waits (in milliseconds) for the join index to catch up with the indexes before it reads the join as usual.
+
+- **Type**: `int`
+- **Default**: `100`
+- **Scope**: Server-wide or per database
+
+</ContentFrame>
+
+<ContentFrame>
+
+### Join.QueryWaitForNonStaleInMs
+
+The same wait, for a query that asked to wait for non-stale results.
+
+- **Type**: `int`
+- **Default**: `1000`
+- **Scope**: Server-wide or per database
+
+</ContentFrame>
+
+</Panel>
+
+<Panel heading="Storage mode">
+
+Learn what the storage modes are in [Storage modes](../../indexes/join-indexes.mdx#storage-modes).
+
+<ContentFrame>
+
+### Join.StorageModeDefault
+
+The storage mode of the lists of a join index whose definition does not name one.
+
+* `Expanded`: the lists hold the outer entries of the keys that match.
+* `Indirect`: the lists hold the keys. Used only while [Join.IndirectEnabled](../../server/configuration/join-configuration.mdx#joinindirectenabled) is `true`.
+* `Auto` (the default): the server chooses when the join index is built. It chooses `Indirect` when the outer entries share their keys
+  ([Join.AutoIndirectMinRowsPerKey](../../server/configuration/join-configuration.mdx#joinautoindirectminrowsperkey) rows per key or more),
+  the resident cache of the join index fits the budget, and the server is not short of memory. Otherwise it chooses `Expanded`.  
+  `Auto` chooses `Indirect` only while `Join.IndirectEnabled` is `true`, so with the default settings every join index is `Expanded`.
+* A join index that was built keeps its mode. The setting applies to the join indexes that are built or reset afterwards.
+
+- **Type**: `enum JoinStorageMode` (`Auto`, `Expanded`, `Indirect`)
+- **Default**: `Auto`
+- **Scope**: Server-wide or per database
+
+</ContentFrame>
+
+<ContentFrame>
+
+### Join.IndirectEnabled
+
+Allows the storage mode `Indirect`: in the definition of a join index, and as `Join.StorageModeDefault`.  
+The creation of a join index whose definition names `Indirect` is refused while this is `false`.  
+`Indirect` is not released: leave this `false` outside of tests.
+
+- **Type**: `bool`
+- **Default**: `false`
+- **Scope**: Server-wide or per database
+
+</ContentFrame>
+
+<ContentFrame>
+
+### Join.AutoIndirectMinRowsPerKey
+
+The number of outer entries per key from which a join index whose storage mode is `Auto` is built as `Indirect`.  
+The default comes from a measurement: with 1,000,000 outer entries, a change of the inner documents was 1.9 times faster than with `Expanded` at 30 rows per key,
+and there was no difference up to 5 rows per key. See [The Auto rule](../../indexes/join-indexes.mdx#the-auto-rule).
+
+- **Type**: `int`
+- **Default**: `30`
+- **Scope**: Server-wide or per database
+
+</ContentFrame>
+
+<ContentFrame>
+
+### Join.ResidentCacheMaxMemoryInMb
+
+The native memory (in MB) that the resident key-list caches of all `Indirect` join indexes of the server may hold together.  
+The cache of one join index is limited by it too. `0` switches the caches off, and reads of an `Indirect` join index are then much slower
+(38 to 330 times slower in a measurement of reading every key).
+
+* The caches are shared by all the databases of the server, so this key can be set for the server only.  
+  A database record that sets it is refused.
+* The auto join index is not built when the memory that the cache of the new join index would need is not left in this budget.
+* The default is `256` MB, or a sixteenth of the memory of the machine (or of its container limit) when that is less: `64` MB at 1 GB.
+
+- **Type**: `int`
+- **Default**: `DefaultValueSetInConstructor`
+- **Scope**: Server-wide only
+
+</ContentFrame>
+
+</Panel>
+
+<Panel heading="Auto join index">
+
+Learn what the auto join index is in [Auto join index](../../indexes/join-indexes.mdx#auto-join).
+
+<ContentFrame>
+
+### Join.AutoEnabled
+
+When `true`, a JOIN that a join index could answer creates an auto join index (an auto index that keeps the join up to date), which later queries are answered from.  
+The query that creates it is read as usual and never waits for it, unless it asked to wait for non-stale results.  
+It is off by default: only join indexes that are put explicitly serve JOINs, because an auto join index builds a structure of its own from the first query that could use it.
+
+- **Type**: `bool`
+- **Default**: `false`
+- **Scope**: Server-wide or per database
+
+</ContentFrame>
+
+<ContentFrame>
+
+### Join.AutoMinimumAvailableMemoryInMb
+
+An auto join index is not built while less memory than this (in MB) would be available to the machine after the build  
+(the available memory minus the estimated memory of the build, and minus the estimated resident cache of an `Indirect` join index).
+
+* The default is 1.25 times the low memory limit of the server ([Memory.LowMemoryLimitInMb](../../server/configuration/memory-configuration.mdx#memorylowmemorylimitinmb), by default the smaller of 2 GB and a tenth of the memory):  
+  an eighth of the memory of the machine (or of its container limit), at most `2560` MB.
+* In a container, the available memory counts only what the process holds (the page cache is not counted).
+
+- **Type**: `int`
+- **Default**: `DefaultValueSetInConstructor`
+- **Scope**: Server-wide or per database
+
+</ContentFrame>
+
+<ContentFrame>
+
+### Join.AutoMaxBuildMemoryInMb
+
+An auto join index is not built when the estimated memory of its build (in MB) is more than this.  
+The default is `512` MB, or half of the memory of the machine (or of its container limit) when that is less.
+
+- **Type**: `int`
+- **Default**: `DefaultValueSetInConstructor`
+- **Scope**: Server-wide or per database
+
+</ContentFrame>
+
+<ContentFrame>
+
+### Join.AutoBuildMemoryBaseInMb
+
+The estimated memory of the build of an auto join index is this (in MB) plus the memory per entry of the two indexes that it joins.
+
+- **Type**: `int`
+- **Default**: `192`
+- **Scope**: Server-wide or per database
+
+</ContentFrame>
+
+<ContentFrame>
+
+### Join.AutoBuildMemoryPerEntryInBytes
+
+The memory (in bytes) that the estimate of the build of an auto join index adds for every entry of the two indexes that it joins.  
+The entries are counted as the documents of the collections of the indexes.
+
+- **Type**: `long`
+- **Default**: `8`
+- **Scope**: Server-wide or per database
+
+</ContentFrame>
+
+<ContentFrame>
+
+### Join.AutoBuildWaitForNonStaleInMs
+
+How long a query that asked to wait for non-stale results, and has to create an auto join index, waits (in milliseconds) for the join index to be built,  
+when the query has no timeout of its own.
+
+- **Type**: `int`
+- **Default**: `15000`
+- **Scope**: Server-wide or per database
+
+</ContentFrame>
+
+</Panel>
+
+<Panel heading="Defaults that depend on the memory">
+
+The defaults below are computed once, when the configuration is created, from the total physical memory of the machine.  
+In a container with a memory limit, the limit is used.  
+The table is computed from the formulas in the descriptions above.
+
+| Key | Formula | 1 GB | 2 GB | 4 GB | 8 GB | 16 GB or more |
+|-----|---------|------|------|------|------|---------------|
+| `Join.MinQueuedListChanges` | memory / 128 / 128 bytes, at most `1048576` | `65536` | `131072` | `262144` | `524288` | `1048576` |
+| `Join.MaxQueuedListChangesInBuild` | memory / 16 / 128 bytes, at most `1048576` | `524288` | `1048576` | `1048576` | `1048576` | `1048576` |
+| `Join.ResidentCacheMaxMemoryInMb` | the smaller of `256` and memory / 16 | `64` | `128` | `256` | `256` | `256` |
+| `Join.AutoMaxBuildMemoryInMb` | the smaller of `512` and memory / 2 | `512` | `512` | `512` | `512` | `512` |
+| `Join.AutoMinimumAvailableMemoryInMb` | the smaller of `2560` and memory / 8 | `128` | `256` | `512` | `1024` | `2048` at 16 GB, `2560` from 20 GB |
+| [Query.JoinMaxKeysMemoryInMb](../../server/configuration/query-configuration.mdx#queryjoinmaxkeysmemoryinmb) | the smaller of `512` and memory / 8 | `128` | `256` | `512` | `512` | `512` |
+
+<Admonition type="note" title="">
+
+Set these keys explicitly if the memory of the machine is not what the server should plan with,  
+for example when several servers share one machine.
+
+</Admonition>
+
+</Panel>
