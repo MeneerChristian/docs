@@ -109,3 +109,52 @@ var isStale = stats.IsStale;
 `}
 </CodeBlock>
 </TabItem>
+
+<TabItem value="syntax_3" label="syntax_3">
+<CodeBlock language="csharp">
+{`public sealed class MemoryStats
+\{
+    public Size DiskSize \{ get; set; \}
+    public Size ThreadAllocations \{ get; set; \}
+    public Size MemoryBudget \{ get; set; \}
+\}
+
+public sealed class CollectionStats
+\{
+    public long LastProcessedDocumentEtag \{ get; set; \}
+    public long LastProcessedTombstoneEtag \{ get; set; \}
+    public long LastProcessedTimeSeriesDeletedRangeEtag \{ get; set; \}
+    public long DocumentLag \{ get; set; \}
+    public long TombstoneLag \{ get; set; \}
+\}
+
+// Raven.Client.Util.Size
+public sealed class Size
+\{
+    public long SizeInBytes \{ get; set; \}
+    public string HumaneSize \{ get; \}
+\}
+`}
+</CodeBlock>
+</TabItem>
+
+| `IndexStats.Memory` (`MemoryStats`) | Description |
+| - | - |
+| **DiskSize** | The total size of the files that the server has memory-mapped from the index's storage path and its temp path |
+| **ThreadAllocations** | The memory allocated by the indexing thread. Set only while the index has an indexing thread. |
+| **MemoryBudget** | The maximum memory currently allowed to the index. Set only while the index has an indexing thread. |
+
+Each `Size` is zero until it is set.
+
+`IndexStats.Memory` is `null` unless the server was asked to calculate the memory statistics.  
+The server does so for requests that come from Studio, and for requests with the query string parameter `includeStats=true`.  
+`GetIndexStatisticsOperation` and `GetIndexesStatisticsOperation` do not send that parameter,  
+so `Memory` is `null` in the results that they return.
+
+| `IndexStats.Collections` value (`CollectionStats`) | Description |
+| - | - |
+| **LastProcessedDocumentEtag** | The Etag of the last document of the collection that the index processed |
+| **LastProcessedTombstoneEtag** | The Etag of the last tombstone of the collection that the index processed |
+| **LastProcessedTimeSeriesDeletedRangeEtag** | The Etag of the last time series deleted range of the collection that the index processed |
+| **DocumentLag** | The number of documents the index still has to process. `-1` when it was not set. |
+| **TombstoneLag** | The number of tombstones the index still has to process. `-1` when it was not set. |
