@@ -14,6 +14,7 @@ import CodeBlock from '@theme/CodeBlock';
    * [Enable subscription](../../../../client-api/data-subscriptions/advanced-topics/maintenance-operations.mdx#enable-subscription)  
    * [Update subscription](../../../../client-api/data-subscriptions/advanced-topics/maintenance-operations.mdx#update-subscription)
    * [Drop Connection](../../../../client-api/data-subscriptions/advanced-topics/maintenance-operations.mdx#drop-connection)
+   * [Drop a specific worker](../../../../client-api/data-subscriptions/advanced-topics/maintenance-operations.mdx#drop-a-specific-worker)
    * [Get subscription state](../../../../client-api/data-subscriptions/advanced-topics/maintenance-operations.mdx#get-subscription-state)  
 
 </Admonition>
@@ -34,6 +35,7 @@ The class is available through `DocumentStore`'s `Subscriptions` property.
 | **DropConnection(string name, string database)**                                                              | `void`                          | Drop all existing subscription connections with workers.                                                                                            |
 | **DropConnectionAsync(string name, string database)**                                                         | `Task`                          | Drop all existing subscription connections with workers.                                                                                            |
 | **DropSubscriptionWorker&lt;T&gt;(SubscriptionWorker&lt;T&gt; worker, string database = null)**                           | `void`                          | Drop an existing subscription connection with a worker                                                                                              |
+| **DropSubscriptionWorkerAsync&lt;T&gt;(SubscriptionWorker&lt;T&gt; worker, string database = null, CancellationToken token = default)** | `Task` | Drop an existing subscription connection with a worker |
 | **Enable(string name, string database)**                                                                      | `void`                          | Enable existing subscription.                                                                                                                       |
 | **EnableAsync(string name, string database)**                                                                 | `Task`                          | Enable existing subscription.                                                                                                                       |
 | **Disable(string name, string database)**                                                                     | `void`                          | Disable existing subscription.                                                                                                                      |
@@ -164,6 +166,37 @@ usage:
 
 
 
+## Drop a specific worker
+
+`DropConnection` drops the connections of all the workers of a subscription.  
+To drop the connection of a single worker, for example when a subscription
+[has several concurrent workers](../../../../client-api/data-subscriptions/concurrent-subscriptions.mdx),
+pass that worker to `DropSubscriptionWorker`.  
+The server is asked to close the connection that belongs to the worker's `WorkerId`, and the other workers of the subscription stay connected.
+
+```csharp
+void DropSubscriptionWorker<T>(SubscriptionWorker<T> worker, string database = null);
+
+Task DropSubscriptionWorkerAsync<T>(SubscriptionWorker<T> worker, string database = null,
+                                    CancellationToken token = default);
+```
+
+| Parameter    | Type                    | Description                                                                                                                                      |
+|--------------|-------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
+| **worker**   | `SubscriptionWorker<T>` | The worker whose connection is dropped.                                                                                                          |
+| **database** | `string`                | The database that holds the subscription. If `null`, the default database configured in the DocumentStore is used.                               |
+| **token**    | `CancellationToken`     | Cancellation token used to halt the request. Async method only.                                                                                  |
+
+usage:
+
+```csharp
+SubscriptionWorker<Order> worker = store.Subscriptions.GetSubscriptionWorker<Order>("orders-subscription");
+
+// Drop only this worker's connection
+await store.Subscriptions.DropSubscriptionWorkerAsync(worker);
+```
+
+
 ## Get subscription state
 
 <TabItem value="interface_subscription_state" label="interface_subscription_state">
@@ -198,6 +231,44 @@ usage:
 | **ChangeVectorForNextBatchStartingPoint** | `string`    | The Change Vector from which the subscription will begin sending documents.&lt;br.This value is updated on batch acknowledgement and can also be set manually. |
 | **Disabled**                              | `bool`      | If `true`, subscription will not allow workers to connect.                                                                                                    |
 | **LastClientConnectionTime**              | `DateTime?` | Time when last client was connected (value sustained after disconnection).                                                                                  |                
+| **PinToMentorNode**                       | `bool`      | If `true`, the subscription is pinned to its mentor node. Use `IsPinnedToMentorNode()` to read this value as a method call.                                  |
+| **RaftCommandIndex**                      | `long`      | The Raft index of the command that created or last updated the subscription.                                                                                  |
+| **ArchivedDataProcessingBehavior**        | `ArchivedDataProcessingBehavior?` | Whether [archived documents](../../../../data-archival/archived-documents-and-other-features.mdx#archived-documents-and-subscriptions) are included in the subscription. |
+| **ShardingState**                         | `SubscriptionShardingState` | The per-shard processing state of a subscription on a sharded database. See [below](../../../../client-api/data-subscriptions/advanced-topics/maintenance-operations.mdx#sharding-state). |
+
+##### Sharding state
+
+`ShardingState` is set for subscriptions of a [sharded database](../../../../sharding/overview.mdx).  
+In that case `NodeTag` is the node tag of the orchestrator, and the per-shard progress is kept in `ShardingState`.
+
+```csharp
+public sealed class SubscriptionShardingState
+{
+    public Dictionary<string, string> ChangeVectorForNextBatchStartingPointPerShard { get; set; }
+    public Dictionary<string, string> NodeTagPerShard { get; set; }
+    public Dictionary<int, string> ProcessedChangeVectorPerBucket { get; set; }
+    public string ChangeVectorForNextBatchStartingPointForOrchestrator { get; set; }
+}
+```
+
+| Member                                                 | Type                         | Description                                                                          |
+|--------------------------------------------------------|------------------------------|--------------------------------------------------------------------------------------|
+| **ChangeVectorForNextBatchStartingPointPerShard**      | `Dictionary<string, string>` | The change vector from which each shard will continue sending documents.            |
+| **NodeTagPerShard**                                    | `Dictionary<string, string>` | The node tag of the node that is responsible for processing each shard.             |
+| **ProcessedChangeVectorPerBucket**                     | `Dictionary<int, string>`    | The last processed change vector for each bucket.                                   |
+| **ChangeVectorForNextBatchStartingPointForOrchestrator** | `string`                   | The change vector from which the orchestrator will continue sending documents.      |
+
+```csharp
+SubscriptionState state = store.Subscriptions.GetSubscriptionState(subscriptionName);
+
+if (state.ShardingState != null)
+{
+    foreach (var (shard, nodeTag) in state.ShardingState.NodeTagPerShard)
+        Console.WriteLine($"{shard} is processed by node {nodeTag}");
+}
+
+bool pinned = state.IsPinnedToMentorNode();
+```
 
 </Admonition>
 
