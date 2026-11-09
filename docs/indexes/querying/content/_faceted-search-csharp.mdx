@@ -926,6 +926,28 @@ select facet(id("customDocumentID"))
 
 
 
+## Executing a raw facet query asynchronously
+
+When a facet query is written as RQL with `RawQuery`, call `ExecuteAggregation` in a sync session,
+or `ExecuteAggregationAsync` in an async session. Both return `Dictionary<string, FacetResult>`.
+
+<TabItem value="RawQuery_async" label="RawQuery_async">
+<CodeBlock language="csharp">
+{`Dictionary<string, FacetResult> results = await asyncSession.Advanced
+    .AsyncRawQuery<Camera>(@"from index 'Cameras/ByFeatures'
+                             select facet(Brand) as 'Camera Brand'")
+    .ExecuteAggregationAsync();
+`}
+</CodeBlock>
+</TabItem>
+
+<TabItem value="ExecuteAggregationAsync-definition" label="ExecuteAggregationAsync-definition">
+<CodeBlock language="csharp">
+{`Task<Dictionary<string, FacetResult>> ExecuteAggregationAsync(CancellationToken token = default);
+`}
+</CodeBlock>
+</TabItem>
+
 ## Syntax
 
 <TabItem value="syntax_1" label="syntax_1">

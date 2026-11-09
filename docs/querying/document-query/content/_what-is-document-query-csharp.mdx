@@ -374,6 +374,52 @@ Available custom methods and extensions:
 
 </Panel>
 
+<Panel heading="Query result and Distinct state">
+
+* `GetQueryResult` (`GetQueryResultAsync` in an async session) returns the `QueryResult` of the query.  
+  The first call executes the query. The returned object is a snapshot of the results held by the query.
+
+* `IsDistinct` is a read-only property that is `true` when `Distinct` was applied to the query.
+
+<Tabs groupId="languageSyntax">
+<TabItem value="DocumentQuery" label="DocumentQuery">
+```csharp
+IDocumentQuery<Order> docQuery = session.Advanced
+    .DocumentQuery<Order>()
+    .WhereGreaterThan(x => x.Freight, 25)
+    .Distinct();
+
+bool isDistinct = docQuery.IsDistinct; // true
+
+// Executes the query on the first call
+QueryResult queryResult = docQuery.GetQueryResult();
+int totalResults = queryResult.TotalResults;
+```
+</TabItem>
+<TabItem value="DocumentQuery_async" label="DocumentQuery_async">
+```csharp
+IAsyncDocumentQuery<Order> docQuery = asyncSession.Advanced
+    .AsyncDocumentQuery<Order>()
+    .WhereGreaterThan(x => x.Freight, 25)
+    .Distinct();
+
+bool isDistinct = docQuery.IsDistinct; // true
+
+// Executes the query on the first call
+QueryResult queryResult = await docQuery.GetQueryResultAsync();
+int totalResults = queryResult.TotalResults;
+```
+</TabItem>
+</Tabs>
+
+```csharp
+QueryResult GetQueryResult();                                  // IDocumentQuery<T>
+Task<QueryResult> GetQueryResultAsync(CancellationToken token = default); // IAsyncDocumentQuery<T>
+bool IsDistinct { get; }                                       // both
+```
+
+</Panel>
+
 <Panel heading="Syntax">
 
 The available `DocumentQuery` overloads are listed in this [Syntax section](../../../querying/overview.mdx#syntax) in the [Query Overview](../../../querying/overview.mdx).
