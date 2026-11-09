@@ -289,6 +289,15 @@ where BookNames = "The Witcher"
      Any change done to any document in the **indexed related documents** will Not trigger re-indexing.  
      (See changes that cause re-indexing [here](../../indexes/indexing-related-documents.mdx#document-changes-that-cause-re-indexing)).
 
+* **The `NoTracking` property**:  
+  In an index class, `NoTracking` has the type `NoTrackingCommonApiForIndexes`, which implements `ILoadCommonApiForIndexes`.
+  This interface has the overloads `LoadDocument<T>(string id)`, `LoadDocument<T>(string id, string collectionName)`,
+  `LoadDocument<T>(IEnumerable<string> ids)` and `LoadDocument<T>(IEnumerable<string> ids, string collectionName)`.
+  Calling these methods on the client throws a `NotSupportedException` ("This can only be run on the server side"):
+  they are only used inside the index definition, which is converted and run on the server.
+  The base class of the index classes, `AbstractCommonApiForIndexes`, implements both `ILoadCommonApiForIndexes` and `ILoadCompareExchangeApiForIndexes`
+  (`LoadCompareExchangeValue<T>(string key)` and `LoadCompareExchangeValue<T>(IEnumerable<string> keys)`).
+
 * **The index**:  
 <Tabs groupId='languageSyntax'>
 <TabItem value="LINQ-index" label="LINQ-index">

@@ -3,7 +3,8 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import CodeBlock from '@theme/CodeBlock';
 
-Various indexing LINQ extensions are available to enhance the usability and reduce the complexity of the indexing functions. The available extensions are:
+Various indexing LINQ extensions are available to enhance the usability and reduce the complexity of the indexing functions.
+The `Boost`, `IfEntityIs`, `WhereEntityIs`, `ParseInt`, `ParseDouble` and `ParseDecimal` extensions are defined in the static class `IndexingLinqExtensions` (namespace `Raven.Client.Documents.Linq.Indexing`). The available extensions are:
 
 - [Boost](../../indexes/indexing-linq-extensions.mdx#boost)
 - [Reverse](../../indexes/indexing-linq-extensions.mdx#reverse)
@@ -14,6 +15,8 @@ Various indexing LINQ extensions are available to enhance the usability and redu
 ## **Boost**
 
 You can read more about boosting [here](../../indexes/boosting.mdx).
+
+`Boost(this object item, float value)` returns a `BoostedValue` (namespace `Raven.Client.Documents.Indexes`), which has the properties `Boost` (`float`) and `Value` (`object`).
 
 
 
