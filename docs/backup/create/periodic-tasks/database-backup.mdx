@@ -336,6 +336,42 @@ DateTime? lastIncrementalBackup = status.LastIncrementalBackup;
 string? localBackupDir = status.LocalBackup?.BackupDirectory;
 ```
 <br />
+
+#### `PeriodicBackupStatus` members
+
+| Member | Type | Description |
+|---|---|---|
+| **TaskId** | `long` | The backup task ID |
+| **BackupType** | `BackupType` | `Backup` or `Snapshot` |
+| **IsFull** | `bool` | Whether the last run was a full backup |
+| **NodeTag** | `string` | The tag of the node that ran the backup |
+| **DelayUntil** | `DateTime?` | The time until which the backup was delayed (set when the backup is delayed) |
+| **OriginalBackupTime** | `DateTime?` | The originally scheduled backup time |
+| **LastFullBackup** | `DateTime?` | Time of the last full backup |
+| **LastIncrementalBackup** | `DateTime?` | Time of the last incremental backup |
+| **LastFullBackupInternal**, **LastIncrementalBackupInternal** | `DateTime?` | Internal time values. `EndTime` is calculated from them and `DurationInMs`. |
+| **EndTime** | `DateTime?` (read-only) | `LastFullBackupInternal` (when `IsFull` is `true`) or `LastIncrementalBackupInternal`, plus `DurationInMs` |
+| **LocalBackup** | `LocalBackup` | Status of the backup to a local path |
+| **UploadToS3**, **UploadToGlacier**, **UploadToAzure**, **UploadToGoogleCloud**, **UploadToFtp** | `UploadToS3`, `UploadToGlacier`, `UploadToAzure`, `UploadToGoogleCloud`, `UploadToFtp` (fields) | Status of the upload to each destination |
+| **LastEtag** | `long?` | The last etag |
+| **LastDatabaseChangeVector** | `string` | The last database change vector |
+| **LastRaftIndex** | `LastRaftIndex` | Has `LastEtag` and `LastFullBackupEtag` (both `long?`) |
+| **FolderName** | `string` | The backup folder name |
+| **DurationInMs** | `long?` | The duration of the last backup |
+| **LocalRetentionDurationInMs** | `long?` | How long running the local retention policy took, for a backup to a local folder |
+| **Version** | `long` | A version number of the status, incremented as the status is updated |
+| **Error** | `Error` | Has `Exception` (`string`) and `At` (`DateTime`) |
+| **LastOperationId** | `long?` | The ID of the last backup operation |
+| **IsEncrypted** | `bool` | Whether the backup is encrypted |
+
+`LocalBackup` and the `UploadTo...` classes derive from `BackupStatus`, which has the properties
+`LastFullBackup` and `LastIncrementalBackup` (`DateTime?`), `FullBackupDurationInMs` and `IncrementalBackupDurationInMs` (`long?`), and `Exception` (`string`).
+
+* `LocalBackup` adds `BackupDirectory` (`string`), `FileName` (`string`) and `TempFolderUsed` (`bool`).
+* The `UploadTo...` classes derive from `CloudUploadStatus`, which adds `Skipped` (`bool`) and `UploadProgress` (`UploadProgress`).
+
+`UploadProgress` has `UploadType` (`UploadType`: `Regular`, `Chunked`), `UploadState` (`UploadState`: `PendingUpload`, `Uploading`, `PendingResponse`, `Done`, `Aborted`; read-only),
+`UploadedInBytes` (`long`), `TotalInBytes` (`long`), `BytesPutsPerSec` (`double`) and `UploadTimeInMs` (`long`, read-only).
 <Admonition type="note" title="">
 
 #### For a Sharded database:
