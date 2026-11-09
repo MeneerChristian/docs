@@ -1,0 +1,82 @@
+import Admonition from '@theme/Admonition';
+import TabItem from '@theme/TabItem';
+import CodeBlock from '@theme/CodeBlock';
+
+<Admonition type="note" title="">
+
+* Use `ModifyDatabaseTopologyOperation` to send a new `DatabaseTopology` for a database.  
+  The server validates the nodes in the topology and then stores it as the topology of the database.
+
+* To change only the order of the members, see [Reorder database members](../../../client-api/operations/server-wide/reorder-database-members.mdx).  
+  To add a node to the database group, see [Add database node](../../../client-api/operations/server-wide/add-database-node.mdx).
+
+</Admonition>
+
+## Example
+
+<TabItem value="modify_topology" label="modify_topology">
+<CodeBlock language="csharp">
+{`// Get the current topology from the database record
+DatabaseRecordWithEtag record = store.Maintenance.Server.Send(new GetDatabaseRecordOperation("Northwind"));
+DatabaseTopology topology = record.Topology;
+
+// Change it, for example keep only the nodes "A" and "B" as members
+topology.Members = new List<string> \{ "A", "B" \};
+topology.Promotables = new List<string>();
+topology.Rehabs = new List<string>();
+
+ModifyDatabaseTopologyResult result =
+    store.Maintenance.Server.Send(new ModifyDatabaseTopologyOperation("Northwind", topology));
+
+long raftIndex = result.RaftCommandIndex;
+`}
+</CodeBlock>
+</TabItem>
+
+## Syntax
+
+<TabItem value="syntax" label="syntax">
+<CodeBlock language="csharp">
+{`public ModifyDatabaseTopologyOperation(string databaseName, DatabaseTopology databaseTopology)
+public ModifyDatabaseTopologyOperation(string databaseName, int shardNumber, DatabaseTopology databaseTopology)
+`}
+</CodeBlock>
+</TabItem>
+
+| Parameter | Type | Description |
+|---|---|---|
+| **databaseName** | `string` | The database name. It must be a valid database name. |
+| **shardNumber** | `int` | For a sharded database: the shard whose topology is modified. The operation then targets the name of that shard. |
+| **databaseTopology** | `DatabaseTopology` | The new topology. The constructor throws `ArgumentNullException` when it is `null`. |
+
+| Return value | Type | Description |
+|---|---|---|
+| **RaftCommandIndex** | `long` | The index of the Raft command that updated the topology. |
+
+#### `DatabaseTopology` fields
+
+| Field | Type | Default | Description |
+|---|---|---|---|
+| **Members** | `List<string>` | empty list | Node tags of the members |
+| **Promotables** | `List<string>` | empty list | Node tags of the promotable nodes |
+| **Rehabs** | `List<string>` | empty list | Node tags of the nodes in rehab |
+| **PredefinedMentors** | `Dictionary<string, string>` | empty | Mentor node per node tag |
+| **DemotionReasons** | `Dictionary<string, string>` | empty | Reason per demoted node tag |
+| **PromotablesStatus** | `Dictionary<string, DatabasePromotionStatus>` | empty | Promotion status per promotable node tag |
+| **DynamicNodesDistribution** | `bool` | `false` | Whether the node distribution is dynamic |
+| **ReplicationFactor** | `int` | `1` | The replication factor. |
+| **PriorityOrder** | `List<string>` | `null` | The priority order of the nodes |
+| **NodesModifiedAt** | `DateTime?` | `null` | When the nodes were last modified |
+| **Stamp** | `LeaderStamp` | `null` | The leader stamp (`Index`, `Term`, `LeadersTicks`) |
+| **DatabaseTopologyIdBase64** | `string` | `null` | The ID of the topology |
+| **ClusterTransactionIdBase64** | `string` | `null` | The ID of cluster transactions |
+
+## Server-side checks
+
+* The server throws a `DatabaseDoesNotExistException` when the database record is not found.
+* For every node in the new topology (members, promotables and rehabs), the server throws an `ArgumentException`
+  when the node is not part of the cluster.
+* A node that is not yet relevant for the database is validated like a node that is added to the database group,
+  and the request fails when that validation fails.
+* The server sets `ReplicationFactor` to the smaller of the number of nodes in the new topology
+  and the number of nodes in the cluster, so the value you send is not kept.
