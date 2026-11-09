@@ -355,6 +355,34 @@ public enum EncryptionMode
 
 ---
 
+### Backup result and progress
+
+`store.Maintenance.SendAsync(new BackupOperation(config))` returns an `Operation<StartBackupOperationResult>`.
+`StartBackupOperationResult` has the properties `ResponsibleNode` (`string`) and `OperationId` (`long`).
+
+For a database that is not sharded, the operation reports progress as a `BackupProgress` and completes with a `BackupResult`.
+Both derive from the smuggler result and progress classes (`SmugglerResult`, `SmugglerResult.SmugglerProgress`).
+
+| `BackupResult` property | Type | Description |
+|---|---|---|
+| **SnapshotBackup** | `Counts` | Counters for a snapshot backup |
+| **LocalBackup** | `LocalBackup` | Status of the backup to a local path |
+| **S3Backup** | `UploadToS3` | Status of the upload to Amazon S3 |
+| **GlacierBackup** | `UploadToGlacier` | Status of the upload to Amazon Glacier |
+| **AzureBackup** | `UploadToAzure` | Status of the upload to Azure |
+| **GoogleCloudBackup** | `UploadToGoogleCloud` | Status of the upload to Google Cloud |
+| **FtpBackup** | `UploadToFtp` | Status of the upload to an FTP server |
+
+`BackupProgress` exposes `SnapshotBackup`, `S3Backup`, `AzureBackup`, `GoogleCloudBackup`, `GlacierBackup` and `FtpBackup`
+as read-only properties. They return the values of the underlying `BackupResult`, or `null` when there is none.
+
+For a sharded database the result is a `ShardedBackupResult`, which holds a list of `ShardNodeBackupResult` items in `Results`;
+each item has `ShardNumber` (`int`), `NodeTag` (`string`) and the shard's `BackupResult` in `Result`.
+The progress type is `ShardedBackupProgress`, which adds `ShardNumber` (`int`) and `NodeTag` (`string`).
+The members of `LocalBackup` and the `UploadTo...` classes are listed under [PeriodicBackupStatus members](../../backup/create/periodic-tasks/database-backup.mdx#periodicbackupstatus-members), and the members of `Counts` under [Restore result and progress](../../backup/restore.mdx#restore-result-and-progress).
+
+---
+
 ### Backup destinations classes
 
 <Tabs groupId='storage-settings'>
