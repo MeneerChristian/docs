@@ -166,6 +166,27 @@ await store.Maintenance.Server.SendAsync(new UpdateDatabaseOperation(dbrecord, d
 </CodeBlock>
 </TabItem>  
 
+* The configuration can also be sent with a dedicated maintenance operation, without editing the whole database record:
+  `UpdateDocumentsCompressionConfigurationOperation` (namespace `Raven.Client.ServerWide.Operations.DocumentsCompression`).  
+  It applies to the store's database (use `ForDatabase` to target another one). Its constructor throws an `ArgumentNullException` when the configuration is `null`.  
+  It returns a `DocumentCompressionConfigurationResult` with one property, `RaftCommandIndex` (`long?`).
+
+<TabItem value="update_compression_op" label="update_compression_op">
+<CodeBlock language="csharp">
+{`// Syntax:
+public UpdateDocumentsCompressionConfigurationOperation(DocumentsCompressionConfiguration configuration)
+
+// Example:
+DocumentCompressionConfigurationResult result = store.Maintenance.Send(
+    new UpdateDocumentsCompressionConfigurationOperation(new DocumentsCompressionConfiguration
+    \{
+        Collections = new[] \{ "Orders" \},
+        CompressRevisions = true
+    \}));
+`}
+</CodeBlock>
+</TabItem>
+
 
 
 
