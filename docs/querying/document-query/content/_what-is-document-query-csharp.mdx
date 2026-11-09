@@ -393,7 +393,7 @@ bool isDistinct = docQuery.IsDistinct; // true
 
 // Executes the query on the first call
 QueryResult queryResult = docQuery.GetQueryResult();
-int totalResults = queryResult.TotalResults;
+long totalResults = queryResult.TotalResults;
 ```
 </TabItem>
 <TabItem value="DocumentQuery_async" label="DocumentQuery_async">
@@ -407,7 +407,7 @@ bool isDistinct = docQuery.IsDistinct; // true
 
 // Executes the query on the first call
 QueryResult queryResult = await docQuery.GetQueryResultAsync();
-int totalResults = queryResult.TotalResults;
+long totalResults = queryResult.TotalResults;
 ```
 </TabItem>
 </Tabs>
