@@ -64,12 +64,14 @@ import ContentFrame from '@site/src/components/ContentFrame';
       [ShouldIgnoreEntityChanges](../../../client-api/configuration/conventions.mdx#shouldignoreentitychanges)  
       [TopologyCacheLocation](../../../client-api/configuration/conventions.mdx#topologycachelocation)  
       [TransformTypeCollectionNameToDocumentIdPrefix](../../../client-api/configuration/conventions.mdx#transformtypecollectionnametodocumentidprefix)  
+      [TypeIsKnownServerSide](../../../client-api/configuration/conventions.mdx#typeisknownserverside)  
       [UseHttpCompression](../../../client-api/configuration/conventions.mdx#usehttpcompression)  
       [UseHttpDecompression](../../../client-api/configuration/conventions.mdx#usehttpdecompression)  
       [HttpCompressionAlgorithm](../../../client-api/configuration/conventions.mdx#httpcompressionalgorithm)  
       [WaitForIndexesAfterSaveChangesTimeout](../../../client-api/configuration/conventions.mdx#waitforindexesaftersavechangestimeout)  
       [WaitForNonStaleResultsTimeout](../../../client-api/configuration/conventions.mdx#waitfornonstaleresultstimeout)  
-      [WaitForReplicationAfterSaveChangesTimeout](../../../client-api/configuration/conventions.mdx#waitforreplicationaftersavechangestimeout)
+      [WaitForReplicationAfterSaveChangesTimeout](../../../client-api/configuration/conventions.mdx#waitforreplicationaftersavechangestimeout)  
+    * [Convention methods](../../../client-api/configuration/conventions.mdx#convention-methods)
 
 </Admonition>
 
@@ -1372,6 +1374,32 @@ public Func<string, string> TransformTypeCollectionNameToDocumentIdPrefix { get;
 </ContentFrame>
 <ContentFrame>
 
+### TypeIsKnownServerSide
+
+* Use the `TypeIsKnownServerSide` convention to define a function that tells the client
+  whether a type exists on the server.  
+  The client calls it while it converts a LINQ expression of an index definition to a server-side string,
+  for types that are not in its built-in list of known types.  
+  Types from the core .NET assemblies, `System.Text.RegularExpressions`, the signed Lucene.Net assembly,
+  and the `RemoteAttachmentFlags` enum are always treated as known.
+
+* When the type is not known and the expression calls `GetValueOrDefault` on a nullable value of that type,
+  the conversion throws an `InvalidOperationException` that names this convention.
+
+* DEFAULT: the function returns `false` for every type.
+
+```csharp
+TypeIsKnownServerSide = type => type == typeof(MyServerSideType)
+```
+<br/>  
+```csharp
+// Syntax:
+public Func<Type, bool> TypeIsKnownServerSide { get; set; }
+```
+
+</ContentFrame>
+<ContentFrame>
+
 ### UseHttpCompression
 
 * When setting the `UseHttpCompression` convention to `true`,  
@@ -1478,4 +1506,41 @@ public TimeSpan WaitForReplicationAfterSaveChangesTimeout { get; set; }
 ```
 
 </ContentFrame>
+</Panel>
+
+<Panel heading="Convention methods">
+
+`DocumentConventions` also exposes methods that apply the conventions above.
+You can call them on `store.Conventions`.
+
+| Method                                                              | Returns          | Description |
+|---------------------------------------------------------------------|------------------|-------------|
+| `GenerateDocumentId(string databaseName, object entity)`            | `string`         | Generates the document ID of `entity`. Runs `GenerateDocumentIdAsync` synchronously. |
+| `GenerateDocumentIdAsync(string databaseName, object entity)`       | `Task<string>`   | Uses the first ID convention registered with `RegisterAsyncIdConvention` whose type is assignable from the entity's type. If there is none, it uses `AsyncDocumentIdGenerator`. |
+| `GetClrTypeName(object entity)`                                     | `string`         | Gets the CLR type name that is stored in the entity's metadata. For a dynamic entity it uses `FindClrTypeNameForDynamic` when that convention is set; otherwise it uses `FindClrTypeName`. |
+| `GetClrTypeName(Type entityType)`                                   | `string`         | Gets the CLR type name using `FindClrTypeName`. |
+| `GetClrType(string id, BlittableJsonReaderObject document)`         | `string`         | Gets the CLR type name of a document using `FindClrType`. |
+| `GetIdentityProperty(Type type)`                                    | `MemberInfo`     | Returns the first property or field of `type` for which `FindIdentityProperty` returns `true`, or `null` if there is none. The result is cached per type. |
+| `GetRangeType(Type type)`                                           | `RangeType`      | Returns `RangeType.Long` for `int`, `long`, `short` and `TimeSpan`, and `RangeType.Double` for `double`, `float` and `decimal` (nullable types are unwrapped first). For other types it returns the range type registered through the `RegisterQueryValueConverter` overload that takes a `RangeType`, or `RangeType.None`. |
+| `Clone()`                                                           | `DocumentConventions` | Returns a shallow copy of the conventions. |
+
+<CodeBlock language="csharp">
+{`string id = store.Conventions.GenerateDocumentId("Northwind", new Employee());
+
+string typeName = store.Conventions.GetClrTypeName(typeof(Employee));
+
+MemberInfo idProperty = store.Conventions.GetIdentityProperty(typeof(Employee));
+
+RangeType rangeType = store.Conventions.GetRangeType(typeof(int?)); // RangeType.Long
+`}
+</CodeBlock>
+
+The default implementations of three conventions are also available as public static methods:
+
+| Method                                                                                           | Used as the default of                          | Behavior |
+|--------------------------------------------------------------------------------------------------|-------------------------------------------------|----------|
+| `DocumentConventions.DefaultTransformCollectionNameToDocumentIdPrefix(string collectionName)`    | `TransformTypeCollectionNameToDocumentIdPrefix` | Lower-cases the name if it has at most one uppercase letter; otherwise returns it unchanged. |
+| `DocumentConventions.DefaultFindPropertyNameForIndex(Type indexedType, string indexedName, string path, string prop)` | `FindPropertyNameForIndex` | Concatenates `path` and `prop`, then replaces `"[]."` and `"."` with `"_"`. |
+| `DocumentConventions.DefaultFindPropertyNameForDynamicIndex(Type indexedType, string indexedName, string path, string prop)` | `FindPropertyNameForDynamicIndex` | Returns `path + prop` unchanged. |
+
 </Panel>
