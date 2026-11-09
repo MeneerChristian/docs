@@ -544,6 +544,30 @@ public interface IDatabaseRecordBuilderBase
 </CodeBlock>
 </TabItem>
 
+#### Additional builder members:
 
+The builder interfaces also have the members below. The builder only fills the `DatabaseRecord` that `ToDatabaseRecord()` returns.
+Which of its properties the server applies when it creates a database is described in the note under [The Database Record](../../../../client-api/operations/server-wide/create-database.mdx#the-database-record).
 
+| Method                                                                          | Fills in the `DatabaseRecord` |
+|---------------------------------------------------------------------------------|-------------------------------|
+| `ConfigureRevisionsBin(RevisionsBinConfiguration)` (throws `ArgumentNullException` for `null`) | `RevisionsBin` |
+| `WithEtls(Action<IEtlConfigurationBuilder>)`: `AddRavenEtl`, `AddSqlEtl`, `AddElasticSearchEtl`, `AddOlapEtl`, `AddQueueEtl`, `AddSnowflakeEtl`, `AddEmbeddingsGeneration` | `RavenEtls`, `SqlEtls`, `ElasticSearchEtls`, `OlapEtls`, `QueueEtls`, `SnowflakeEtls`, `EmbeddingsGenerations` (a list per type) |
+| `WithBackups(Action<IBackupConfigurationBuilder>)`: `AddPeriodicBackup` | `PeriodicBackups` |
+| `WithReplication(Action<IReplicationConfigurationBuilder>)`: `AddExternalReplication`, `AddPullReplicationSink`, `AddPullReplicationHub` | `ExternalReplications`, `SinkPullReplications`, `HubPullReplications` |
+| `WithConnectionStrings(Action<IConnectionStringConfigurationBuilder>)`: `AddRavenConnectionString`, `AddSqlConnectionString`, `AddOlapConnectionString`, `AddElasticSearchConnectionString`, `AddQueueConnectionString`, `AddSnowflakeConnectionString`, `AddAiConnectionString` | The connection string dictionary of each type, keyed by the connection string name |
+| `WithIntegrations(Action<IIntegrationConfigurationBuilder>)`: `ConfigurePostgreSql` | `Integrations.PostgreSql` |
+
+Each `Add...` method throws an `ArgumentNullException` when its argument is `null`.
+
+Topology builders:
+
+| Builder | Members |
+|---|---|
+| `ITopologyConfigurationBuilder` (from `WithTopology`) | `AddNode(string nodeTag)` adds the tag to the `Members` of the record's `Topology`. `EnableDynamicNodesDistribution()` sets `DynamicNodesDistribution` to `true` on it. |
+| `IShardedTopologyConfigurationBuilder` (from `Sharded`) | `Orchestrator(OrchestratorTopology)` or `Orchestrator(Action<IOrchestratorTopologyConfigurationBuilder>)`, and `AddShard(int shardNumber, DatabaseTopology)` or `AddShard(int shardNumber, Action<IShardTopologyConfigurationBuilder>)`. |
+| `IOrchestratorTopologyConfigurationBuilder`, `IShardTopologyConfigurationBuilder` | `AddNode(string nodeTag)` and `EnableDynamicNodesDistribution()`, applied to the orchestrator topology or to that shard's topology. |
+
+`AddNode` throws an `ArgumentException` for a `null` or empty tag in the orchestrator and shard builders.
+`WithReplicationFactor(int)` sets `ReplicationFactor` on the record's `Topology`, creating it when it is `null`.
 
