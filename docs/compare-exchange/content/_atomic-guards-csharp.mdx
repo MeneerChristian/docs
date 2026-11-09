@@ -173,7 +173,7 @@ A cluster-wide session that creates, updates, or deletes a compare-exchange item
 `CompareExchangeInvalidKeyException` (namespace `Raven.Client.Exceptions`, derives from `RavenException`):  
 _"You cannot manipulate the atomic guard '...' via the cluster-wide session"_.  
 
-The check is skipped when [atomic guards are disabled](../../compare-exchange/atomic-guards.mdx#disabling-atomic-guards) for the session.
+The check is skipped when [atomic guards are disabled](../../compare-exchange/atomic-guards.mdx#disabling-atomic-guards).
 
 ```csharp
 using (var session = store.OpenSession(new SessionOptions

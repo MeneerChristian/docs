@@ -178,7 +178,7 @@ Options for the **non-generic** version of the subscription creation options obj
 
 `SubscriptionCreationOptions<T>` has a `ToSubscriptionCreationOptions` method that translates the typed options (`Filter`, `Projection` and `Includes`) into
 the non-generic `SubscriptionCreationOptions`, whose `Query` property holds the generated subscription RQL.  
-The `Create` methods that take `SubscriptionCreationOptions<T>` use the same translation. Call it yourself to inspect the generated query, or to pass the result to the non-generic `Create` overload.
+The `Create` methods that take `SubscriptionCreationOptions<T>` use the same query translation. Call it yourself to inspect the generated query, or to pass the result to the non-generic `Create` overload.
 
 ```csharp
 public SubscriptionCreationOptions ToSubscriptionCreationOptions(DocumentConventions conventions);
