@@ -138,9 +138,8 @@ The `AdditionalAssembly`s are collected in `AdditionalAssemblies`, a property of
 
 <TabItem value="only_usings" label="only_usings">
 <CodeBlock language="csharp">
-{`AdditionalAssemblies = \{
-    AdditionalAssembly.OnlyUsings(new HashSet<string> \{ "System.Text" \})
-\}
+{`// In the constructor of an index class
+AddAssembly(AdditionalAssembly.OnlyUsings(new HashSet<string> \{ "System.Text" \}));
 `}
 </CodeBlock>
 </TabItem>
