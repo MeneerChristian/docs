@@ -135,6 +135,55 @@ This event is useful for logging these unexpected exceptions.
 
 </Admonition>
 
+<Admonition type="info" title="Subscription exceptions" id="subscription-exceptions" href="#subscription-exceptions">
+
+The exceptions that are specific to subscriptions derive from the abstract `SubscriptionException` class
+(namespace `Raven.Client.Exceptions.Documents.Subscriptions`), which derives from `RavenException`.  
+Catch `SubscriptionException` to handle all of them in one place.
+
+The task returned by `Run` completes with the exception when the worker stops.  
+When the worker is going to reconnect, the exception is not thrown; it is passed to the `OnSubscriptionConnectionRetry` event instead.
+
+| Exception                                              | Thrown when                                                                                                                                                                                                                                    | Worker reconnects |
+|--------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-----------------:|
+| `SubscriptionDoesNotBelongToNodeException`             | The node the worker connected to is not responsible for the subscription, and the server redirects the worker to another node. `AppropriateNode` holds the tag of the node to redirect to, and `Reasons` maps node tags to the reasons reported by the server. | Yes, to `AppropriateNode` |
+| `SubscriptionChangeVectorUpdateConcurrencyException`   | The server cannot acknowledge or record batch progress, because the subscription's change vector or definition was changed in the meantime, for example by updating the subscription.                                                         | Yes               |
+| `SubscriptionMessageTypeException`                     | The server replies to the connection request with a message that is not a connection status. This is treated as an unexpected error.                                                                                                           | Yes               |
+| `SubscriptionNameException`                            | A subscription is created or updated with a name that is longer than the maximum document ID size. The exception is thrown by `Create` and `Update`, not by a worker.                                                                           | Not applicable    |
+| `SubscriptionClosedException`                          | The subscription was closed. For example, the worker was started with `CloseWhenNoDocsLeft` and there are no more documents to send.                                                                                                           | Only when the server marks the connection as one that can reconnect |
+| `SubscriptionInUseException`                           | The subscription is used by another worker, and the [worker strategy](../../../../client-api/data-subscriptions/consumption/how-to-consume-data-subscription.mdx#worker-strategies) does not allow taking it. An existing worker also gets it when another worker takes over. | No                |
+| `SubscriptionDoesNotExistException`                    | The subscription does not exist.                                                                                                                                                                                                               | No                |
+| `SubscriptionInvalidStateException`                    | The subscription is in an invalid state, or the worker stayed in an erroneous state for longer than `MaxErroneousPeriod`.                                                                                                                      | No                |
+| `SubscriberErrorException`                             | The batch processing logic threw an exception while `IgnoreSubscriberErrors` is `false`. The original exception is the `InnerException`.                                                                                                       | No                |
+
+```csharp
+// Reconnection attempts are reported through the event
+worker.OnSubscriptionConnectionRetry += e =>
+{
+    if (e is SubscriptionDoesNotBelongToNodeException redirect)
+        Console.WriteLine($"Redirected to node {redirect.AppropriateNode}");
+};
+
+try
+{
+    await worker.Run(batch =>
+    {
+        // process the batch
+    });
+}
+catch (SubscriptionDoesNotExistException)
+{
+    // the subscription was deleted, no point in retrying
+}
+catch (SubscriptionException e)
+{
+    // any other subscription exception
+    Console.WriteLine($"Subscription failed: {e.Message}");
+}
+```
+
+</Admonition>
+
 
 
 ## Worker strategies
