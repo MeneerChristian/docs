@@ -19,6 +19,10 @@ import Panel from "@site/src/components/Panel";
     * [Wait-after-save timeouts](../../client-api/exceptions.mdx#wait-after-save-timeouts)
     * [Backup already running](../../client-api/exceptions.mdx#backup-already-running)
     * [Request executor exceptions](../../client-api/exceptions.mdx#request-executor-exceptions)
+    * [Index, sorter and collection exceptions](../../client-api/exceptions.mdx#index-sorter-and-collection-exceptions)
+    * [Database state exceptions](../../client-api/exceptions.mdx#database-state-exceptions)
+    * [Cluster and node exceptions](../../client-api/exceptions.mdx#cluster-and-node-exceptions)
+    * [Attachment, counter, revisions and license exceptions](../../client-api/exceptions.mdx#attachment-counter-revisions-and-license-exceptions)
 
 </Admonition>
 
@@ -145,3 +149,68 @@ It is thrown:
 to an exception, when the parsed error is null or has a null `Message`, `Error` or `Type`.
 
 </Panel>
+
+<Panel heading="Index, sorter and collection exceptions">
+
+All of these derive from `RavenException`.
+
+| Exception                         | Thrown when |
+|-----------------------------------|-------------|
+| `IndexDoesNotExistException`      | The query result is null, so the client throws "Could not find index ...". The server also throws it for a missing index ("There is no index with '...' name.") or a missing auto index ("There is no auto index with '...' name."). |
+| `IndexAlreadyExistException`      | An index is edited while its lock mode is `IndexLockMode.LockedError`. The message is "Cannot edit existing index ... with lock mode ...". |
+| `IndexCreationException`          | The server cannot create an index, for example: a JavaScript index definition has a problem, the index configuration contains an unrecognized option key, or a license limit blocks the creation (the `LicenseLimitException` is the inner exception). |
+| `IndexDeletionException`          | The server fails to delete or reset an index. The original exception is the inner exception. |
+| `IndexInvalidException`           | The server finds an invalid index definition detail, for example an unsupported or duplicated-field pattern in the references pattern of a map-reduce output to a collection. |
+| `PendingRollingIndexException`    | A query uses an index on a node where a rolling index deployment is still pending. |
+| `NotImplementedInCoraxException`  | A Corax index uses a feature that Corax does not implement, such as indexing-time boosting of a field in a document, or stream values. |
+| `SorterDoesNotExistException`     | A query names a custom sorter that the server cannot find ("There is no sorter with '...' name."). |
+| `DocumentCollectionMismatchException` | An update would change the collection of a document. The message says to delete the document and recreate it. |
+
+</Panel>
+
+<Panel heading="Database state exceptions">
+
+All of these derive from `RavenException`.
+
+| Exception                                | Thrown when |
+|------------------------------------------|-------------|
+| `DatabaseDisabledException`              | The database is disabled: a `disable.marker` file exists in its data directory, or the (sharded) database record is disabled. A subscription worker also throws it when the server reports the database as disabled. |
+| `DatabaseLoadFailureException`           | The database fails to start. The message contains the database name and its data directory, and the cause is the inner exception. |
+| `DatabaseSchemaErrorException`           | The database fails to start because of a storage schema error. Same message format as above. |
+| `DatabaseLoadTimeoutException`           | Loading a database for a TCP connection, or unloading a database for a request, times out. |
+| `DatabaseConcurrentLoadTimeoutException` | Too many databases are loading concurrently and the wait for a free slot times out. |
+| `DatabaseIdleException`                  | A replication attempt without changes reaches an idle database, or the remote task topology of a pull-replication sink is requested for an idle database. |
+| `DatabaseNotRelevantException`           | A cluster transaction reaches a node that is only a promotable member of the database group, or a sharded database's orchestrator is requested on a node where it is not relevant. |
+| `DatabaseRestoringException`             | The database state is `RestoreInProgress` when its configuration is created. |
+| `ServerLoadFailureException`             | The server fails to load its system storage. |
+
+</Panel>
+
+<Panel heading="Cluster and node exceptions">
+
+| Exception                           | Derives from       | Thrown when |
+|-------------------------------------|--------------------|-------------|
+| `NoLeaderException`                 | `RavenException`   | A node that is not the leader receives a command that only the leader accepts, or the node loses leadership while it handles one. |
+| `NodeIsPassiveException`            | `RavenException`   | An action on a database, or a request for TCP info, reaches a node that is passive. |
+| `RequestedNodeUnavailableException` | `Exception`        | The request executor was asked for a specific node and either the node tag is not in the topology, or the node is currently marked as unavailable (when the caller asked to throw on failures). |
+| `InvalidNetworkTopologyException`   | `Exception`        | A TCP connection attempt (for example from replication) is answered with the `InvalidNetworkTopology` status. |
+| `UnsuccessfulRequestException`      | `Exception`        | The request executor records it per failed node: it is the inner exception of `AllTopologyNodesDownException`, and it is stored for a node when a request is no longer relevant for that node. |
+| `ClientVersionMismatchException`    | `RavenException`   | The server rejects a client of major version 3, or a client with a newer build version than the server. |
+| `RouteNotFoundException`            | `RavenException`   | The server has no handler for the requested HTTP method and path. |
+
+</Panel>
+
+<Panel heading="Attachment, counter, revisions and license exceptions">
+
+All of these derive from `RavenException`.
+
+| Exception                         | Thrown when |
+|-----------------------------------|-------------|
+| `AttachmentDoesNotExistException` | An attachment name is not found for a document ("There is no attachment with '...' name for document '...'."), or the metadata of a non-existing remote attachment is updated. |
+| `InvalidAttachmentRangeException` | The server answers a get-attachment request with status 416 (Requested Range Not Satisfiable). The message contains the range, the attachment name and the document ID. |
+| `CounterOverflowException`        | Incrementing a counter overflows a `long`, or the sum of a counter's per-node values overflows when it is read and the value is not capped on overflow. |
+| `RevisionsDisabledException`      | Revisions are deleted before a given time while no revisions configuration exists on the database. |
+| `LicenseActivationException`      | A license activation or update fails and the caller asked to throw on failure. The original exception is the inner exception. |
+
+</Panel>
+
