@@ -8,7 +8,8 @@ import Admonition from '@theme/Admonition';
 
 * The listing is generated from the compiled assembly. For each type it shows the namespace, the kind, the base type and interfaces,
   and the members that the type declares itself (members that a type inherits are shown on the base type).
-  Constructors and members are shown without descriptions.
+  Where the source code has an XML documentation comment for a type or member, its summary (and the exceptions it documents) is shown as a comment above the declaration.
+  The text of those comments was written by the authors of the code and is shown as it is, with the markup removed. A declaration without a comment has no description in the source.
   A type is listed here because it is public in the assembly, which does not mean that a public API creates or returns it:
   for example, `AiAgentTruncateChat` is public, but the only constructor and property of the client that accept it are `internal`.
 
@@ -26,10 +27,14 @@ import Admonition from '@theme/Admonition';
 ### `Raven.Client`
 
 ```csharp
+// Defines special states for subscription change vectors.
 public enum Constants.Documents.SubscriptionChangeVectorSpecialStates
 {
+    // Indicates that the change vector should not be changed.
     DoNotChange,
+    // Indicates that the subscription should start from the last document.
     LastDocument,
+    // Indicates that the subscription should start from the beginning of time.
     BeginningOfTime,
 }
 ```
@@ -37,11 +42,15 @@ public enum Constants.Documents.SubscriptionChangeVectorSpecialStates
 ### `Raven.Client.Documents`
 
 ```csharp
+// Contains implementation of some IDocumentStore operations shared by DocumentStore implementations
 public abstract class DocumentStoreBase : IDocumentStore
 {
     AiOperations AI { get; }
+    // The client certificate to use for authentication
     X509Certificate2 Certificate { get; set; }
+    // Gets the conventions.
     DocumentConventions Conventions { get; set; }
+    // The default database name
     string Database { get; set; }
     IHiLoIdGenerator HiLoIdGenerator { get; }
     string Identifier { get; set; }
@@ -50,9 +59,13 @@ public abstract class DocumentStoreBase : IDocumentStore
     DatabaseSmuggler Smuggler { get; }
     DocumentSubscriptions Subscriptions { get; }
     TimeSeriesOperations TimeSeries { get; }
+    // Gets or sets the Urls
     string[] Urls { get; set; }
+    // Whether the instance has been disposed
     bool WasDisposed { get; }
+    // Setup the context for aggressive caching.
     IDisposable AggressivelyCache(string database);
+    // Setup the context for aggressive caching.
     ValueTask<IDisposable> AggressivelyCacheAsync(string database);
     IDisposable AggressivelyCacheFor(TimeSpan cacheDuration, string database);
     IDisposable AggressivelyCacheFor(TimeSpan cacheDuration, AggressiveCacheMode mode, string database);
@@ -61,6 +74,7 @@ public abstract class DocumentStoreBase : IDocumentStore
     BulkInsertOperation BulkInsert(string database, CancellationToken token);
     BulkInsertOperation BulkInsert(string database, BulkInsertOptions options, CancellationToken token);
     BulkInsertOperation BulkInsert(BulkInsertOptions options, CancellationToken token);
+    // Subscribe to change notifications from the server
     IDatabaseChanges Changes(string database);
     ISingleNodeDatabaseChanges Changes(string database, string nodeTag);
     IDisposable DisableAggressiveCaching(string database);
@@ -103,6 +117,7 @@ public abstract class DocumentStoreBase : IDocumentStore
 ```
 
 ```csharp
+// Extensions to the LINQ syntax
 public static class LinqExtensions
 {
     static IAggregationQuery<T> AggregateBy<T>(IQueryable<T> source, FacetBase facet);
@@ -111,6 +126,7 @@ public static class LinqExtensions
     static IAggregationQuery<T> AggregateUsing<T>(IQueryable<T> source, string facetSetupDocumentId);
     static Task<bool> AnyAsync<TSource>(IQueryable<TSource> source, CancellationToken token);
     static Task<bool> AnyAsync<TSource>(IQueryable<TSource> source, Expression<Func<TSource, bool>> predicate, CancellationToken token);
+    // Project into a different type.
     static IQueryable<TResult> As<TResult>(IQueryable queryable);
     static Task<int> CountAsync<TSource>(IQueryable<TSource> source, CancellationToken token);
     static Task<int> CountAsync<TSource>(IQueryable<TSource> source, Expression<Func<TSource, bool>> predicate, CancellationToken token);
@@ -122,7 +138,12 @@ public static class LinqExtensions
     static Task<TSource> FirstAsync<TSource>(IQueryable<TSource> source, Expression<Func<TSource, bool>> predicate, CancellationToken token);
     static Task<TSource> FirstOrDefaultAsync<TSource>(IQueryable<TSource> source, CancellationToken token);
     static Task<TSource> FirstOrDefaultAsync<TSource>(IQueryable<TSource> source, Expression<Func<TSource, bool>> predicate, CancellationToken token);
+    // Creates a dynamic query which does an aggregation of data grouped by entire content of an array. The group by
+    //    key will be calculated by hashing all values of the array. Underneath an auto map-reduce index will be
+    //    created to handle such query.
     static IRavenQueryable<IGrouping<IEnumerable<TKey>, TSource>> GroupByArrayContent<TSource, TKey>(IQueryable<TSource> source, Expression<Func<TSource, IEnumerable<TKey>>> fieldSelector);
+    // Creates a dynamic query which does an aggregation of data grouped by individual values of an array.
+    //    Underneath a fanout auto map-reduce index will be created to handle such query.
     static IRavenQueryable<IGrouping<TKey, TSource>> GroupByArrayValues<TSource, TKey>(IQueryable<TSource> source, Expression<Func<TSource, IEnumerable<TKey>>> fieldSelector);
     static IRavenQueryable<TResult> Include<TResult>(IQueryable<TResult> source, Expression<Func<TResult, object>> path);
     static IRavenQueryable<TResult> Include<TResult, TInclude>(IQueryable<TResult> source, Expression<Func<TResult, object>> path);
@@ -133,6 +154,7 @@ public static class LinqExtensions
     static Lazy<IEnumerable<T>> Lazily<T>(IQueryable<T> source, Action<IEnumerable<T>> onEval);
     static Lazy<Task<IEnumerable<T>>> LazilyAsync<T>(IQueryable<T> source);
     static Lazy<Task<IEnumerable<T>>> LazilyAsync<T>(IQueryable<T> source, Action<IEnumerable<T>> onEval);
+    // Returns the number of query results as int64 type.
     static long LongCount<TSource>(IQueryable<TSource> source);
     static Task<long> LongCountAsync<TSource>(IQueryable<TSource> source, CancellationToken token);
     static Lazy<long> LongCountLazily<T>(IQueryable<T> source);
@@ -175,6 +197,7 @@ public static class LinqExtensions
     static IOrderedQueryable<T> OrderByDistanceDescending<T>(IQueryable<T> source, string fieldName, string shapeWkt, double roundFactor);
     static IOrderedQueryable<T> OrderByScore<T>(IQueryable<T> self);
     static IOrderedQueryable<T> OrderByScoreDescending<T>(IQueryable<T> self);
+    // Projects query results into the specified type.
     static IRavenQueryable<TResult> ProjectInto<TResult>(IQueryable queryable);
     static IRavenQueryable<T> Search<T>(IQueryable<T> self, Expression<Func<T, object>> fieldSelector, string searchTerms, decimal boost, SearchOptions options, SearchOperator operator);
     static IRavenQueryable<T> Search<T>(IQueryable<T> self, Expression<Func<T, object>> fieldSelector, IEnumerable<string> searchTerms, decimal boost, SearchOptions options, SearchOperator operator);
@@ -201,7 +224,9 @@ public static class LinqExtensions
     static IOrderedQueryable<T> ThenByDescending<T>(IOrderedQueryable<T> source, Expression<Func<T, object>> path, NullsOrdering nulls, OrderingType ordering);
     static IOrderedQueryable<T> ThenByDescending<T>(IOrderedQueryable<T> source, string path, OrderingType ordering);
     static IOrderedQueryable<T> ThenByDescending<T>(IOrderedQueryable<T> source, string path, NullsOrdering nulls, OrderingType ordering);
+    // Performs secondary sorting of query results by score in ascending order.
     static IOrderedQueryable<T> ThenByScore<T>(IOrderedQueryable<T> self);
+    // Performs secondary sorting of query results by score in descending order.
     static IOrderedQueryable<T> ThenByScoreDescending<T>(IOrderedQueryable<T> self);
     static Task<T[]> ToArrayAsync<T>(IQueryable<T> source, CancellationToken token);
     static IAsyncDocumentQuery<T> ToAsyncDocumentQuery<T>(IQueryable<T> source);
@@ -222,20 +247,33 @@ public static class LinqExtensions
 ### `Raven.Client.Documents.AI`
 
 ```csharp
+// Manages AI agents and conversation interactions in a specific RavenDB database.
 public class AiOperations
 {
     AiOperations(IDocumentStore store, string databaseName);
+    // Opens a conversation with an AI agent.
     IAiConversationOperations Conversation(string agentId, string conversationId, AiConversationCreationOptions creationOptions, string changeVector);
+    // Creates or updates an AI agent configuration (with the given schema) on the database.
     AiAgentConfigurationResult CreateAgent(AiAgentConfiguration configuration);
+    // Creates or updates an AI agent configuration (with the given schema) on the database.
     AiAgentConfigurationResult CreateAgent<TSchema>(AiAgentConfiguration configuration, TSchema sampleObject);
+    // Asynchronously creates or updates an AI agent configuration (with the given schema) on the database.
     Task<AiAgentConfigurationResult> CreateAgentAsync<TSchema>(AiAgentConfiguration configuration, TSchema sampleObject, CancellationToken token);
+    // Asynchronously creates or updates an AI agent configuration (with the given schema) on the database.
     Task<AiAgentConfigurationResult> CreateAgentAsync(AiAgentConfiguration configuration, CancellationToken token);
+    // Deletes an AI agent from the database.
     AiAgentConfigurationResult DeleteAgent(string agentId);
+    // Asynchronously deletes an AI agent from the database.
     Task<AiAgentConfigurationResult> DeleteAgentAsync(string agentId, CancellationToken token);
+    // Returns a 'AiOperations' for a different database.
     AiOperations ForDatabase(string databaseName);
+    // Retrieves the AI agent configuration for a specific agent.
     AiAgentConfiguration GetAgent(string agentId);
+    // Retrieves the AI agent configuration for a specific agent asynchronously.
     Task<AiAgentConfiguration> GetAgentAsync(string agentId, CancellationToken token);
+    // Retrieves all AI agents and their configurations.
     GetAiAgentsResponse GetAgents();
+    // Retrieves all AI agents and their configurations.
     Task<GetAiAgentsResponse> GetAgentsAsync(CancellationToken token);
     AiConversationMessagesResult GetConversationMessages(string conversationId);
     AiConversationMessagesResult GetConversationMessages(GetConversationMessagesOptions parameters);
@@ -273,6 +311,7 @@ public abstract class DatabaseChange
 public sealed class IndexRenameChange : IndexChange
 {
     IndexRenameChange();
+    // The old index name
     string OldIndexName { get; set; }
 }
 ```
@@ -299,8 +338,11 @@ public abstract class AbstractQueryCommand<TResult, TParameters> : RavenCommand<
 ```csharp
 public abstract class AbstractStreamResult
 {
+    // Document change vector.
     string ChangeVector { get; set; }
+    // Document ID.
     string Id { get; set; }
+    // Document metadata.
     IMetadataDictionary Metadata { get; set; }
 }
 ```
@@ -379,36 +421,72 @@ public sealed class DocumentConventions.ShardingConventions
 ### `Raven.Client.Documents.Indexes`
 
 ```csharp
+// Represents a JSON object that can be used in indexing operations. Provides access to properties and values in
+//    a JSON document structure.
 public interface IJsonObject : IEnumerable<KeyValuePair<string, object>>
 {
+    // Gets the value of the specified property cast to the specified type.
     T Value<T>(string propertyName);
+    // Gets all values in the JSON object cast to the specified type.
     IEnumerable<T> Values<T>();
 }
 ```
 
 ```csharp
+// Represents metadata associated with a JSON object.
 public interface IJsonObject.IMetadata
 {
+    // Gets the value of the specified metadata property cast to the specified type.
     T Value<T>(string propertyName);
+    // Gets all metadata values cast to the specified type.
     IEnumerable<T> Values<T>();
 }
 ```
 
 ```csharp
+// Records the statically-known shape of a single index class so the RavenDB analyzers can reason about it from
+//    any assembly. Emitted per index type at assembly level by the analyzer package's source generator; it is
+//    not meant to be written by hand.
 public sealed class RavenIndexMetadataAttribute : Attribute
 {
     RavenIndexMetadataAttribute(Type indexType);
+    // Number of AddMap / AddMapForAll call sites across the constructors in the chain.
     int AddMapCount { get; set; }
+    // Whether any of those AddMap call sites sits inside a loop, in which case the call count understates how many
+    //    maps are registered at runtime.
     bool AddMapInLoop { get; set; }
+    // Whether the generator could read the index completely. False when the shape cannot be determined statically:
+    //    a JavaScript index, dynamic field creation via CreateField, a block-bodied map lambda, or a base class
+    //    whose own metadata is missing or unanalyzable. Consumers must treat every other value here as unknown when
+    //    this is false, rather than as an empty set, so that an unreadable index never produces a false report.
     bool Analyzable { get; set; }
+    // Whether any constructor in the chain assigns the Map property.
     bool AssignsMap { get; set; }
+    // Whether 'MapFields', 'StoredFields' and 'StoreAllFields' could be read. False when the map projection or a
+    //    storage directive has a shape the generator cannot follow (a block-bodied lambda, dynamic field creation
+    //    via CreateField, a computed field name). The remaining values stay valid, since they describe how the
+    //    index defines itself rather than which fields it produces.
     bool FieldsKnown { get; set; }
+    // The index class this metadata describes.
     Type IndexType { get; }
+    // Whether any constructor in the chain assigns the Reduce property. A map-reduce index serves every projected
+    //    field from its index entries, so stored-field rules do not apply.
     bool IsMapReduce { get; set; }
+    // Field names produced by the map projection across the chain. Empty when the index projects nothing statically
+    //    knowable.
     string[] MapFields { get; set; }
+    // Whether StoreAllFields(FieldStorage.Yes) was called anywhere in the chain, which makes every map-projection
+    //    field stored regardless of 'StoredFields'.
     bool StoreAllFields { get; set; }
+    // Field names explicitly stored across the chain, via Store(…), Stores[…] = FieldStorage.Yes, or
+    //    StoresStrings[…] = FieldStorage.Yes. Being part of the map projection does not make a field stored.
     string[] StoredFields { get; set; }
+    // Whether the chain writes to AdditionalSources or AdditionalAssemblies, shipping C# for the server to compile.
+    //    A helper called from the map may then be translatable after all, so rules about untranslatable calls must
+    //    stand down for such an index.
     bool UsesAdditionalCode { get; set; }
+    // Whether any of those call sites is AddMapForAll, which maps every collection derived from its type argument
+    //    and therefore has no single-map equivalent.
     bool UsesAddMapForAll { get; set; }
 }
 ```
@@ -416,6 +494,7 @@ public sealed class RavenIndexMetadataAttribute : Attribute
 ### `Raven.Client.Documents.Indexes.Counters`
 
 ```csharp
+// Abstract class used to provide infrastructure service for actual creation tasks
 public abstract class AbstractGenericCountersIndexCreationTask<TReduceResult> : AbstractCountersIndexCreationTask
 {
     bool IsMapReduce { get; }
@@ -423,16 +502,20 @@ public abstract class AbstractGenericCountersIndexCreationTask<TReduceResult> : 
 ```
 
 ```csharp
+// This class provides a way to define a strongly typed index on the client.
 public class CountersIndexDefinitionBuilder<TDocument, TReduceResult> : AbstractIndexDefinitionBuilder<TDocument, TReduceResult, CountersIndexDefinition>
 {
     CountersIndexDefinitionBuilder(string indexName);
+    // Sets map function for specified Counters
     void AddMap(string counter, Expression<Func<IEnumerable<CounterEntry>, IEnumerable>> map);
+    // Sets map function for all Counters
     void AddMapForAll(Expression<Func<IEnumerable<CounterEntry>, IEnumerable>> map);
     CountersIndexDefinition ToIndexDefinition(DocumentConventions conventions, bool validateMap);
 }
 ```
 
 ```csharp
+// This class provides a way to define a strongly typed index on the client.
 public sealed class CountersIndexDefinitionBuilder<TDocument> : CountersIndexDefinitionBuilder<TDocument, TDocument>
 {
     CountersIndexDefinitionBuilder(string indexName);
@@ -453,33 +536,55 @@ public sealed class FieldToFetch
 ```
 
 ```csharp
+// Generate a new document query
 public interface IDocumentQueryGenerator
 {
+    // Gets the conventions associated with this query
     DocumentConventions Conventions { get; }
     InMemoryDocumentSessionOperations Session { get; }
+    // Create a new query for
     IAsyncDocumentQuery<T> AsyncQuery<T>(string indexName, string collectionName, bool isMapReduce);
+    // Generates a query inspector
     RavenQueryInspector<TS> CreateRavenQueryInspector<TS>();
+    // Create a new query for
     IDocumentQuery<T> Query<T>(string indexName, string collectionName, bool isMapReduce);
 }
 ```
 
 ```csharp
+// Extension for the built-in 'IQueryProvider' allowing for Raven specific operations
 public interface IRavenQueryProvider : IQueryProvider
 {
+    // The action to execute on the customize query
     Action<IDocumentQueryCustomization> CustomizeQuery { get; }
+    // Set the fields to fetch
     HashSet<FieldToFetch> FieldsToFetch { get; }
+    // Gets the name of the index.
     string IndexName { get; }
     bool IsProjectInto { get; set; }
     Type OriginalQueryType { get; }
+    // Get the query generator
     IDocumentQueryGenerator QueryGenerator { get; }
+    // Callback to get the results of the query
     void AfterQueryExecuted(Action<QueryResult> afterQueryExecuted);
+    // Convert the Linq query to a lazy-count Lucene query and provide a function to execute when it is being
+    //    evaluated
     Lazy<int> CountLazily<T>(Expression expression);
+    // Convert the Linq query to a lazy-count Lucene query and provide a function to execute when it is being
+    //    evaluated
     Lazy<Task<int>> CountLazilyAsync<T>(Expression expression, CancellationToken token);
+    // Customizes the query using the specified action
     void Customize(Action<IDocumentQueryCustomization> action);
+    // Change the result type for the query provider
     IRavenQueryProvider For<TS>();
+    // Convert the Linq query to a lazy Lucene query and provide a function to execute when it is being evaluated
     Lazy<IEnumerable<T>> Lazily<T>(Expression expression, Action<IEnumerable<T>> onEval);
     Lazy<Task<IEnumerable<T>>> LazilyAsync<T>(Expression expression, Action<IEnumerable<T>> onEval);
+    // Convert the Linq query to a lazy-count Lucene query and provide a function to execute when it is being
+    //    evaluated
     Lazy<long> LongCountLazily<T>(Expression expression);
+    // Convert the Linq query to a lazy-count Lucene query and provide a function to execute when it is being
+    //    evaluated
     Lazy<Task<long>> LongCountLazilyAsync<T>(Expression expression, CancellationToken token);
     IAsyncDocumentQuery<T> ToAsyncDocumentQuery<T>(Expression expression);
     IDocumentQuery<TResult> ToDocumentQuery<TResult>(Expression expression);
@@ -491,15 +596,25 @@ public interface IRavenQueryProvider : IQueryProvider
 ```csharp
 public abstract class AbstractDatabaseStatistics<TIndexInformation>
 {
+    // Total number of attachments in database.
     long CountOfAttachments { get; set; }
+    // Total number of conflicts in database.
     long CountOfConflicts { get; set; }
+    // Total number of counter-group entries in database.
     long CountOfCounterEntries { get; set; }
+    // Total number of documents in database.
     long CountOfDocuments { get; set; }
+    // Total number of documents conflicts in database.
     long CountOfDocumentsConflicts { get; set; }
+    // Total number of indexes in database.
     int CountOfIndexes { get; set; }
+    // Total number of revision documents in database.
     long CountOfRevisionDocuments { get; set; }
+    // Total number of time-series segments in database.
     long CountOfTimeSeriesSegments { get; set; }
+    // Total number of tombstones in database.
     long CountOfTombstones { get; set; }
+    // Statistics for each index in database.
     TIndexInformation[] Indexes { get; set; }
 }
 ```
@@ -530,6 +645,7 @@ public interface IBulkOperationDetails
 ```
 
 ```csharp
+// Used to describe indeterminate progress (we use text to describe progress)
 public sealed class IndeterminateProgress : IOperationProgress
 {
     IndeterminateProgress();
@@ -620,34 +736,58 @@ public abstract class ShardNodeOperationResult<TResult> : IShardNodeOperationRes
 ### `Raven.Client.Documents.Operations.AI`
 
 ```csharp
+// Specifies the AI provider configured in an 'AiConnectionString'.
 public enum AiConnectorType
 {
+    // No provider configured.
     None,
+    // OpenAI.
     OpenAi,
+    // Azure OpenAI.
     AzureOpenAi,
+    // Ollama.
     Ollama,
+    // Embedded ONNX service.
     Embedded,
+    // Google AI.
     Google,
+    // Hugging Face Inference API.
     HuggingFace,
+    // Mistral AI.
     MistralAi,
+    // Vertex AI.
     Vertex,
+    // Anthropic (native Claude Messages API).
     Anthropic,
 }
 ```
 
 ```csharp
+// Flags describing what differs between two AI settings/configurations. These distinctions help determine
+//    whether embeddings must be regenerated or if a simple configuration update is sufficient.
 public enum AiSettingsCompareDifferences
 {
+    // No differences.
     None,
+    // Identifier value changed.
     Identifier,
+    // Embedding dimensionality changed.
     EmbeddingDimensions,
+    // Model name/version changed in a way that affects embedding structure.
     ModelArchitecture,
+    // Convenience combination representing structure-impacting changes.
     EmbeddingStructure,
+    // Endpoint/URL configuration changed.
     EndpointConfiguration,
+    // Authentication-related settings changed (API key, org/project, etc.).
     AuthenticationSettings,
+    // Convenience combination representing connection-related changes.
     ConnectionConfig,
+    // Provider-specific deployment changed (e.g., Azure deployment name).
     DeploymentConfiguration,
+    // Indicates that previously generated embeddings should be regenerated.
     RequiresEmbeddingsRegeneration,
+    // All changes.
     All,
 }
 ```
@@ -655,6 +795,8 @@ public enum AiSettingsCompareDifferences
 ```csharp
 public static class OpenAiReasoningEffortExtensions
 {
+    // Converts a legacy 'OpenAiReasoningEffort' value to the lowercase form expected by the provider, e.g. 'High'
+    //    to high.
     static string ToReasoningEffort(OpenAiReasoningEffort reasoningEffort);
 }
 ```
@@ -662,11 +804,15 @@ public static class OpenAiReasoningEffortExtensions
 ### `Raven.Client.Documents.Operations.AI.Agents`
 
 ```csharp
+// Configuration for truncating the AI chat history based on message count.
 public class AiAgentTruncateChat
 {
     AiAgentTruncateChat();
+    // Number of messages after delete the old messages
     int MessagesLengthAfterTruncate { get; set; }
+    // Maximum number of messages allowed before delete the old messages
     int MessagesLengthBeforeTruncate { get; set; }
+    // Converts the truncation configuration into a JSON representation.
     DynamicJsonValue ToJson();
 }
 ```
@@ -725,56 +871,103 @@ public class CdcSinkProcessState : IDatabaseTaskStatus
 ### `Raven.Client.Documents.Operations.CdcSink.Schema`
 
 ```csharp
+// One source-side column as the CDC schema-discovery endpoint sees it. Field names mirror 'CdcColumnMapping' so
+//    Studio can drop the response straight into its mapping model.
 public class CdcSinkSourceColumn : IDynamicJson
 {
     CdcSinkSourceColumn();
+    // True when CDC can actually capture this column. False when the source-side type has no CDC mapping
+    //    (PostgreSQL extension OIDs the streaming code would throw on) or when the column is not enrolled in the
+    //    SQL Server CDC capture list.
     bool IsCdcCapturable { get; set; }
+    // True when this column participates in the source table's primary key.
     bool IsPrimaryKey { get; set; }
+    // Source column name. Matches 'Column'.
     string Name { get; set; }
+    // Raw source-side type string (e.g. "varchar", "bigint", "jsonb"). For MySQL this is DATA_TYPE (without
+    //    precision); the fuller COLUMN_TYPE form is not surfaced here today.
     string NativeType { get; set; }
+    // What CDC will store this column as by default. Json for PostgreSQL jsonb/json and MySQL json; Attachment for
+    //    PostgreSQL bytea and SQL Server varbinary/image; Default otherwise.
     CdcColumnType SuggestedType { get; set; }
+    // Human-readable reason set when 'IsCdcCapturable' is false. Null on capturable columns.
     string UnsupportedReason { get; set; }
     DynamicJsonValue ToJson();
 }
 ```
 
 ```csharp
+// Foreign-key reference from one source table to another, surfaced by the CDC schema-discovery endpoint so
+//    Studio can suggest linked tables for the CDC mapping UI.
 public class CdcSinkSourceForeignKey : IDynamicJson
 {
     CdcSinkSourceForeignKey();
+    // FK column(s) on the source ("child") table.
     List<string> Columns { get; set; }
+    // PK column(s) on the referenced table.
     List<string> ReferencedColumns { get; set; }
+    // Schema of the referenced ("parent") table.
     string ReferencedSchema { get; set; }
+    // Name of the referenced ("parent") table.
     string ReferencedTable { get; set; }
     DynamicJsonValue ToJson();
 }
 ```
 
 ```csharp
+// Top-level response of POST /admin/cdc-sink/schema. Carries the source-side schema annotated with CDC-specific
+//    capturability hints so Studio can drive the CDC mapping UI without a second round-trip.
 public class CdcSinkSourceSchema : IDynamicJson
 {
     CdcSinkSourceSchema();
+    // Source database / catalog name (whatever connection.Database returns for MS SQL / MySQL / PostgreSQL; the
+    //    Oracle owner for Oracle — Oracle is not a CDC source today but the field stays generic).
     string CatalogName { get; set; }
+    // Whole-request failures (validation, missing connection-string, source DB unreachable) and connection-level
+    //    verification blockers (e.g. PostgreSQL wal_level not logical, the connecting user lacking the privilege to
+    //    provision CDC with no infrastructure in place). Per-table issues live on the individual
+    //    'UnsupportedReason' / 'Warnings' / column-level 'UnsupportedReason' fields instead.
     List<string> Errors { get; set; }
+    // Whether the connecting user has sufficient privileges to provision the CDC infrastructure (PostgreSQL
+    //    replication slot/publication, SQL Server sp_cdc_enable_*). When false an administrator must set CDC up
+    //    out-of-band. Distinct from per-table 'IsCdcEnabled', which reports whether CDC is already active.
     bool HasPermissionToSetup { get; set; }
+    // True when nothing blocks setting up CDC against this source — i.e. there are no 'Errors'. Warnings do not
+    //    affect success.
     bool Success { get; }
+    // Discovered source tables, each annotated with CDC capturability hints.
     List<CdcSinkSourceTable> Tables { get; set; }
+    // Non-fatal connection-level verification findings (e.g. SQL Server Agent not running, CDC infrastructure
+    //    already present under a reduced-privilege account). Per-table warnings live on 'Warnings'.
     List<string> Warnings { get; set; }
     DynamicJsonValue ToJson();
 }
 ```
 
 ```csharp
+// One source-side table as the CDC schema-discovery endpoint sees it. Field names mirror 'CdcSinkTableConfig'
+//    so Studio can populate the CDC mapping form with minimal transformation.
 public class CdcSinkSourceTable : IDynamicJson
 {
     CdcSinkSourceTable();
+    // Source columns of this table, in discovery order.
     List<CdcSinkSourceColumn> Columns { get; set; }
+    // Foreign keys leaving this table. Studio uses these to suggest 'CdcSinkLinkedTableConfig' entries.
     List<CdcSinkSourceForeignKey> ForeignKeys { get; set; }
+    // True when CDC tracking is active for this table at the source. SQL Server: present in cdc.change_tables.
+    //    PostgreSQL / MySQL: always true (publication / binlog membership is a database-level concern; surfaced
+    //    elsewhere).
     bool IsCdcEnabled { get; set; }
+    // Names of the columns that make up this table's primary key.
     List<string> PrimaryKeyColumns { get; set; }
+    // SQL table name. Matches 'SourceTableName'.
     string SourceTableName { get; set; }
+    // SQL schema. Matches 'SourceTableSchema'.
     string SourceTableSchema { get; set; }
+    // Set when the entire table cannot be CDC-captured. Null on usable tables.
     string UnsupportedReason { get; set; }
+    // Non-fatal, table-scoped verification findings that don't make the table unusable but affect captured data
+    //    quality — e.g. PostgreSQL REPLICA IDENTITY that won't carry row-identifying columns on DELETE.
     List<string> Warnings { get; set; }
     DynamicJsonValue ToJson();
 }
@@ -795,12 +988,17 @@ public enum StudioConfiguration.StudioEnvironment
 ### `Raven.Client.Documents.Operations.Counters`
 
 ```csharp
+// Represents detailed information about a group of counters associated with a document in RavenDB.
 public sealed class CounterGroupDetail : IDisposable
 {
     CounterGroupDetail();
+    // Gets or sets the change vector for the counter group.
     LazyStringValue ChangeVector { get; set; }
+    // Gets or sets the ID of the document to which the counter group belongs.
     LazyStringValue DocumentId { get; set; }
+    // Gets or sets the ETag for the counter group.
     long Etag { get; set; }
+    // Gets or sets the raw Blittable JSON object containing the counter values in the group.
     BlittableJsonReaderObject Values { get; set; }
     void Dispose();
     DynamicJsonValue ToJson();
@@ -972,9 +1170,12 @@ public interface IIndexQuery
 public abstract class IndexQueryBase<T> : IIndexQuery, IEquatable<IndexQueryBase<T>>
 {
     ProjectionBehavior? ProjectionBehavior { get; set; }
+    // Actual query that will be performed (Lucene syntax).
     string Query { get; set; }
     T QueryParameters { get; set; }
+    // User-defined query tag. Sent to the server as the tag query-string parameter.
     string Tag { get; set; }
+    // When set to true> server side will wait until result are non stale or until timeout
     bool WaitForNonStaleResults { get; set; }
     TimeSpan? WaitForNonStaleResultsTimeout { get; set; }
     bool Equals(IndexQueryBase<T> other);
@@ -987,20 +1188,38 @@ public abstract class IndexQueryBase<T> : IIndexQuery, IEquatable<IndexQueryBase
 ```csharp
 public abstract class QueryResultBase<TResult, TInclude>
 {
+    // Gets or sets the Compare Exchange Values included in the result.
     BlittableJsonReaderObject CompareExchangeValueIncludes { get; set; }
+    // Gets or sets the Counters included in the result.
     BlittableJsonReaderObject CounterIncludes { get; set; }
+    // The names of all the counters that the server was asked to include in the result, by document id.
     Dictionary<string, string[]> IncludedCounterNames { get; set; }
+    // The paths that the server included in the results
     string[] IncludedPaths { get; set; }
+    // Gets or sets the document included in the result.
     TInclude Includes { get; set; }
+    // The index used to answer this query
     string IndexName { get; set; }
+    // The last time the index was updated. This can be used to determine the freshness of the data.
     DateTime IndexTimestamp { get; set; }
+    // Gets or sets a value indicating whether the index is stale. Value: - true - if index is stale - false -
+    //    otherwise
     bool IsStale { get; set; }
+    // The timestamp of the last time the index was queried
     DateTime LastQueryTime { get; set; }
+    // Tag of a cluster node which responded to the query
     string NodeTag { get; set; }
+    // The ETag value for this index current state, which include what docs were indexed, what document were
+    //    deleted, etc.
     long ResultEtag { get; set; }
+    // Gets or sets the document resulting from this query.
     TResult Results { get; set; }
+    // Gets or sets the Revisions included in the result.
     BlittableJsonReaderArray RevisionIncludes { get; set; }
+    // Gets or sets the TimeSeries included in the result.
     BlittableJsonReaderObject TimeSeriesIncludes { get; set; }
+    // Detailed timings for various parts of a query (Lucene search, loading documents, transforming results) - if
+    //    requested.
     QueryTimings Timings { get; set; }
 }
 ```
@@ -1049,6 +1268,7 @@ public sealed class MoreLikeThisUsingAnyDocument : MoreLikeThisBase
 public sealed class MoreLikeThisUsingDocument : MoreLikeThisBase
 {
     MoreLikeThisUsingDocument(string documentJson);
+    // JSON document that will be used as a base for operation.
     string DocumentJson { get; set; }
 }
 ```
@@ -1082,6 +1302,7 @@ public sealed class ReplicationClientConfiguration
 public enum StraightforwardConflictResolution
 {
     None,
+    // Always resolve in favor of the latest version based on the last modified time
     ResolveToLatest,
 }
 ```
@@ -1114,6 +1335,8 @@ public sealed class ReplicationLatestEtagRequest
     string SourceMachineName { get; set; }
     string SourceTag { get; set; }
     string SourceUrl { get; set; }
+    // Indicates that the source database can use composite item change vectors for pull replication. Both sides
+    //    must declare this before pull replication may send order|version item change vectors.
     bool SupportsPullReplicationCompositeChangeVectors { get; set; }
 }
 ```
@@ -1121,22 +1344,27 @@ public sealed class ReplicationLatestEtagRequest
 ### `Raven.Client.Documents.Session`
 
 ```csharp
+// A query against a Raven index
 public abstract class AbstractDocumentQuery<T, TSelf> : IDocumentQueryCustomization, IAbstractDocumentQuery<T>
 {
     IAsyncDocumentSession AsyncSession { get; }
     string CollectionName { get; }
+    // Gets the document convention from the query session
     DocumentConventions Conventions { get; }
     FieldsToFetchToken FieldsToFetchToken { get; set; }
+    // The index to query
     string IndexName { get; }
     bool IsDistinct { get; }
     bool IsDynamicMapReduce { get; }
     bool IsProjectInto { get; }
     string ParameterPrefix { get; set; }
     QueryOperation QueryOperation { get; }
+    // Gets the session associated with this document query
     IDocumentSession Session { get; }
     string AddAliasToIncludesTokens(string fromAlias);
     void AddFromAliasToFilterTokens(string fromAlias);
     void AddFromAliasToOrderByTokens(string fromAlias);
+    // Adds an alias to the FieldName of each where token
     void AddFromAliasToWhereTokens(string fromAlias);
     void AddParameter(string name, object value);
     void AddRootType(Type type);
@@ -1144,25 +1372,36 @@ public abstract class AbstractDocumentQuery<T, TSelf> : IDocumentQueryCustomizat
     IDocumentQueryCustomization AfterStreamExecuted(Action<BlittableJsonReaderObject> action);
     void AggregateBy(FacetBase facet);
     void AggregateUsing(string facetSetupDocumentId);
+    // Add an AND to the query
     void AndAlso();
+    // Wraps previous query with clauses and adds an AND operator to the given query
     void AndAlso(bool wrapPreviousQueryClauses);
     IDocumentQueryCustomization BeforeQueryExecuted(Action<IndexQuery> action);
+    // Specifies a boost weight to the previous where clause. The higher the boost factor, the more relevant the
+    //    term will be.
     void Boost(decimal boost);
+    // Simplified method for closing a clause within the query
     void CloseSubclause();
     void ContainsAll(string fieldName, IEnumerable<object> values);
     void ContainsAny(string fieldName, IEnumerable<object> values);
+    // This function exists solely to forbid in memory where clause on IDocumentQuery, because that is nearly always
+    //    a mistake.
     int Count(Func<T, bool> predicate);
     void Distinct();
+    // Specifies a fuzziness factor to the single word term in the last where clause
     void Fuzzy(decimal fuzzy);
     IndexQuery GetIndexQuery();
     string GetMemberQueryPath(Expression expression);
     string GetMemberQueryPathForOrderBy(Expression expression);
+    // Gets the fields for projection
     IEnumerable<string> GetProjectionFields();
     void GroupBy(string fieldName, string[] fieldNames);
     void GroupBy(ValueTuple<string, GroupByMethod> field, ValueTuple<string, GroupByMethod>[] fields);
+    // This function exists solely to forbid Linq group by clause on IDocumentQuery
     IEnumerable<IGrouping<TKey, T>> GroupBy<TKey>(Func<T, TKey> keySelector);
     IEnumerable<IGrouping<TKey, TElement>> GroupBy<TKey, TElement>(Func<T, TKey> keySelector, Func<T, TElement> elementSelector);
     IEnumerable<IGrouping<TKey, T>> GroupBy<TKey>(Func<T, TKey> keySelector, IEqualityComparer<TKey> comparer);
+    // This function exists solely to forbid Linq group by clause on IDocumentQuery
     IEnumerable<IGrouping<TKey, TElement>> GroupBy<TKey, TElement>(Func<T, TKey> keySelector, Func<T, TElement> elementSelector, IEqualityComparer<TKey> comparer);
     void GroupByCount(string projectedName);
     void GroupByKey(string fieldName, string projectedName);
@@ -1171,21 +1410,40 @@ public abstract class AbstractDocumentQuery<T, TSelf> : IDocumentQueryCustomizat
     void Include(string path);
     void Include(Expression<Func<T, object>> path);
     void Include(IncludeBuilder includes);
+    // Explanations gives context how document was matched by query and provide information about how the score was
+    //    calculated.
+    // Throws InvalidOperationException: Explanations should be included only once in the query.
     void IncludeExplanations(ExplanationOptions options, out Explanations explanations);
     void IncludeTimings(out QueryTimings timings);
     QueryOperation InitializeQueryOperation();
     void Intersect();
+    // Called externally to raise the after query executed callback
     void InvokeAfterQueryExecuted(QueryResult result);
+    // Called externally to raise the after stream executed callback
     void InvokeAfterStreamExecuted(BlittableJsonReaderObject result);
     MoreLikeThisScope MoreLikeThis();
+    // Negate the next operation
     void NegateNext();
     IDocumentQueryCustomization NoCaching();
     IDocumentQueryCustomization NoTracking();
+    // Simplified method for opening a new clause within the query
     void OpenSubclause();
+    // Order the results by the specified fields The fields are the names of the fields to sort, defaulting to
+    //    sorting by ascending. You can prefix a field name with '-' to indicate sorting by descending or '+' to
+    //    sort by ascending
     void OrderBy(string field, string sorterName);
+    // Order the results by the specified fields The fields are the names of the fields to sort, defaulting to
+    //    sorting by ascending. You can prefix a field name with '-' to indicate sorting by descending or '+' to
+    //    sort by ascending
     void OrderBy(string field, OrderingType ordering);
     void OrderBy(string field, NullsOrdering nulls, OrderingType ordering);
+    // Order the results by the specified fields The fields are the names of the fields to sort, defaulting to
+    //    sorting by descending. You can prefix a field name with '-' to indicate sorting by descending or '+' to
+    //    sort by ascending
     void OrderByDescending(string field, string sorterName);
+    // Order the results by the specified fields The fields are the names of the fields to sort, defaulting to
+    //    sorting by descending. You can prefix a field name with '-' to indicate sorting by descending or '+' to
+    //    sort by ascending
     void OrderByDescending(string field, OrderingType ordering);
     void OrderByDescending(string field, NullsOrdering nulls, OrderingType ordering);
     void OrderByDistance(DynamicSpatialField field, double latitude, double longitude);
@@ -1214,18 +1472,28 @@ public abstract class AbstractDocumentQuery<T, TSelf> : IDocumentQueryCustomizat
     void OrderByDistanceDescending(string fieldName, string shapeWkt, double roundFactor, NullsOrdering nulls);
     void OrderByScore();
     void OrderByScoreDescending();
+    // Add an OR to the query
     void OrElse();
     string ProjectionParameter(object value);
+    // Specifies a proximity distance for the phrase in the last search clause
     void Proximity(int proximity);
+    // Order the search results randomly
     void RandomOrdering();
+    // Order the search results randomly using the specified seed this is useful if you want to have repeatable
+    //    random queries
     void RandomOrdering(string seed);
     void RawQuery(string query);
+    // Perform a search for documents which fields that match the searchTerms. If there is more than a single term,
+    //    each of them will be checked independently.
     void Search(string fieldName, string searchTerms, SearchOperator operator);
+    // Skips the specified count.
     void Skip(long count);
     void Spatial(DynamicSpatialField dynamicField, SpatialCriteria criteria);
     void Spatial(string fieldName, SpatialCriteria criteria);
+    // Provide statistics about the query, such as total count of matching records
     void Statistics(out QueryStatistics stats);
     void SuggestUsing(SuggestionBase suggestion);
+    // Takes the specified count.
     void Take(long count);
     IDocumentQueryCustomization Timings(out QueryTimings timings);
     string ToString();
@@ -1233,34 +1501,53 @@ public abstract class AbstractDocumentQuery<T, TSelf> : IDocumentQueryCustomizat
     void VectorSearch(IVectorEmbeddingFieldFactoryAccessor fieldFactoryAccessor, IVectorFieldValueFactoryAccessor fieldValueFactoryAccessor, float? minimumSimilarity, int? numberOfCandidates, bool isExact);
     void VectorSearch(IVectorFieldFactory<T> fieldFactory, IVectorFieldValueFactory valueFactory, float? minimumSimilarity, int? numberOfCandidates, bool isExact);
     void WaitForNonStaleResults(TimeSpan? waitTimeout);
+    // This function exists solely to forbid in memory where clause on IDocumentQuery, because that is nearly always
+    //    a mistake.
     IEnumerable<T> Where(Func<T, bool> predicate);
+    // Matches fields where the value is between the specified start and end, inclusive
     void WhereBetween(string fieldName, object start, object end, bool exact);
     void WhereEndsWith(string fieldName, object value);
     void WhereEndsWith(string fieldName, object value, bool exact);
+    // Matches value
     void WhereEquals(string fieldName, object value, bool exact);
+    // Matches value
     void WhereEquals(string fieldName, MethodCall method, bool exact);
+    // Matches value
     void WhereEquals(WhereParams whereParams);
     void WhereExists(string fieldName);
+    // Matches fields where the value is greater than the specified value
     void WhereGreaterThan(string fieldName, object value, bool exact);
+    // Matches fields where the value is greater than or equal to the specified value
     void WhereGreaterThanOrEqual(string fieldName, object value, bool exact);
+    // Check that the field has one of the specified value
     void WhereIn(string fieldName, IEnumerable<object> values, bool exact);
+    // Matches fields where the value is less than the specified value
     void WhereLessThan(string fieldName, object value, bool exact);
+    // Matches fields where the value is less than or equal to the specified value
     void WhereLessThanOrEqual(string fieldName, object value, bool exact);
+    // Filter the results from the index using the specified where clause.
     void WhereLucene(string fieldName, string whereClause, bool exact);
+    // Not matches value
     void WhereNotEquals(string fieldName, object value, bool exact);
+    // Not matches value
     void WhereNotEquals(string fieldName, MethodCall method, bool exact);
+    // Not matches value
     void WhereNotEquals(WhereParams whereParams);
+    // Matches fields where Regex.IsMatch(filedName, pattern)
     void WhereRegex(string fieldName, string pattern);
     void WhereStartsWith(string fieldName, object value);
     void WhereStartsWith(string fieldName, object value, bool exact);
     void WhereTrue();
+    // Sets a user-defined tag on the query request.
     void WithTag(string tag);
 }
 ```
 
 ```csharp
+// Abstract base class for advanced session extensions
 public abstract class AdvancedSessionExtensionBase
 {
+    // Defer commands to be executed on SaveChanges()
     void Defer(ICommandData command, ICommandData[] commands);
 }
 ```
@@ -1329,40 +1616,50 @@ public abstract class ClusterTransactionOperationsBase<TSession> : ClusterTransa
 ```
 
 ```csharp
+// Implements Unit of Work for accessing the RavenDB server
 public sealed class DocumentSessionAttachments : DocumentSessionAttachmentsBase, IAttachmentsSessionOperations
 {
     DocumentSessionAttachments(InMemoryDocumentSessionOperations session);
+    // Check if attachment exists
     bool Exists(string documentId, string name);
     AttachmentResult Get(string documentId, string name);
     AttachmentResult Get(object entity, string name);
+    // Returns multiple attachments by their requests
     IEnumerator<AttachmentEnumeratorResult> Get(IEnumerable<AttachmentRequest> attachments);
     AttachmentResult GetRange(string documentId, string name, long? from, long? to);
     AttachmentResult GetRange(object entity, string name, long? from, long? to);
+    // Returns the revision attachment by the document id, attachment name and change vector
     AttachmentResult GetRevision(string documentId, string name, string changeVector);
 }
 ```
 
 ```csharp
+// Implements Unit of Work for accessing the RavenDB server
 public sealed class DocumentSessionAttachmentsAsync : DocumentSessionAttachmentsBase, IAttachmentsSessionOperationsAsync
 {
     DocumentSessionAttachmentsAsync(InMemoryDocumentSessionOperations session);
+    // Check if attachment exists asynchronously
     Task<bool> ExistsAsync(string documentId, string name, CancellationToken token);
     Task<AttachmentResult> GetAsync(string documentId, string name, CancellationToken token);
     Task<AttachmentResult> GetAsync(object entity, string name, CancellationToken token);
+    // Returns multiple attachments by their requests asynchronously
     Task<IEnumerator<AttachmentEnumeratorResult>> GetAsync(IEnumerable<AttachmentRequest> attachments, CancellationToken token);
     Task<AttachmentResult> GetRangeAsync(string documentId, string name, long? from, long? to, CancellationToken token);
     Task<AttachmentResult> GetRangeAsync(object entity, string name, long? from, long? to, CancellationToken token);
+    // Returns the revision attachment by the document id, attachment name and change vector asynchronously
     Task<AttachmentResult> GetRevisionAsync(string documentId, string name, string changeVector, CancellationToken token);
 }
 ```
 
 ```csharp
+// Abstract implementation for in memory session operations
 public abstract class DocumentSessionAttachmentsBase : AdvancedSessionExtensionBase
 {
     void Copy(object sourceEntity, string sourceName, object destinationEntity, string destinationName);
     void Copy(string sourceDocumentId, string sourceName, string destinationDocumentId, string destinationName);
     void Delete(object entity, string name);
     void Delete(string documentId, string name);
+    // Returns the attachments info of a document
     AttachmentName[] GetNames(object entity);
     void Move(object sourceEntity, string sourceName, object destinationEntity, string destinationName);
     void Move(string sourceDocumentId, string sourceName, string destinationDocumentId, string destinationName);
@@ -1370,11 +1667,13 @@ public abstract class DocumentSessionAttachmentsBase : AdvancedSessionExtensionB
     void Rename(object entity, string name, string newName);
     void Store(string documentId, string name, Stream stream, string contentType);
     void Store(object entity, string name, Stream stream, string contentType);
+    // Stores attachment to be sent in the session using the provided parameters
     void Store(string documentId, StoreAttachmentParameters parameters);
 }
 ```
 
 ```csharp
+// Implements Unit of Work for accessing the RavenDB server
 public sealed class DocumentSessionRevisions : DocumentSessionRevisionsBase, IRevisionsSessionOperations, ILazyRevisionsOperations
 {
     DocumentSessionRevisions(InMemoryDocumentSessionOperations session);
@@ -1389,6 +1688,7 @@ public sealed class DocumentSessionRevisions : DocumentSessionRevisionsBase, IRe
 ```
 
 ```csharp
+// Implements Unit of Work for accessing the RavenDB server
 public sealed class DocumentSessionRevisionsAsync : DocumentSessionRevisionsBase, IRevisionsSessionOperationsAsync, ILazyRevisionsOperationsAsync
 {
     DocumentSessionRevisionsAsync(AsyncDocumentSession session);
@@ -1422,11 +1722,16 @@ public sealed class GroupByDocumentQuery<T> : IGroupByDocumentQuery<T>
 ```
 
 ```csharp
+// Mostly used by the linq provider
 public interface IAbstractDocumentQuery<T>
 {
+    // Get the queried collection name.
     string CollectionName { get; }
+    // Get the document conventions used for this query.
     DocumentConventions Conventions { get; }
+    // Get the queried index name.
     string IndexName { get; }
+    // Determines if query is a dynamic map-reduce query.
     bool IsDynamicMapReduce { get; }
     string ParameterPrefix { get; set; }
     string AddAliasToIncludesTokens(string fromAlias);
@@ -1436,13 +1741,21 @@ public interface IAbstractDocumentQuery<T>
     void AddRootType(Type type);
     void AggregateBy(FacetBase facet);
     void AggregateUsing(string facetSetupDocumentId);
+    // Add an AND to the query
     void AndAlso();
+    // Specifies a boost weight to the previous where clause. The higher the boost factor, the more relevant the
+    //    term will be.
     void Boost(decimal boost);
+    // Simplified method for closing a clause within the query
     void CloseSubclause();
+    // Performs a query matching ALL of the provided values against the given field (AND)
     void ContainsAll(string fieldName, IEnumerable<object> values);
+    // Performs a query matching ANY of the provided values against the given field (OR)
     void ContainsAny(string fieldName, IEnumerable<object> values);
     void Distinct();
+    // Specifies a fuzziness factor to the single word term in the last where clause
     void Fuzzy(decimal fuzzy);
+    // Gets field names of query result projection.
     IEnumerable<string> GetProjectionFields();
     void GroupBy(string fieldName, string[] fieldNames);
     void GroupBy(ValueTuple<string, GroupByMethod> field, ValueTuple<string, GroupByMethod>[] fields);
@@ -1455,9 +1768,15 @@ public interface IAbstractDocumentQuery<T>
     void Include(IncludeBuilder includes);
     void Intersect();
     MoreLikeThisScope MoreLikeThis();
+    // Negate the next operation
     void NegateNext();
+    // Simplified method for opening a new clause within the query
     void OpenSubclause();
+    // Order the results by the specified fields The field is the name of the field to sort, defaulting to sorting
+    //    by ascending.
     void OrderBy(string field, string sorterName);
+    // Order the results by the specified fields The field is the name of the field to sort, defaulting to sorting
+    //    by ascending.
     void OrderBy(string field, OrderingType ordering);
     void OrderBy(string field, NullsOrdering nulls, OrderingType ordering);
     void OrderByDescending(string field, string sorterName);
@@ -1489,43 +1808,67 @@ public interface IAbstractDocumentQuery<T>
     void OrderByDistanceDescending(string fieldName, string shapeWkt, double roundFactor, NullsOrdering nulls);
     void OrderByScore();
     void OrderByScoreDescending();
+    // Add an OR to the query
     void OrElse();
     string ProjectionParameter(object value);
+    // Specifies a proximity distance for the phrase in the last where clause
     void Proximity(int proximity);
     void RandomOrdering();
     void RandomOrdering(string seed);
+    // Perform a search for documents which fields that match the searchTerms. If there is more than a single term,
+    //    each of them will be checked independently.
     void Search(string fieldName, string searchTerms, SearchOperator operator);
+    // Skips the specified number of query results.
     void Skip(long count);
     void Spatial(DynamicSpatialField field, SpatialCriteria criteria);
     void Spatial(string fieldName, SpatialCriteria criteria);
     void SuggestUsing(SuggestionBase suggestion);
+    // Takes the specified number of query results.
     void Take(long count);
+    // Returns a 'String' that represents this instance.
     string ToString();
     void VectorSearch(IVectorFieldFactory<T> textFieldFactory, IVectorFieldValueFactory textValueFactory, float? minimumSimilarity, int? numberOfCandidates, bool isExact);
+    // Instruct the query to wait for non-stale results. This shouldn't be used outside of unit tests unless you are
+    //    well aware of the implications.
     void WaitForNonStaleResults(TimeSpan? waitTimeout);
+    // Matches fields where the value is between the specified start and end, inclusive
     void WhereBetween(string fieldName, object start, object end, bool exact);
+    // Matches fields which ends with the specified value.
     void WhereEndsWith(string fieldName, object value);
+    // Matches fields which ends with the specified value.
     void WhereEndsWith(string fieldName, object value, bool exact);
     void WhereEquals(string fieldName, object value, bool exact);
     void WhereEquals(string fieldName, MethodCall method, bool exact);
+    // Matches value
     void WhereEquals(WhereParams whereParams);
     void WhereExists(string fieldName);
+    // Matches fields where the value is greater than the specified value
     void WhereGreaterThan(string fieldName, object value, bool exact);
+    // Matches fields where the value is greater than or equal to the specified value
     void WhereGreaterThanOrEqual(string fieldName, object value, bool exact);
+    // Check that the field has one of the specified value
     void WhereIn(string fieldName, IEnumerable<object> values, bool exact);
+    // Matches fields where the value is less than the specified value
     void WhereLessThan(string fieldName, object value, bool exact);
+    // Matches fields where the value is less than or equal to the specified value
     void WhereLessThanOrEqual(string fieldName, object value, bool exact);
     void WhereNotEquals(string fieldName, object value, bool exact);
     void WhereNotEquals(string fieldName, MethodCall method, bool exact);
+    // Not matches value
     void WhereNotEquals(WhereParams whereParams);
+    // Matches fields where Regex.IsMatch(filed, pattern)
     void WhereRegex(string fieldName, string pattern);
+    // Matches fields which starts with the specified value.
     void WhereStartsWith(string fieldName, object value);
+    // Matches fields which starts with the specified value.
     void WhereStartsWith(string fieldName, object value, bool exact);
     void WhereTrue();
 }
 ```
 
 ```csharp
+// This is used as an abstraction for the implementation of a query when passing to other parts of the query
+//    infrastructure. Meant to be internal only, making this public to allow mocking / instrumentation.
 public interface IAbstractDocumentQueryImpl<T>
 {
     FieldsToFetchToken FieldsToFetchToken { get; set; }
@@ -1552,22 +1895,39 @@ public interface IAsyncAdvancedDocumentsSessionOperations
 ```csharp
 public interface IAsyncDocumentQueryBase<T>
 {
+    // Checks if query returns any results.
     Task<bool> AnyAsync(CancellationToken token);
+    // Gets the total count of query results.
     Task<int> CountAsync(CancellationToken token);
+    // Registers the lazy-count query and returns its lazy instance that will be evaluated on request.
     Lazy<Task<int>> CountLazilyAsync(CancellationToken token);
+    // Returns first result of the query.
+    // Throws InvalidOperationException: Results are empty.
     Task<T> FirstAsync(CancellationToken token);
+    // Returns first result of the query, or default value for queried type if there are none.
     Task<T> FirstOrDefaultAsync(CancellationToken token);
+    // Registers the lazy query and returns its lazy instance that will be evaluated on request.
     Lazy<Task<IEnumerable<T>>> LazilyAsync(Action<IEnumerable<T>> onEval);
+    // Gets the total count of query results as int64.
     Task<long> LongCountAsync(CancellationToken token);
+    // Registers the lazy-count query and returns its lazy instance that will be evaluated on request.
     Lazy<Task<long>> LongCountLazilyAsync(CancellationToken token);
+    // Returns single result of the query.
+    // Throws InvalidOperationException: There is not exactly one result.
     Task<T> SingleAsync(CancellationToken token);
+    // Returns single result of the query, or default value for given type if sequence is empty. Throws if there is
+    //    more than one result.
+    // Throws InvalidOperationException: There is more than a single result.
     Task<T> SingleOrDefaultAsync(CancellationToken token);
+    // Executes the query and returns the results as an array.
     Task<T[]> ToArrayAsync(CancellationToken token);
+    // Executes the query and returns the results as a list.
     Task<List<T>> ToListAsync(CancellationToken token);
 }
 ```
 
 ```csharp
+// It gives the ability to construct queries with the usage of 'IAsyncDocumentQuery`1' interface
 public interface IAsyncDocumentQueryBuilder
 {
     IAsyncDocumentQuery<T> AsyncDocumentQuery<T, TIndexCreator>();
@@ -1585,6 +1945,7 @@ public interface IAsyncSessionDocumentCounters : ISessionDocumentCountersBase
 ```
 
 ```csharp
+// Advanced async Incremental TimeSeries session operations
 public interface IAsyncSessionDocumentIncrementalTimeSeries : IAsyncTimeSeriesStreamingBase<TimeSeriesEntry>, ISessionDocumentIncrementTimeSeriesBase, ISessionDocumentDeleteTimeSeriesBase
 {
     Task<TimeSeriesEntry[]> GetAsync(DateTime? from, DateTime? to, int start, int pageSize, CancellationToken token);
@@ -1593,6 +1954,7 @@ public interface IAsyncSessionDocumentIncrementalTimeSeries : IAsyncTimeSeriesSt
 ```
 
 ```csharp
+// Advanced async TimeSeries typed session operations
 public interface IAsyncSessionDocumentRollupTypedTimeSeries<TValues> : ISessionDocumentTypedAppendTimeSeriesBase<TValues>, IAsyncTimeSeriesStreamingBase<TimeSeriesRollupEntry<TValues>>, ISessionDocumentDeleteTimeSeriesBase
 {
     Task<TimeSeriesRollupEntry<TValues>[]> GetAsync(DateTime? from, DateTime? to, int start, int pageSize, CancellationToken token);
@@ -1600,14 +1962,17 @@ public interface IAsyncSessionDocumentRollupTypedTimeSeries<TValues> : ISessionD
 ```
 
 ```csharp
+// Advanced async TimeSeries session operations
 public interface IAsyncSessionDocumentTimeSeries : ISessionDocumentAppendTimeSeriesBase, ISessionDocumentDeleteTimeSeriesBase, IAsyncTimeSeriesStreamingBase<TimeSeriesEntry>
 {
+    // Retrieves a range of entries from a single time series.
     Task<TimeSeriesEntry[]> GetAsync(DateTime? from, DateTime? to, int start, int pageSize, CancellationToken token);
     Task<TimeSeriesEntry[]> GetAsync(DateTime? from, DateTime? to, Action<ITimeSeriesIncludeBuilder> includes, int start, int pageSize, CancellationToken token);
 }
 ```
 
 ```csharp
+// Advanced async Incremental TimeSeries typed session operations
 public interface IAsyncSessionDocumentTypedIncrementalTimeSeries<TValues> : IAsyncTimeSeriesStreamingBase<TimeSeriesEntry<TValues>>, ISessionDocumentDeleteTimeSeriesBase, ISessionDocumentIncrementTimeSeriesBase
 {
     Task<TimeSeriesEntry<TValues>[]> GetAsync(DateTime? from, DateTime? to, int start, int pageSize, CancellationToken token);
@@ -1615,6 +1980,7 @@ public interface IAsyncSessionDocumentTypedIncrementalTimeSeries<TValues> : IAsy
 ```
 
 ```csharp
+// Advanced async TimeSeries typed session operations
 public interface IAsyncSessionDocumentTypedTimeSeries<TValues> : ISessionDocumentTypedAppendTimeSeriesBase<TValues>, IAsyncTimeSeriesStreamingBase<TimeSeriesEntry<TValues>>, ISessionDocumentDeleteTimeSeriesBase
 {
     Task<TimeSeriesEntry<TValues>[]> GetAsync(DateTime? from, DateTime? to, int start, int pageSize, CancellationToken token);
@@ -1671,11 +2037,13 @@ public interface IAttachmentsSessionOperationsBase
     void Copy(string sourceDocumentId, string sourceName, string destinationDocumentId, string destinationName);
     void Delete(string documentId, string name);
     void Delete(object entity, string name);
+    // Returns the attachments info of a document.
     AttachmentName[] GetNames(object entity);
     void Move(object sourceEntity, string sourceName, object destinationEntity, string destinationName);
     void Move(string sourceDocumentId, string sourceName, string destinationDocumentId, string destinationName);
     void Rename(object entity, string name, string newName);
     void Rename(string documentId, string name, string newName);
+    // Stores attachment to be sent in the session.
     void Store(string documentId, StoreAttachmentParameters parameters);
     void Store(string documentId, string name, Stream stream, string contentType);
     void Store(object entity, string name, Stream stream, string contentType);
@@ -1683,9 +2051,15 @@ public interface IAttachmentsSessionOperationsBase
 ```
 
 ```csharp
+// It gives the ability to construct queries with the usage of 'IDocumentQuery`1' interface
 public interface IDocumentQueryBuilder
 {
+    // It provides low-level querying capabilities with the usage of 'TIndexCreator' index. It gives a lot of
+    //    flexibility and control over the process of building a query.
     IDocumentQuery<T> DocumentQuery<T, TIndexCreator>();
+    // It provides low-level querying capabilities with the usage of an index or directly querying documents from a
+    //    specified collection (note: it might require an auto index to be created). It gives a lot of flexibility
+    //    and control over the process of building a query.
     IDocumentQuery<T> DocumentQuery<T>(string indexName, string collectionName, bool isMapReduce);
 }
 ```
@@ -1699,6 +2073,8 @@ public interface IDocumentsSessionOperations
     IEnumerator<StreamResult<T>> Stream<T>(IRawDocumentQuery<T> query);
     IEnumerator<StreamResult<T>> Stream<T>(IRawDocumentQuery<T> query, out StreamQueryStatistics streamQueryStats);
     IEnumerator<StreamResult<T>> Stream<T>(IDocumentQuery<T> query, out StreamQueryStatistics streamQueryStats);
+    // Creates a stream to fetch documents whose IDs match the given parameters. Documents are converted to CLR type
+    //    'T' along the way and wrapped in 'StreamResult`1' containing document metadata.
     IEnumerator<StreamResult<T>> Stream<T>(string startsWith, string matches, int start, int pageSize, string startAfter);
     void StreamInto<T>(IDocumentQuery<T> query, Stream output);
     void StreamInto<T>(IRawDocumentQuery<T> query, Stream output);
@@ -1718,12 +2094,15 @@ public interface IGroupByDocumentQueryBase<T, TSelf>
 ```csharp
 public interface IPagingDocumentQueryBase<T, TSelf>
 {
+    // Skips the specified count.
     TSelf Skip(long count);
+    // Takes the specified count.
     TSelf Take(long count);
 }
 ```
 
 ```csharp
+// Time series advanced in memory session operations
 public interface ISessionDocumentAppendTimeSeriesBase
 {
     void Append(DateTime timestamp, IEnumerable<double> values, string tag);
@@ -1734,7 +2113,10 @@ public interface ISessionDocumentAppendTimeSeriesBase
 ```csharp
 public interface ISessionDocumentCountersBase
 {
+    // Marks the specified document's counter for deletion. The counter will be deleted when 'SaveChanges' is
+    //    called.
     void Delete(string counter);
+    // Increments the counter value by the provided delta, or by 1 if delta is not provided.
     void Increment(string counter, long delta);
 }
 ```
@@ -1742,12 +2124,14 @@ public interface ISessionDocumentCountersBase
 ```csharp
 public interface ISessionDocumentDeleteTimeSeriesBase
 {
+    // Deletes a range of entries from a single time series.
     void Delete(DateTime? from, DateTime? to);
     void Delete(DateTime at);
 }
 ```
 
 ```csharp
+// Incremental time series synchronous session operations
 public interface ISessionDocumentIncrementalTimeSeries : ITimeSeriesStreamingBase<TimeSeriesEntry>, ISessionDocumentDeleteTimeSeriesBase, ISessionDocumentIncrementTimeSeriesBase
 {
     TimeSeriesEntry[] Get(DateTime? from, DateTime? to, int start, int pageSize);
@@ -1768,11 +2152,13 @@ public interface ISessionDocumentIncrementTimeSeriesBase
 ```csharp
 public interface ISessionDocumentRollupTypedAppendTimeSeriesBase<T>
 {
+    // Appends rollup values to the time series at the provided timestamp.
     void Append(TimeSeriesRollupEntry<T> entry);
 }
 ```
 
 ```csharp
+// Time series typed synchronous session operations
 public interface ISessionDocumentRollupTypedTimeSeries<TValues> : ITimeSeriesStreamingBase<TimeSeriesRollupEntry<TValues>>, ISessionDocumentRollupTypedAppendTimeSeriesBase<TValues>, ISessionDocumentDeleteTimeSeriesBase
 {
     TimeSeriesRollupEntry<TValues>[] Get(DateTime? from, DateTime? to, int start, int pageSize);
@@ -1782,12 +2168,15 @@ public interface ISessionDocumentRollupTypedTimeSeries<TValues> : ITimeSeriesStr
 ```csharp
 public interface ISessionDocumentTypedAppendTimeSeriesBase<T>
 {
+    // Appends values (and an optional tag) to the time series at the provided timestamp.
     void Append(DateTime timestamp, T entry, string tag);
+    // Appends values (and an optional tag) to the time series at the provided timestamp.
     void Append(TimeSeriesEntry<T> entry);
 }
 ```
 
 ```csharp
+// Incremental time series typed synchronous session operations
 public interface ISessionDocumentTypedIncrementalTimeSeries<TValues> : ITimeSeriesStreamingBase<TimeSeriesEntry<TValues>>, ISessionDocumentDeleteTimeSeriesBase, ISessionDocumentTypedIncrementTimeSeriesBase<TValues>
 {
     TimeSeriesEntry<TValues>[] Get(DateTime? from, DateTime? to, int start, int pageSize);
@@ -1797,12 +2186,14 @@ public interface ISessionDocumentTypedIncrementalTimeSeries<TValues> : ITimeSeri
 ```csharp
 public interface ISessionDocumentTypedIncrementTimeSeriesBase<T>
 {
+    // Increments the values of the incremental time series at the provided timestamp using the specified entry.
     void Increment(DateTime timestamp, T entry);
     void Increment(T entry);
 }
 ```
 
 ```csharp
+// Time series typed synchronous session operations
 public interface ISessionDocumentTypedTimeSeries<TValues> : ISessionDocumentTypedAppendTimeSeriesBase<TValues>, ITimeSeriesStreamingBase<TimeSeriesEntry<TValues>>, ISessionDocumentDeleteTimeSeriesBase
 {
     TimeSeriesEntry<TValues>[] Get(DateTime? from, DateTime? to, int start, int pageSize);
@@ -1848,11 +2239,13 @@ public interface ITimeSeriesSessionStreamRawResultOperations
 ```csharp
 public interface ITimeSeriesStreamingBase<T>
 {
+    // Creates a stream to fetch time series entries within the specified time range.
     IEnumerator<T> Stream(DateTime? from, DateTime? to, TimeSpan? offset);
 }
 ```
 
 ```csharp
+// Abstract implementation for in memory session operations
 public abstract class SessionCountersBase
 {
     void Delete(string counter);
@@ -1885,6 +2278,7 @@ public sealed class SessionDocumentTimeSeries<TValues> : ISessionDocumentTimeSer
 ```
 
 ```csharp
+// Abstract implementation for in memory session operations
 public abstract class SessionTimeSeriesBase
 {
     void Append(DateTime timestamp, double value, string tag);
@@ -2095,23 +2489,30 @@ public sealed class WhereToken.WhereOptions
 ### `Raven.Client.Documents.Subscriptions`
 
 ```csharp
+// Response wrapper for listing subscriptions.
 public sealed class GetSubscriptionsResult
 {
     GetSubscriptionsResult();
+    // Array of subscription states returned by the server.
     SubscriptionState[] Results;
 }
 ```
 
 ```csharp
+// Defines how a subscription may be connected by clients.
 public enum SubscriptionMode
 {
+    // No specific mode was set.
     None,
+    // A single client may be connected to the subscription at a time.
     Single,
+    // Multiple clients may connect concurrently (when supported by server configuration).
     Concurrent,
 }
 ```
 
 ```csharp
+// Result returned after updating a subscription. Inherits common fields from 'CreateSubscriptionResult'.
 public sealed class UpdateSubscriptionResult : CreateSubscriptionResult
 {
     UpdateSubscriptionResult();
@@ -2183,6 +2584,8 @@ public static class TaskExtensions
 ### `Raven.Client.Http`
 
 ```csharp
+// We use AttachmentStreamContent instead of StreamContent in order to not dispose the stream the user passes us
+//    so it will be usable again in failover scenarios.
 public sealed class AttachmentStreamContent : HttpContent
 {
     AttachmentStreamContent(Stream stream, CancellationToken cancellationToken);
@@ -2522,7 +2925,9 @@ public interface ITopologyConfigurationBuilderBase<TSelf>
 public sealed class ModifySolverResult
 {
     ModifySolverResult();
+    // Key of the database .
     string Key { get; set; }
+    // long? of the database after PUT operation.
     long? RaftCommandIndex { get; set; }
     ConflictSolver Solver { get; set; }
 }
@@ -2865,9 +3270,12 @@ public static class AsyncHelpers
 ```
 
 ```csharp
+// Provide a way for interested party to tell whether implementers have been disposed
 public interface IDisposalNotification : IDisposable
 {
+    // Whether the instance has been disposed
     bool WasDisposed { get; }
+    // Called after dispose is completed
     event EventHandler AfterDispose;
 }
 ```
@@ -2875,13 +3283,14 @@ public interface IDisposalNotification : IDisposable
 
 ## Members that no article mentions
 
-The names below are public members of types that are described elsewhere. A signature is shown without a description; the member may be an overload of a described member, a constant, or a helper that the client uses internally.
+The names below are public members of types that are described elsewhere. A member is shown with the description from the source code when there is one. The member may be an overload of a described member, a constant, or a helper that the client uses internally.
 
 ### `Raven.Client`
 
 ```csharp
 public sealed class Constants.Certificates
 {
+    // Maximum number of certificates allowed with the same hash.
     const int MaxNumberOfCertsWithSameHash;
 }
 ```
@@ -2889,6 +3298,7 @@ public sealed class Constants.Certificates
 ```csharp
 public sealed class Constants.Configuration
 {
+    // Configuration identifier for studio settings.
     const string StudioId;
 }
 ```
@@ -2896,6 +3306,7 @@ public sealed class Constants.Configuration
 ```csharp
 public sealed class Constants.Documents
 {
+    // The maximum allowed length for a database name.
     const int MaxDatabaseNameLength;
 }
 ```
@@ -2954,6 +3365,8 @@ public sealed class Constants.Documents.Indexing.Fields.JavaScript
 ```csharp
 public sealed class Constants.Documents.Indexing.Spatial
 {
+    // The International Union of Geodesy and Geophysics says the Earth's mean radius in KM is: [1]
+    //    http://en.wikipedia.org/wiki/Earth_radius
     const double EarthMeanRadiusKm;
     const double MilesToKm;
 }
@@ -2963,8 +3376,11 @@ public sealed class Constants.Documents.Indexing.Spatial
 public sealed class Constants.Documents.Metadata
 {
     const string HasValue;
+    // Property name for document identifier in objects.
     const string IdProperty;
+    // Metadata field name for legacy attachment metadata.
     const string LegacyAttachmentsMetadata;
+    // Metadata field name for revision time series snapshot.
     const string RevisionTimeSeries;
 }
 ```
@@ -2984,26 +3400,47 @@ public sealed class Constants.Documents.PeriodicBackup
 ```csharp
 public sealed class Constants.Headers
 {
+    // HTTP header name for accept encoding.
     const string AcceptEncoding;
+    // HTTP header name for the scheduled remote attachment upload time.
     const string AttachmentRemoteParametersAt;
+    // HTTP header name for remote attachment configuration flags.
     const string AttachmentRemoteParametersFlags;
+    // HTTP header name for remote attachment storage destination identifier.
     const string AttachmentRemoteParametersIdentifier;
+    // HTTP header name for RavenDB client version.
     const string ClientVersion;
+    // HTTP header name for cluster topology etag.
     const string ClusterTopologyEtag;
+    // HTTP header name for content disposition.
     const string ContentDisposition;
+    // HTTP header name for content encoding.
     const string ContentEncoding;
+    // HTTP header name for content length.
     const string ContentLength;
+    // HTTP header name for database cluster transaction identifier.
     const string DatabaseClusterTransactionId;
+    // HTTP header name for conditional request matching.
     const string IfMatch;
+    // HTTP header name for conditional request non-matching.
     const string IfNoneMatch;
+    // Prefix used for incremental time series headers.
     const string IncrementalTimeSeriesPrefix;
+    // HTTP header name for the last known cluster transaction index.
     const string LastKnownClusterTransactionIndex;
+    // HTTP header name for triggering client configuration refresh.
     const string RefreshClientConfiguration;
+    // HTTP header name for triggering topology refresh.
     const string RefreshTopology;
+    // HTTP header name for request timestamp.
     const string RequestTime;
+    // HTTP header name for server startup timestamp.
     const string ServerStartupTime;
+    // HTTP header name for RavenDB Studio version.
     const string StudioVersion;
+    // HTTP header name for transfer encoding.
     const string TransferEncoding;
+    // HTTP header name identifying the originating client IP address through a proxy.
     const string XForwardedFor;
 }
 ```
@@ -3017,7 +3454,9 @@ public sealed class Constants.Json.Fields
 ```csharp
 public sealed class Constants.Platform.Linux
 {
+    // Maximum file name length supported on Linux.
     const int MaxFileNameLength;
+    // Maximum path length supported on Linux.
     const int MaxPath;
 }
 ```
@@ -3025,6 +3464,7 @@ public sealed class Constants.Platform.Linux
 ```csharp
 public sealed class Constants.Platform.Windows
 {
+    // Maximum path length supported on Windows.
     static int MaxPath;
 }
 ```
@@ -3063,6 +3503,8 @@ public class StartingPointChangeVector : IEquatable<StartingPointChangeVector>
 ```csharp
 public class AiOutputOptions
 {
+    // When true, disables structured output entirely. The LLM returns free-form text instead of JSON conforming to
+    //    a schema.
     bool NoSchema { get; set; }
 }
 ```
@@ -3070,6 +3512,7 @@ public class AiOutputOptions
 ```csharp
 public interface IAiConversationOperations
 {
+    // Retrieves the list of action-tool requests that the AI agent needs you to execute.
     IEnumerable<AiAgentActionRequest> RequiredActions();
     AiAnswer<TAnswer> RunWithSchema<TAnswer>(AiOutputOptions outputOptions);
     AiAnswer<TAnswer> RunWithSchema<TAnswer>(TAnswer sampleObject);
@@ -3219,6 +3662,7 @@ public sealed class PatchCommandData : ICommandData
 ```csharp
 public sealed class PutAttachmentCommandData : ICommandData
 {
+    // Called before the session saves changes to allow the command to perform any necessary preparation.
     void OnBeforeSaveChanges(InMemoryDocumentSessionOperations session);
 }
 ```
@@ -3250,6 +3694,8 @@ public sealed class PutCompareExchangeCommandData : ICommandData
 ```csharp
 public sealed class DocumentConventions : Conventions
 {
+    // Gets or sets a function to find the property name for a member when building an index definition from a LINQ
+    //    expression.
     Func<MemberInfo, string> FindPropertyNameForIndexDefinition { get; set; }
 }
 ```
@@ -3293,8 +3739,10 @@ public class GenerateEntityIdOnTheClient
 {
     string GenerateDocumentIdForStorage(object entity);
     ValueTask<string> GenerateDocumentIdForStorageAsync(object entity);
+    // Tries to get the identity.
     string GetOrGenerateDocumentId(object entity);
     bool TryGetIdFromDynamic(object entity, out string id);
+    // Attempts to get the document ID from an instance
     bool TryGetIdFromInstance(object entity, out string id);
     void TrySetIdOnDynamic(object entity, string id);
 }
@@ -3305,6 +3753,7 @@ public class GenerateEntityIdOnTheClient
 ```csharp
 public abstract class AbstractCommonApiForIndexes : ILoadCommonApiForIndexes, ILoadCompareExchangeApiForIndexes
 {
+    // Gets a value indicating whether this instance is map reduce index definition
     bool IsMapReduce { get; }
 }
 ```
@@ -3319,6 +3768,7 @@ public abstract class AbstractGenericIndexCreationTask<TReduceResult> : Abstract
 ```csharp
 public abstract class AbstractIndexDefinitionBuilder<TDocument, TReduceResult, TIndexDefinition>
 {
+    // Gets or sets the spatial options
     IDictionary<Expression<Func<TReduceResult, object>>, SpatialOptions> SpatialIndexes { get; set; }
     ISet<Expression<Func<TReduceResult, object>>> SuggestionsOptions { get; set; }
 }
@@ -3375,8 +3825,11 @@ public abstract class AbstractJavaScriptTimeSeriesIndexCreationTask : AbstractTi
 ```csharp
 public sealed class LinqPathProvider
 {
+    // Get the member expression from the expression
     static MemberExpression GetMemberExpression(Expression expression);
+    // Get the path from the expression, including considering dictionary calls
     LinqPathProvider.Result GetPath(Expression expression, bool isFilterActive);
+    // Get the actual value from the expression
     object GetValueFromExpression(Expression expression, Type type);
     static bool GetValueFromExpressionWithoutConversion(Expression expression, out object value);
     static string HandlePropertyRenames(MemberInfo member, string name);
@@ -3411,6 +3864,7 @@ public sealed class RavenQueryInspector<T> : IRavenQueryable<T>, IRavenQueryInsp
 {
     void FieldsToFetch(IEnumerable<string> fields);
     IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken);
+    // Initializes a new instance of the 'RavenQueryInspector`1' class.
     void Init(IRavenQueryProvider provider, QueryStatistics queryStats, LinqQueryHighlightings highlightings, string indexName, string collectionName, Expression expression, InMemoryDocumentSessionOperations session, bool isMapReduce);
 }
 ```
@@ -3589,6 +4043,8 @@ public class PatchResult : PatchResultBase
 ```csharp
 public abstract class AbstractAiIntegrationConfiguration : EtlConfiguration<AiConnectionString>
 {
+    // Returns the active AI connector type derived from the associated connection string, or 'None' if no provider
+    //    is configured.
     AiConnectorType AiConnectorType { get; }
 }
 ```
@@ -3596,6 +4052,7 @@ public abstract class AbstractAiIntegrationConfiguration : EtlConfiguration<AiCo
 ```csharp
 public abstract class AbstractAiSettings : IDynamicJson
 {
+    // Validates provider-specific fields, adding messages to the supplied error list.
     void ValidateFields(List<string> errors);
 }
 ```
@@ -3603,6 +4060,7 @@ public abstract class AbstractAiSettings : IDynamicJson
 ```csharp
 public class AddEmbeddingsGenerationOperation : IMaintenanceOperation<AddEmbeddingsGenerationOperationResult>
 {
+    // Creates the command to send to the server.
     RavenCommand<AddEmbeddingsGenerationOperationResult> GetCommand(DocumentConventions conventions, JsonOperationContext context);
 }
 ```
@@ -3610,6 +4068,7 @@ public class AddEmbeddingsGenerationOperation : IMaintenanceOperation<AddEmbeddi
 ```csharp
 public class AddGenAiOperation : IMaintenanceOperation<AddGenAiOperationResult>
 {
+    // Creates the command to send to the server.
     RavenCommand<AddGenAiOperationResult> GetCommand(DocumentConventions conventions, JsonOperationContext context);
 }
 ```
@@ -3617,7 +4076,10 @@ public class AddGenAiOperation : IMaintenanceOperation<AddGenAiOperationResult>
 ```csharp
 public sealed class AiConnectionString : ConnectionString
 {
+    // Returns the active AI provider based on which settings object is configured.
     AiConnectorType GetActiveProvider();
+    // Determines whether the specified 'ConnectionString' is equal to the current instance, including the active
+    //    provider and its settings.
     bool IsEqual(ConnectionString connectionString);
 }
 ```
@@ -3640,10 +4102,14 @@ public sealed class AzureOpenAiSettings : OpenAiBaseSettings
 ```csharp
 public sealed class EmbeddingsGenerationConfiguration : AbstractAiIntegrationConfiguration
 {
+    // The ETL type. Always 'EmbeddingsGeneration' for this configuration.
     EtlType EtlType { get; }
+    // Store the text of each chunk in the database alongside its embedding. Useful for debugging or highlighting,
+    //    but increases storage requirements. Defaults to false.
     bool StoreChunkText { get; set; }
     string GetDefaultTaskName();
     string GetDestination();
+    // Indicates whether the underlying provider connection uses HTTPS or other encrypted transport.
     bool UsingEncryptedCommunicationChannel();
 }
 ```
@@ -3651,11 +4117,15 @@ public sealed class EmbeddingsGenerationConfiguration : AbstractAiIntegrationCon
 ```csharp
 public class GenAiConfiguration : AbstractAiIntegrationConfiguration
 {
+    // Enables detailed tracing for the GenAI task.
     bool EnableTracing { get; set; }
+    // The ETL type. Always 'GenAi' for this configuration.
     EtlType EtlType { get; }
+    // Generates a normalized identifier from the configuration name.
     string GenerateIdentifier();
     string GetDefaultTaskName();
     string GetDestination();
+    // Indicates whether the underlying provider connection uses HTTPS or other encrypted transport.
     bool UsingEncryptedCommunicationChannel();
 }
 ```
@@ -3663,6 +4133,7 @@ public class GenAiConfiguration : AbstractAiIntegrationConfiguration
 ```csharp
 public class GenAiTransformation
 {
+    // Validates that the script calls ai.genContext.
     bool ValidateScript(out string error);
 }
 ```
@@ -3714,6 +4185,7 @@ public sealed class OpenAiSettings : OpenAiBaseSettings
 ```csharp
 public class UpdateEmbeddingsGenerationOperation : IMaintenanceOperation<UpdateEtlOperationResult>
 {
+    // Creates the command that will be executed by the maintenance executor.
     RavenCommand<UpdateEtlOperationResult> GetCommand(DocumentConventions conventions, JsonOperationContext context);
 }
 ```
@@ -3721,6 +4193,7 @@ public class UpdateEmbeddingsGenerationOperation : IMaintenanceOperation<UpdateE
 ```csharp
 public class UpdateGenAiOperation : IMaintenanceOperation<UpdateEtlOperationResult>
 {
+    // Creates the command that will be executed by the maintenance executor.
     RavenCommand<UpdateEtlOperationResult> GetCommand(DocumentConventions conventions, JsonOperationContext context);
 }
 ```
@@ -3737,6 +4210,7 @@ public sealed class VertexSettings : AbstractAiSettings
 ```csharp
 public class AddOrUpdateAiAgentOperation : IMaintenanceOperation<AiAgentConfigurationResult>
 {
+    // Creates the command to send to the server.
     RavenCommand<AiAgentConfigurationResult> GetCommand(DocumentConventions conventions, JsonOperationContext context);
 }
 ```
@@ -3751,6 +4225,7 @@ public class AiAgentConfiguration : IDynamicJson
 ```csharp
 public class DeleteAiAgentOperation : IMaintenanceOperation<AiAgentConfigurationResult>
 {
+    // Creates the underlying command that will be sent to the server.
     RavenCommand<AiAgentConfigurationResult> GetCommand(DocumentConventions conventions, JsonOperationContext context);
 }
 ```
@@ -3758,6 +4233,7 @@ public class DeleteAiAgentOperation : IMaintenanceOperation<AiAgentConfiguration
 ```csharp
 public sealed class GetAiAgentsOperation : IMaintenanceOperation<GetAiAgentsResponse>
 {
+    // Creates the command that will be executed by the server to retrieve the agent(s).
     RavenCommand<GetAiAgentsResponse> GetCommand(DocumentConventions conventions, JsonOperationContext context);
 }
 ```
@@ -3772,6 +4248,7 @@ public sealed class GetConversationMessagesOperation : IMaintenanceOperation<AiC
 ```csharp
 public class RunConversationOperation<TSchema> : IMaintenanceOperation<ConversationResult<TSchema>>
 {
+    // Creates the command that will be sent to the server to execute the conversation step.
     RavenCommand<ConversationResult<TSchema>> GetCommand(DocumentConventions conventions, JsonOperationContext context);
 }
 ```
@@ -3847,6 +4324,7 @@ public sealed class PutAttachmentOperation : IOperation<AttachmentDetails>
 ```csharp
 public sealed class ConfigureRemoteAttachmentsOperation : IMaintenanceOperation<ConfigureRemoteAttachmentsOperationResult>
 {
+    // Gets the command that will be executed to configure remote attachments.
     RavenCommand<ConfigureRemoteAttachmentsOperationResult> GetCommand(DocumentConventions conventions, JsonOperationContext ctx);
 }
 ```
@@ -3854,6 +4332,7 @@ public sealed class ConfigureRemoteAttachmentsOperation : IMaintenanceOperation<
 ```csharp
 public sealed class GetRemoteAttachmentsConfigurationOperation : IMaintenanceOperation<RemoteAttachmentsConfiguration>
 {
+    // Gets the command that will be executed to retrieve the remote attachments configuration.
     RavenCommand<RemoteAttachmentsConfiguration> GetCommand(DocumentConventions conventions, JsonOperationContext context);
 }
 ```
@@ -4061,7 +4540,15 @@ public class AddCdcSinkOperation : IMaintenanceOperation<AddCdcSinkOperationResu
 ```csharp
 public class CdcSinkConfiguration : IDynamicJson, IDatabaseTask
 {
+    // Collects the active configured tables (including embedded tables recursively) as a flat, deduplicated list of
+    //    physical (schema, table) identities. A source table can be mapped several times at once (a root collection
+    //    and/or embedded arrays), but must be read/captured exactly ONCE and then fanned out to all its processors.
+    //    Disabled root tables - and their embedded tables - are excluded, so they are neither initial-loaded nor
+    //    change-captured.
     List<CdcSinkConfiguration.TableInfo> CollectAllTablesFlat(string defaultSchema);
+    // Walks every embedded table in the configuration tree (depth-first, recursive). A single traversal with a
+    //    stack guard — all callers that need to visit embedded tables should use this instead of rolling their own
+    //    recursion.
     static void ForEachEmbeddedTable(List<CdcSinkEmbeddedTableConfig> embedded, Action<CdcSinkEmbeddedTableConfig> action);
     string GetDefaultTaskName();
     string GetDestination();
@@ -4345,6 +4832,9 @@ public sealed class AzureQueueStorageConnectionSettings
 public sealed class AzureServiceBusConnectionSettings
 {
     string GetServiceBusUrl();
+    // Verifies that exactly one authentication method is configured and that its required fields are populated.
+    //    Validation of the connection string itself is intentionally shallow (substring match for sb://) and is
+    //    deferred to the Azure Service Bus SDK, which produces the authoritative error at connect time.
     bool IsValidConnection();
     DynamicJsonValue ToAuditJson();
 }
@@ -4768,6 +5258,7 @@ public sealed class PullReplicationAsSink : ExternalReplicationBase
 ```csharp
 public sealed class PullReplicationDefinition : IDynamicJson
 {
+    // The mode to prevent deletions during replication.
     PreventDeletionsMode PreventDeletionsMode { get; set; }
     DynamicJsonValue ToAuditJson();
 }
@@ -5202,7 +5693,9 @@ public class AsyncDocumentQuery<T> : AbstractDocumentQuery<T, AsyncDocumentQuery
 ```csharp
 public class AsyncDocumentSession : InMemoryDocumentSessionOperations, IAsyncAdvancedSessionOperations, IDocumentQueryGenerator
 {
+    // Creates a new Raven query inspector for the specified type
     RavenQueryInspector<S> CreateRavenQueryInspector<S>();
+    // Internal method to lazily load entities with includes asynchronously
     Lazy<Task<Dictionary<string, T>>> LazyAsyncLoadInternal<T>(string[] ids, string[] includes, Action<Dictionary<string, T>> onEval, CancellationToken token);
     Task<Dictionary<string, T>> LoadAsyncInternal<T>(string[] ids, string[] includes, string[] counterIncludes, bool includeAllCounters, IEnumerable<AbstractTimeSeriesRange> timeSeriesIncludes, string[] compareExchangeValueIncludes, string[] revisionIncludesByChangeVector, DateTime? revisionsToIncludeByDateTime, CancellationToken token);
 }
@@ -5211,6 +5704,8 @@ public class AsyncDocumentSession : InMemoryDocumentSessionOperations, IAsyncAdv
 ```csharp
 public sealed class DocumentInfo : IDisposable
 {
+    // If set to true, the session will ignore this document when SaveChanges() is called, and won't perform and
+    //    change tracking
     bool IgnoreChanges { get; set; }
     bool IsNewDocument { get; set; }
     IMetadataDictionary MetadataInstance { get; set; }
@@ -5229,8 +5724,10 @@ public class DocumentQuery<T> : AbstractDocumentQuery<T, DocumentQuery<T>>, IDoc
 ```csharp
 public class DocumentSession : InMemoryDocumentSessionOperations, IDocumentQueryGenerator, IAdvancedSessionOperations
 {
+    // Create a new query for
     IAsyncDocumentQuery<T> AsyncQuery<T>(string indexName, string collectionName, bool isMapReduce);
     RavenQueryInspector<S> CreateRavenQueryInspector<S>();
+    // Register to lazily load documents and include
     Lazy<Dictionary<string, T>> LazyLoadInternal<T>(string[] ids, string[] includes, Action<Dictionary<string, T>> onEval);
     Dictionary<string, T> LoadInternal<T>(string[] ids, string[] includes, string[] counterIncludes, bool includeAllCounters, IEnumerable<AbstractTimeSeriesRange> timeSeriesIncludes, string[] compareExchangeValueIncludes, string[] revisionIncludesByChangeVector, DateTime? revisionIncludeByDateTimeBefore);
 }
@@ -5241,12 +5738,15 @@ public abstract class InMemoryDocumentSessionOperations : IDisposable
 {
     void AssertNotDisposed();
     bool CheckIfIdAlreadyIncluded(string[] ids, IEnumerable<string> includes);
+    // Gets the default value of the specified type.
     static object GetDefaultValue(Type type);
     void IncrementRequestCount();
     void RegisterMissing(string id);
     void RegisterMissing(IEnumerable<string> ids);
     void RegisterMissingIncludes(BlittableJsonReaderArray results, BlittableJsonReaderObject includes, ICollection<string> includePaths);
+    // Tracks the entity inside the unit of work
     T TrackEntity<T>(DocumentInfo documentFound);
+    // Tracks the entity.
     T TrackEntity<T>(string id, BlittableJsonReaderObject document, BlittableJsonReaderObject metadata, bool noTracking);
 }
 ```
@@ -5254,7 +5754,9 @@ public abstract class InMemoryDocumentSessionOperations : IDisposable
 ```csharp
 public sealed class WhereParams
 {
+    // Should the field allow wildcards
     bool AllowWildcards { get; set; }
+    // Is this a root property or not?
     bool IsNestedPath { get; set; }
 }
 ```
@@ -5462,7 +5964,9 @@ public sealed class InvalidAttachmentRangeException : RavenException
 ```csharp
 public sealed class IndexCompilationException : CompilationException
 {
+    // Indicates which property caused error (Maps, Reduce).
     string IndexDefinitionProperty;
+    // Value of a problematic property.
     string ProblematicText;
 }
 ```
@@ -5499,6 +6003,7 @@ public sealed class ClusterTopology
 ```csharp
 public sealed class HttpCache : IDisposable, ILowMemoryHandler
 {
+    // This value should not be used outside of tests: fetching it locks the cache.
     int NumberOfItems { get; }
     void LowMemory(LowMemorySeverity lowMemorySeverity);
     void LowMemoryOver();
@@ -6303,6 +6808,8 @@ public sealed class Size
 ```csharp
 public sealed class SystemTime
 {
+    // Tests now run in parallel so this is no longer static to mitigate the possibility of getting incorrect
+    //    results. Use DocumentDatabase.Time instead.
     Func<DateTime> UtcDateTime;
     Action<int> WaitCalled;
     DateTime GetUtcNow();
