@@ -634,6 +634,29 @@ SingleShardRestoreSetting
 </TabItem>
 </Tabs>
 
+#### Restore result and progress
+
+While the restore runs, `operation.OnProgressChanged` receives a `RestoreProgress`.
+For a database that is not sharded, `operation.WaitForCompletionAsync` returns a `RestoreResult`: the restore task on the server creates it and reports progress for it.
+A sharded restore uses sharded result and progress types on the server.
+
+`RestoreResult` derives from `SmugglerResult`, and `RestoreProgress` derives from `SmugglerResult.SmugglerProgress`,
+so they share the smuggler properties.
+`RestoreResult` adds these properties:
+
+| Property | Type | Description |
+|---|---|---|
+| **DataDirectory** | `string` | The data directory of the restored database |
+| **JournalStoragePath** | `string` | The journal storage path of the restored database |
+| **SnapshotRestore** | `Counts` | Counters for the snapshot restore |
+| **Files** | `FileCounts` | The file counters of the restore |
+
+`RestoreProgress` exposes `SnapshotRestore` and `Files` as read-only properties that return the values of the underlying `RestoreResult`.
+
+`Counts` has the properties `StartTime` (`DateTime?`), `Processed` (`bool`), `ReadCount` (`long`), `Skipped` (`bool`), `ErroredCount` (`long`) and `SizeInBytes` (`long`).
+`FileCounts` has the properties `CurrentFileName` (`string`), `CurrentFile` (`long`) and `FileCount` (`long`).
+
+
 </ContentFrame>
 
 </Panel>
