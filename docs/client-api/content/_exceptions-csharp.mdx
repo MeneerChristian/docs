@@ -1,0 +1,147 @@
+import Admonition from '@theme/Admonition';
+import CodeBlock from '@theme/CodeBlock';
+import Panel from "@site/src/components/Panel";
+
+<Admonition type="note" title="">
+
+* Most of the exceptions below are thrown by the server.
+  The client receives the error response and re-creates the exception locally,
+  so that your code can catch it by type.
+
+* This page lists exceptions that an application may want to handle,
+  and the conditions under which the source throws them.
+  It is not a list of every exception type in the client.
+
+* In this article:
+    * [How server errors become client exceptions](../../client-api/exceptions.mdx#how-server-errors-become-client-exceptions)
+    * [Concurrency exceptions](../../client-api/exceptions.mdx#concurrency-exceptions)
+    * [Compare-exchange key exceptions](../../client-api/exceptions.mdx#compare-exchange-key-exceptions)
+    * [Wait-after-save timeouts](../../client-api/exceptions.mdx#wait-after-save-timeouts)
+    * [Backup already running](../../client-api/exceptions.mdx#backup-already-running)
+    * [Request executor exceptions](../../client-api/exceptions.mdx#request-executor-exceptions)
+
+</Admonition>
+
+<Panel heading="How server errors become client exceptions">
+
+When the server returns an error response, the client builds the exception as follows:
+
+* **Status code 409 (Conflict)**:
+  * If the error type is `DocumentConflictException`, a `DocumentConflictException` is created.
+  * If the error type is `ClusterTransactionConcurrencyException`,
+    a `ClusterTransactionConcurrencyException` is created, with the violations listed in the response.
+  * Otherwise a `ConcurrencyException` is created.
+
+* **Any other status code**: the client resolves the exception type from the error type name sent by the server.
+  * If the type cannot be resolved or created, a `RavenException` is thrown.
+  * If the resolved type is not a `RavenException`, it is wrapped in a `RavenException`
+    when the command's unsuccessful-response behavior is `WrapException`.
+
+* **A malformed error body**: if the response cannot be parsed into the error schema,
+  an `InvalidOperationException` is thrown.
+  If the parsed error has a null `Message`, `Error` or `Type`, a `BadResponseException` is thrown.
+
+</Panel>
+
+<Panel heading="Concurrency exceptions">
+
+| Exception                              | Derives from                | Thrown when                                                                                         |
+|----------------------------------------|-----------------------------|-----------------------------------------------------------------------------------------------------|
+| `ConflictException` (abstract)         | `RavenException`            | Base class of the conflict exceptions below. It is not thrown directly.                              |
+| `ConcurrencyException`                 | `ConflictException`         | The server answers with status 409 and the error type is neither `DocumentConflictException` nor `ClusterTransactionConcurrencyException`. |
+| `ClusterTransactionConcurrencyException` | `ConcurrencyException`    | A cluster-wide transaction fails because of concurrency violations. The server sets status 409 and attaches the violations. |
+
+`ConcurrencyException` has these properties:
+
+| Property               | Type     | Description                |
+|------------------------|----------|----------------------------|
+| `Id`                   | `string` | The document ID            |
+| `ExpectedChangeVector` | `string` | The expected change vector |
+| `ActualChangeVector`   | `string` | The actual change vector   |
+
+`ClusterTransactionConcurrencyException` adds `ConcurrencyViolations`, an array of `ConcurrencyViolation`:
+
+| Property   | Type              | Description                                                                |
+|------------|-------------------|----------------------------------------------------------------------------|
+| `Type`     | `ViolationOnType` | `Document` or `CompareExchange`: where the concurrency check failed        |
+| `Id`       | `string`          | The ID on which the check failed                                           |
+| `Expected` | `long`            | The expected index                                                         |
+| `Actual`   | `long`            | The actual index                                                           |
+
+Since `ClusterTransactionConcurrencyException` derives from `ConcurrencyException`,
+catch it first:
+
+<CodeBlock language="csharp">
+{`try
+\{
+    session.SaveChanges();
+\}
+catch (ClusterTransactionConcurrencyException e)
+\{
+    foreach (ClusterTransactionConcurrencyException.ConcurrencyViolation violation in e.ConcurrencyViolations)
+    \{
+        // violation.Type, violation.Id, violation.Expected, violation.Actual
+    \}
+\}
+catch (ConcurrencyException e)
+\{
+    // e.Id, e.ExpectedChangeVector, e.ActualChangeVector
+\}
+`}
+</CodeBlock>
+
+</Panel>
+
+<Panel heading="Compare-exchange key exceptions">
+
+| Exception                           | Derives from     | Thrown when                                                                                                   |
+|-------------------------------------|------------------|---------------------------------------------------------------------------------------------------------------|
+| `CompareExchangeKeyTooBigException` | `RavenException` | The server creates an add-or-update compare-exchange command for a key longer than 512 bytes.                 |
+| `CompareExchangeInvalidKeyException` | `RavenException` | A cluster-wide session puts or deletes a compare-exchange key that is an atomic guard key, and atomic document writes are not disabled. The message is "You cannot manipulate the atomic guard ... via the cluster-wide session". |
+
+</Panel>
+
+<Panel heading="Wait-after-save timeouts">
+
+`RavenTimeoutException` (derives from `RavenException`) has the public field `FailImmediately` (`bool`).
+The server throws it, with `FailImmediately` set to `true`, in two cases while processing `SaveChanges`:
+
+* After `session.Advanced.WaitForReplicationAfterSaveChanges` was called with `throwOnTimeout` set to `true`,
+  and the change vector was replicated to fewer servers than requested within the timeout.
+* After `session.Advanced.WaitForIndexesAfterSaveChanges` was called with `throwOnTimeout` set to `true`,
+  and the indexes did not catch up within the timeout.
+  The message lists the stale, errored and paused indexes.
+
+With `throwOnTimeout` set to `false`, the server does not throw in these cases.
+
+</Panel>
+
+<Panel heading="Backup already running">
+
+`BackupAlreadyRunningException` (namespace `Raven.Client.Exceptions.Database`, derives from `RavenException`)
+is thrown by the server when a backup task is started while a backup of the same task is already running.
+It has two public fields, which the client fills from the error response:
+
+| Field         | Type     | Description                                      |
+|---------------|----------|--------------------------------------------------|
+| `OperationId` | `long`   | The ID of the backup operation that is running   |
+| `NodeTag`     | `string` | The tag of the node on which the backup is running |
+
+</Panel>
+
+<Panel heading="Request executor exceptions">
+
+`AllTopologyNodesDownException` derives from `Exception` (not from `RavenException`).
+Its property `FailedTopology` (`Topology`) holds the topology that was used, when it is known.
+
+It is thrown:
+
+* By the request executor when a request failed on every node of the topology and more than one node failed.
+  The message lists each node's URL, cluster tag, server role and exception.
+  When exactly one node failed, the exception of that node is rethrown instead.
+* By the node selector when the topology has no nodes at all, while it selects a node by session ID.
+
+`BadResponseException` (derives from `RavenException`) is thrown while an error response is converted
+to an exception, when the parsed error is null or has a null `Message`, `Error` or `Type`.
+
+</Panel>
