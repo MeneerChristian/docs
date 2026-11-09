@@ -150,6 +150,18 @@ await store.Maintenance.SendAsync(configRevisionsBinCleanerOp);
 `}
 </CodeBlock>
 </TabItem>
+<TabItem value="syntax_3" label="syntax_3">
+<CodeBlock language="csharp">
+{`public sealed class ConfigureRevisionsBinCleanerOperationResult
+\{
+    public long? RaftCommandIndex \{ get; set; \}
+\}
+`}
+</CodeBlock>
+</TabItem>
+
+The operation returns a `ConfigureRevisionsBinCleanerOperationResult`.  
+`RaftCommandIndex` is the index of the Raft command that applied the configuration.
 
 
 

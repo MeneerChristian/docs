@@ -111,6 +111,19 @@ await documentStore.Maintenance.Server.SendAsync(configureConflictRevisionsOp);
 
 * See properties explanation and default values [here](../../../../../document-extensions/revisions/client-api/operations/configure-revisions.mdx#revisions-collection-configuration-object).
 
+<TabItem value="syntax_3" label="syntax_3">
+<CodeBlock language="csharp">
+{`public sealed class ConfigureRevisionsForConflictsResult
+\{
+    public long? RaftCommandIndex;
+\}
+`}
+</CodeBlock>
+</TabItem>
+
+* The operation returns a `ConfigureRevisionsForConflictsResult`.  
+  `RaftCommandIndex` is the index of the Raft command that applied the configuration.
+
 
 
 <Admonition type="info" title="">

@@ -15,6 +15,7 @@ import CodeBlock from '@theme/CodeBlock';
    * [Get revisions metadata](../../../../../document-extensions/revisions/client-api/session/loading.mdx#get-revisions-metadata)  
    * [Get revisions by creation time](../../../../../document-extensions/revisions/client-api/session/loading.mdx#get-revisions-by-creation-time)  
    * [Get revisions by change vector](../../../../../document-extensions/revisions/client-api/session/loading.mdx#get-revisions-by-change-vector)  
+   * [Get revisions lazily](../../../../../document-extensions/revisions/client-api/session/loading.mdx#get-revisions-lazily)  
 
 </Admonition>
 ## Get all revisions
@@ -234,4 +235,80 @@ Dictionary<string, T> Get<T>(IEnumerable<string> changeVectors);
 
 
 
+## Get revisions lazily
 
+* `Advanced.Revisions.Lazily` exposes the revisions methods that can be deferred.  
+  Each returns a `Lazy<>` instance, and the request is sent to the server when its `Value` is accessed.  
+  Learn more about lazy requests in [Perform operations lazily](../../../../../client-api/session/how-to/perform-operations-lazily.mdx).
+
+**Example**:
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="Sync" label="Sync">
+<CodeBlock language="csharp">
+{`Lazy<List<Order>> lazyRevisions = session
+    .Advanced
+    .Revisions
+    .Lazily
+    .GetFor<Order>("orders/1-A", start: 0, pageSize: 25);
+
+Lazy<List<IMetadataDictionary>> lazyMetadata = session
+    .Advanced
+    .Revisions
+    .Lazily
+    .GetMetadataFor("orders/1-A");
+
+// Both requests are sent to the server in a single call when the first value is accessed
+List<Order> revisions = lazyRevisions.Value;
+`}
+</CodeBlock>
+</TabItem>
+<TabItem value="Async" label="Async">
+<CodeBlock language="csharp">
+{`Lazy<Task<List<Order>>> lazyRevisions = asyncSession
+    .Advanced
+    .Revisions
+    .Lazily
+    .GetForAsync<Order>("orders/1-A", start: 0, pageSize: 25);
+
+List<Order> revisions = await lazyRevisions.Value;
+`}
+</CodeBlock>
+</TabItem>
+</Tabs>
+
+**Syntax**:
+
+<TabItem value="syntax_lazily" label="syntax_lazily">
+<CodeBlock language="csharp">
+{`ILazyRevisionsOperations Lazily \{ get; \}
+
+public interface ILazyRevisionsOperations
+\{
+    Lazy<List<T>> GetFor<T>(string id, int start = 0, int pageSize = 25);
+    Lazy<List<IMetadataDictionary>> GetMetadataFor(string id, int start = 0, int pageSize = 25);
+    Lazy<T> Get<T>(string changeVector);
+    Lazy<Dictionary<string, T>> Get<T>(IEnumerable<string> changeVectors);
+    Lazy<T> Get<T>(string id, DateTime date);
+\}
+`}
+</CodeBlock>
+</TabItem>
+<TabItem value="syntax_lazily_async" label="syntax_lazily_async">
+<CodeBlock language="csharp">
+{`ILazyRevisionsOperationsAsync Lazily \{ get; \}
+
+public interface ILazyRevisionsOperationsAsync
+\{
+    Lazy<Task<List<T>>> GetForAsync<T>(string id, int start = 0, int pageSize = 25,
+        CancellationToken token = default);
+    Lazy<Task<List<IMetadataDictionary>>> GetMetadataForAsync(string id, int start = 0,
+        int pageSize = 25, CancellationToken token = default);
+    Lazy<Task<T>> GetAsync<T>(string changeVector, CancellationToken token = default);
+    Lazy<Task<Dictionary<string, T>>> GetAsync<T>(IEnumerable<string> changeVectors,
+        CancellationToken token = default);
+    Lazy<Task<T>> GetAsync<T>(string id, DateTime date, CancellationToken token = default);
+\}
+`}
+</CodeBlock>
+</TabItem>
