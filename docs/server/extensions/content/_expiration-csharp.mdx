@@ -46,6 +46,7 @@ It is possible to:
 
 Modify the expiration settings using the client API by setting an `ExpirationConfiguration` 
 object and sending it to RavenDB using a `ConfigureExpirationOperation` operation.  
+The operation returns a `ConfigureExpirationOperationResult` with one property, `RaftCommandIndex` (`long?`).  
 
 #### Example:
 
