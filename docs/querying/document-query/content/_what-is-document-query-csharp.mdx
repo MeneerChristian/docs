@@ -435,7 +435,7 @@ bool IsDistinct { get; }                                       // both
 ```csharp
 List<Order> orders = session.Advanced
     .DocumentQuery<Order>()
-    .WhereGreaterThan(x => x.OrderedAt, RavenDocumentQuery.Now("-30d"))
+    .WhereGreaterThan("OrderedAt", RavenDocumentQuery.Now("-30d"))
     .ToList();
 ```
 
