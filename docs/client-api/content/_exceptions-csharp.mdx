@@ -158,7 +158,7 @@ All of these derive from `RavenException`.
 | Exception                         | Thrown when |
 |-----------------------------------|-------------|
 | `IndexDoesNotExistException`      | The query result is null, so the client throws "Could not find index ...". The server also throws it for a missing index ("There is no index with '...' name.") or a missing auto index ("There is no auto index with '...' name."). |
-| `IndexAlreadyExistException`      | An index is edited while its lock mode is `IndexLockMode.LockedError`. The message is "Cannot edit existing index ... with lock mode ...". |
+| `IndexAlreadyExistException`      | An index definition that differs from the existing one is put while the existing index's lock mode is `IndexLockMode.LockedError`. The message is "Cannot edit existing index ... with lock mode ...". |
 | `IndexCreationException`          | The server cannot create an index, for example: a JavaScript index definition has a problem, the index configuration contains an unrecognized option key, or a license limit blocks the creation (the `LicenseLimitException` is the inner exception). |
 | `IndexDeletionException`          | The server fails to delete or reset an index. The original exception is the inner exception. |
 | `IndexInvalidException`           | The server finds an invalid index definition detail, for example an unsupported or duplicated-field pattern in the references pattern of a map-reduce output to a collection. |
@@ -175,7 +175,7 @@ All of these derive from `RavenException`.
 
 | Exception                                | Thrown when |
 |------------------------------------------|-------------|
-| `DatabaseDisabledException`              | The database is disabled: a `disable.marker` file exists in its data directory, or the (sharded) database record is disabled. A subscription worker also throws it when the server reports the database as disabled. |
+| `DatabaseDisabledException`              | The database is disabled: a `disable.marker` file exists in its data directory, or the (sharded) database record is disabled. A subscription worker rethrows it when the server's error message for the subscription connection names it. |
 | `DatabaseLoadFailureException`           | The database fails to start. The message contains the database name and its data directory, and the cause is the inner exception. |
 | `DatabaseSchemaErrorException`           | The database fails to start because of a storage schema error. Same message format as above. |
 | `DatabaseLoadTimeoutException`           | Loading a database for a TCP connection, or unloading a database for a request, times out. |
@@ -191,7 +191,7 @@ All of these derive from `RavenException`.
 
 | Exception                           | Derives from       | Thrown when |
 |-------------------------------------|--------------------|-------------|
-| `NoLeaderException`                 | `RavenException`   | A node that is not the leader receives a command that only the leader accepts, or the node loses leadership while it handles one. |
+| `NoLeaderException`                 | `RavenException`   | The `/admin/rachis/send` endpoint receives a command on a node that is not the leader, or the node loses leadership while it handles the command. |
 | `NodeIsPassiveException`            | `RavenException`   | An action on a database, or a request for TCP info, reaches a node that is passive. |
 | `RequestedNodeUnavailableException` | `Exception`        | The request executor was asked for a specific node and either the node tag is not in the topology, or the node is currently marked as unavailable (when the caller asked to throw on failures). |
 | `InvalidNetworkTopologyException`   | `Exception`        | A TCP connection attempt (for example from replication) is answered with the `InvalidNetworkTopology` status. |
