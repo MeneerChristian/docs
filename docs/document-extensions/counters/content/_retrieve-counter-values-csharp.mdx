@@ -113,6 +113,35 @@ using (var session = docStore.OpenSession())
 |--------------------------|---------------------------------|
 | Dictionary&lt;string, long&gt; | Map of Counter names and values |
 
+#### GetAllAsync:
+
+In an async session, use `GetAllAsync`. It returns the same map of Counter names and values.
+
+<TabItem value="counters_region_GetAllAsync" label="counters_region_GetAllAsync">
+<CodeBlock language="csharp">
+{`using (var asyncSession = docStore.OpenAsyncSession())
+\{
+    var documentCounters = asyncSession.CountersFor("products/1-C");
+
+    Dictionary<string, long?> counters = await documentCounters.GetAllAsync();
+
+    foreach (var counter in counters)
+    \{
+        Console.WriteLine("counter name: " + counter.Key + ", counter value: " + counter.Value);
+    \}
+\}
+`}
+</CodeBlock>
+</TabItem>
+
+<TabItem value="GetAllAsync-definition" label="GetAllAsync-definition">
+<CodeBlock language="csharp">
+{`Task<Dictionary<string, long?>> GetAllAsync(CancellationToken token = default);
+`}
+</CodeBlock>
+</TabItem>
+
+
 
 
 
