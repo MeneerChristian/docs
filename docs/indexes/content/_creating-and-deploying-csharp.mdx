@@ -102,6 +102,18 @@ public class Orders_ByTotal : AbstractIndexCreationTask<Order>
 }
 ```
 
+* `Configuration` is an `IndexConfiguration`, a `Dictionary<string, string>`.  
+  Setting a key that already exists replaces its value, with `Add` or with the indexer.
+* Read a value with `GetValue(string key)`. It returns `null` when the key is not set,  
+  while reading the indexer with a key that is not set throws a `KeyNotFoundException`.
+
+```csharp
+IndexDefinition definition = new Orders_ByTotal().CreateIndexDefinition();
+
+string mapTimeout = definition.Configuration.GetValue("Indexing.MapTimeoutInSec");  // "30"
+string batchSize = definition.Configuration.GetValue("Indexing.MapBatchSize");      // null, the key is not set
+```
+
 </ContentFrame>
 
 </Panel>
