@@ -374,6 +374,18 @@ Where(Expression<Func<TimeSeriesEntry, TTag, bool>> predicate);
 | `LoadByTag` type parameter | `TTag`                                          | Time series entry tags can be just strings, but they can also be document IDs, representing a reference to a related document. `LoadByTag` takes the type of the entity. |
 | **predicate**              | `Expression<Func<TimeSeriesEntry, TTag, bool>>` | |
 
+`LoadByTag<TTag>()` returns an `ITimeSeriesLoadTagBuilder<TTag>`. Its only method is the `Where` overload that gets the entry and the loaded document:
+
+<TabItem value="ts_load_tag_builder" label="ts_load_tag_builder">
+<CodeBlock language="csharp">
+{`public interface ITimeSeriesLoadTagBuilder<TTag>
+{
+    ITimeSeriesQueryable Where(Expression<Func<TimeSeriesEntry, TTag, bool>> predicate);
+}
+`}
+</CodeBlock>
+</TabItem>
+
 `FromLast()` and `FromFirst()` take an `ITimePeriodBuilder`, which is used to represent a range of time from milliseconds to years:
 
 <TabItem value="csharp" label="csharp">
@@ -401,6 +413,76 @@ Where(Expression<Func<TimeSeriesEntry, TTag, bool>> predicate);
 
 * **`List<TimeSeriesRawResult>`** for non-aggregated data.  
   When the query doesn't aggregate time series entries, the results are returned in a list of time series results.
+
+#### Result types:
+
+* `TimeSeriesRawResult` and `TimeSeriesAggregationResult` (and their generic versions `TimeSeriesRawResult<T>` and `TimeSeriesAggregationResult<T>`)
+  derive from `TimeSeriesQueryStreamResultBase<TResult>`, which derives from `TimeSeriesQueryResult`.  
+  `TResult` is `TimeSeriesEntry` for raw results and `TimeSeriesRangeAggregation` for aggregated results.  
+  `TimeSeriesEntry` and `TimeSeriesRangeAggregation` implement the marker interface `ITimeSeriesQueryStreamEntry`.
+
+* `Results` holds the entries as an array. If the result holds a stream, reading `Results` reads the stream to its end
+  and keeps the entries in the array.
+
+* `Stream` enumerates the entries, and `StreamAsync` enumerates them asynchronously.
+  `StreamAsync` is available only when the result holds a stream.
+  See [Streaming time series](../../../../../document-extensions/timeseries/querying/stream-timeseries.mdx).
+
+<TabItem value="ts_query_result_types" label="ts_query_result_types">
+<CodeBlock language="csharp">
+{`public class TimeSeriesQueryResult
+{
+    public long Count { get; set; }
+}
+
+public abstract class TimeSeriesQueryStreamResultBase<TResult> : TimeSeriesQueryResult
+    where TResult : ITimeSeriesQueryStreamEntry
+{
+    public TResult[] Results { get; set; }
+    public IEnumerator<TResult> Stream { get; }
+    public IAsyncEnumerator<TResult> StreamAsync { get; }
+}
+
+public interface ITimeSeriesQueryStreamEntry
+{
+}
+
+public class TimeSeriesRangeAggregation : ITimeSeriesQueryStreamEntry
+{
+    public long[] Count;
+    public double[] Max, Min, Last, First, Average, Sum, Percentile, Slope, StandardDeviation;
+    public DateTime To, From;
+    public object Key { get; }
+}
+`}
+</CodeBlock>
+</TabItem>
+
+* In `TimeSeriesRangeAggregation<T>`, the properties `Max`, `Min`, `Last`, `First`, `Average`, `Sum` and `Count` are of type `T`.  
+  Reading one of them throws `InvalidOperationException` if the query result does not contain that aggregation
+  (for example, reading `Max` when the query did not select `max()`).
+
+* `AggregationType` lists the aggregations. The order of the values matters: the position of an aggregation in the enum
+  is the position of its value in the rolled-up entries.
+
+<TabItem value="ts_aggregation_type" label="ts_aggregation_type">
+<CodeBlock language="csharp">
+{`public enum AggregationType
+{
+    First = 0,
+    Last = 1,
+    Min = 2,
+    Max = 3,
+    Sum = 4,
+    Count = 5,
+    Average = 6,
+    Percentile = 7,
+    Slope = 8,
+    StandardDeviation = 9
+}
+`}
+</CodeBlock>
+</TabItem>
 
 
 
