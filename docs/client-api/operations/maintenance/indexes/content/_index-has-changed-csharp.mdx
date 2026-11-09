@@ -17,6 +17,7 @@ import CodeBlock from '@theme/CodeBlock';
 
 * In this page:
     * [Check if index has changed](../../../../../client-api/operations/maintenance/indexes/index-has-changed.mdx#check-if-index-has-changed)
+    * [Compare index definitions on the client](../../../../../client-api/operations/maintenance/indexes/index-has-changed.mdx#compare-index-definitions-on-the-client)
     * [Syntax](../../../../../client-api/operations/maintenance/indexes/index-has-changed.mdx#syntax)
 
 </Admonition>
@@ -70,6 +71,84 @@ bool indexHasChanged = await store.Maintenance.SendAsync(indexHasChangedOp);
 </TabItem>
 </Tabs>
 
+
+## Compare index definitions on the client
+
+`IndexHasChangedOperation` compares the definition on the server.  
+To compare two `IndexDefinition` objects that you already hold, use `IndexDefinition.Compare`.
+
+<TabItem value="compare_definitions" label="compare_definitions">
+<CodeBlock language="csharp">
+{`var localDefinition = new IndexDefinition
+{
+    Name = "UsersByName",
+    Maps = { "from user in docs.Users select new { user.Name }" }
+};
+
+var deployedDefinition = store.Maintenance.Send(new GetIndexOperation("UsersByName"));
+
+if (deployedDefinition != null)
+{
+    IndexDefinitionCompareDifferences differences = localDefinition.Compare(deployedDefinition);
+
+    if (differences.HasFlag(IndexDefinitionCompareDifferences.Maps))
+    {
+        // The map functions are different
+    }
+}
+`}
+</CodeBlock>
+</TabItem>
+
+<TabItem value="compare_syntax" label="syntax">
+<CodeBlock language="csharp">
+{`public IndexDefinitionCompareDifferences Compare(IndexDefinition other)
+`}
+</CodeBlock>
+</TabItem>
+
+* `Compare` throws an `ArgumentNullException` when `other` is `null`.  
+  It returns `IndexDefinitionCompareDifferences.None` when `other` is the same object, or when no difference is found.
+
+* `IndexDefinition.Equals(IndexDefinition)` is `true` when `Compare` returns `None`,  
+  or when the differences contain none of `Maps`, `Reduce`, `Configuration` and `Fields`.
+
+#### `IndexDefinitionCompareDifferences`
+
+The result is a `[Flags]` enum. The values that `Compare` sets:
+
+| Value | Set when |
+| - | - |
+| `None` | No difference was found |
+| `Maps` | The sets of map functions differ. Line endings are normalized before they are compared. |
+| `Reduce` | The reduce functions differ (line endings are normalized), or `OutputReduceToCollection`, `PatternForOutputReduceToCollectionReferences` or `PatternReferencesCollectionName` differ (case-insensitive comparison). |
+| `Fields` | The `Fields` dictionaries differ |
+| `Configuration` | The `Configuration` dictionaries differ |
+| `LockMode` | The lock modes differ. `null` and `Unlock` are treated as equal. |
+| `Priority` | The priorities differ. `null` and `Normal` are treated as equal. |
+| `State` | The states differ. `null` and `Normal` are treated as equal. |
+| `AdditionalSources` | The additional sources differ. Line endings are normalized. |
+| `AdditionalAssemblies` | The sets of additional assemblies differ |
+| `DeploymentMode` | The deployment modes differ. Not set when `other.DeploymentMode` is `null`. |
+| `CompoundFields` | The compound fields differ |
+| `ArchivedDataProcessingBehavior` | The archived data processing behaviors differ |
+| `SchemaValidationConfiguration` | The `SchemaDefinitions` differ |
+| `All` | The combination of all the values above, except `None` |
+
+#### `GetIndexHash`
+
+<TabItem value="get_index_hash_syntax" label="syntax">
+<CodeBlock language="csharp">
+{`public byte[] GetIndexHash()
+`}
+</CodeBlock>
+</TabItem>
+
+* `GetIndexHash` returns the bytes of the definition's `GetHashCode()`, which is computed from the maps,  
+  the reduce function, the fields, the additional sources, the additional assemblies and `OutputReduceToCollection`.
+
+* The result is cached in the `IndexDefinition` object on the first call.  
+  Changing the definition afterwards does not change what later calls return.
 
 
 ## Syntax

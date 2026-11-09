@@ -15,6 +15,7 @@ import CodeBlock from '@theme/CodeBlock';
     * [Put indexes operation with IndexDefinition](../../../../../client-api/operations/maintenance/indexes/put-indexes.mdx#put-indexes-operation-with-indexdefinition)
     * [Put indexes operation with IndexDefinitionBuilder](../../../../../client-api/operations/maintenance/indexes/put-indexes.mdx#put-indexes-operation-with-indexdefinitionbuilder)
     * [Syntax](../../../../../client-api/operations/maintenance/indexes/put-indexes.mdx#syntax)
+    * [Helper methods of IndexDefinition](../../../../../client-api/operations/maintenance/indexes/put-indexes.mdx#helper-methods-of-indexdefinition)
 
 </Admonition>
 ## Ways to deploy indexes - short summary 
@@ -319,6 +320,7 @@ await store.Maintenance.SendAsync(putIndexesOp);
 | Priority                                     | `IndexPriority?`                        | Priority of index<br/>(Low, Normal, High)                                                                                  |
 | LockMode                                     | `IndexLockMode?`                        | Lock mode of index<br/>(Unlock, LockedIgnore, LockedError)                                                                 |
 | Fields                                       | `Dictionary<string, IndexFieldOptions>` | _IndexFieldOptions_ per index field                                                                                       |
+| CompoundFields                               | `List<string[]>`                        | Expert: pairs of index-field names that [Corax](../../../../../indexes/search-engine/corax.mdx#compound-fields) can use to optimize some queries. Has no effect on Lucene indexes. |
 | AdditionalSources                            | `Dictionary<string, string>`            | Additional code files to be compiled with this index                                                                      |
 | AdditionalAssemblies                         | `HashSet<AdditionalAssembly>`           | Additional assemblies that are referenced                                                                                 |
 | Configuration                                | `IndexConfiguration`                    | Can override [indexing configuration](../../../../../server/configuration/indexing-configuration.mdx) by setting this dictionary |
@@ -335,6 +337,79 @@ await store.Maintenance.SendAsync(putIndexesOp);
 |-----------------------------|----------|-----------------------------------------|
 | Index                       | `string` | Name of the index that was added        |
 | RaftCommandIndex            | `long`   | Index of raft command that was executed |
+
+## Helper methods of IndexDefinition
+
+<TabItem value="definition_helpers_syntax" label="syntax">
+<CodeBlock language="csharp">
+{`public IndexType Type { get; }
+public IndexSourceType SourceType { get; }
+
+public IndexType DetectStaticIndexType();
+public IndexSourceType DetectStaticIndexSourceType();
+
+public void RemoveDefaultValues();
+`}
+</CodeBlock>
+</TabItem>
+
+<TabItem value="definition_helpers_sample" label="sample">
+<CodeBlock language="csharp">
+{`var definition = new IndexDefinition
+{
+    Name = "UsersByName",
+    Maps = { "from user in docs.Users select new { user.Name }" }
+};
+
+IndexType type = definition.DetectStaticIndexType();               // IndexType.Map
+IndexSourceType source = definition.DetectStaticIndexSourceType(); // IndexSourceType.Documents
+`}
+</CodeBlock>
+</TabItem>
+
+* **DetectStaticIndexType**  
+  Looks at the first map in `Maps`, after leading comments are removed.  
+  Returns `Map` (or `MapReduce` when `Reduce` is not empty) when the map starts with `from` or `docs`,  
+  or with `timeSeries` or `counters` (but not `timeSeries.map` or `counters.map`).  
+  Otherwise it returns `JavaScriptMap` (or `JavaScriptMapReduce` when `Reduce` is not empty).  
+  It throws an `ArgumentNullException` when `Maps` is empty, and an `ArgumentException` when the map is empty or white space.
+
+* **DetectStaticIndexSourceType**  
+  Returns `TimeSeries` for a map that starts with `timeSeries` or selects from `timeSeries`,  
+  `Counters` for a map that starts with `counters` or selects from `counters`, and `Documents` for any other map.  
+  It throws an `ArgumentNullException` when `Maps` is empty, and an `InvalidOperationException` when the maps have different source types.
+
+* **Type** and **SourceType**  
+  When no value was assigned to them, the getters return the result of the matching `Detect` method  
+  (and throw the same exceptions when `Maps` is empty).
+
+* **RemoveDefaultValues**  
+  Clears the options of each entry in `Fields` that are set to their default value  
+  (`Storage` `No`, `Indexing` `Default`, no analyzer, `TermVector` `No`, `Suggestions` `false`),  
+  and removes entries that have no other option set (no `Spatial` and no `Vector` options either).  
+  It does nothing when `Fields` contains an entry for `AllFields`.
+
+#### `IndexType`
+
+| Value | Description |
+| - | - |
+| `None` | Not set |
+| `AutoMap` | Auto-index, map |
+| `AutoMapReduce` | Auto-index, map-reduce |
+| `Map` | Static index, map |
+| `MapReduce` | Static index, map-reduce |
+| `Faulty` | Faulty index |
+| `JavaScriptMap` | Static JavaScript index, map |
+| `JavaScriptMapReduce` | Static JavaScript index, map-reduce |
+
+#### `IndexSourceType`
+
+| Value | Description |
+| - | - |
+| `None` | Not set |
+| `Documents` | The index is built over documents |
+| `TimeSeries` | The index is built over time series |
+| `Counters` | The index is built over counters |
 
 
 
