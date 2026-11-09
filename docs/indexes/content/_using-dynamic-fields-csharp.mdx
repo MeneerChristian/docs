@@ -872,7 +872,7 @@ public class Products_ByLocalizedDescription_JS : AbstractJavaScriptIndexCreatio
 
 Fields that are generated at indexing time cannot be selected with a lambda expression.  
 For these fields, an index class derived from `AbstractIndexCreationTask` can set the options by the field name,  
-with the following protected methods. Each one has an overload that takes an expression and an overload that takes the field name:
+with the following protected methods. Each one, except `StoreAllFields`, also has an overload that takes an expression:
 
 | Method with a field name                                          | Adds the option to |
 |-------------------------------------------------------------------|--------------------|
