@@ -169,6 +169,8 @@ public class OllamaSettings : AbstractAiSettings
 
 * Define a GenAI task using a `GenAiConfiguration` object.  
 * Run the task using `AddGenAiOperation`.  
+* `AddGenAiOperation` returns an `AddGenAiOperationResult`, which derives from `AddAiTaskOperationResult` and `AddEtlOperationResult`.  
+  It has the properties `RaftCommandIndex` (`long`, the index of the Raft command that added the task), `TaskId` (`long`, the ID of the new task) and `Identifier` (`string`, the created task identifier).  
 
 <Tabs groupId='languageSyntax'>
 <TabItem value="use-sample-object" label="use-sample-object">

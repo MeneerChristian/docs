@@ -681,6 +681,14 @@ public AddEmbeddingsGenerationOperation(EmbeddingsGenerationConfiguration config
 ```
 </TabItem>
 
+`AddEmbeddingsGenerationOperation` returns an `AddEmbeddingsGenerationOperationResult`, which derives from `AddAiTaskOperationResult` and `AddEtlOperationResult`:
+
+| Property | Type | Description |
+|---|---|---|
+| **RaftCommandIndex** | `long` | The index of the Raft command that added the task |
+| **TaskId** | `long` | The ID of the new task |
+| **Identifier** | `string` | The created task identifier |
+
 #### Updating the embeddings generation task:
 
 <TabItem value="syntax_4" label="syntax_4">
