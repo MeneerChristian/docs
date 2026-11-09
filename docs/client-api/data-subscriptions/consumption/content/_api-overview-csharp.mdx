@@ -143,10 +143,13 @@ Task Run(Func<SubscriptionBatch<T>, Task> processDocuments,
 
 ## SubscriptionBatch&lt;T&gt;
 
+`SubscriptionBatch<T>` derives from `SubscriptionBatchBase<T>`, which defines the members `Items`, `NumberOfItemsInBatch` and `LastSentChangeVectorInBatch`.
+
 | Member                   | Type                              | Description                                                                                                                                                            |
 |--------------------------|-----------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **Items**                | `List<SubscriptionBatch<T>.Item>` | List of items in the batch.<br/>See [SubscriptionBatch&lt;T&gt;.Item](../../../../client-api/data-subscriptions/consumption/api-overview.mdx#subscriptionbatchtitem) below. |
 | **NumberOfItemsInBatch** | `int`                             | Number of items in the batch.                                                                                                                                          |
+| **LastSentChangeVectorInBatch** | `string` (field) | The change vector of the last item in the batch. The worker sends it to the server when it acknowledges the batch. |
 
 | Method Signature       | Return value            | Description                                                                                                       |
 |------------------------|-------------------------|-------------------------------------------------------------------------------------------------------------------|
