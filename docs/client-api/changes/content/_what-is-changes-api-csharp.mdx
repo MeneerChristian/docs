@@ -21,6 +21,7 @@ completion handlers.
 * In this article:  
   * [Accessing Changes API](../../../client-api/changes/what-is-changes-api.mdx#accessing-changes-api)  
   * [Connection interface](../../../client-api/changes/what-is-changes-api.mdx#connection-interface)  
+  * [Changes interfaces](../../../client-api/changes/what-is-changes-api.mdx#changes-interfaces)  
   * [Subscribing](../../../client-api/changes/what-is-changes-api.mdx#subscribing)  
   * [Unsubscribing](../../../client-api/changes/what-is-changes-api.mdx#unsubscribing)  
   * [Changes API and Database Timeout](../../../client-api/changes/what-is-changes-api.mdx#changes-api-and-database-timeout)  
@@ -87,6 +88,9 @@ public interface IConnectableChanges<TChanges> : IDisposable
   or when the initial connection attempt fails.  
   A temporary disconnect is not reported through `OnError`, because the client reconnects automatically.
   Use `ConnectionStatusChanged` to track those disconnects and reconnects.
+  When the client fails to process a notification it received, `OnError` is raised with the exception that caused the failure.
+  The client wraps that exception in a `ChangeProcessingException` internally and keeps the connection loop running;
+  the wrapper is not passed to `OnError`, and it is not thrown to your code.
 
 ```csharp
 IDatabaseChanges changes = store.Changes();
@@ -96,6 +100,62 @@ changes.OnError += ex => Console.WriteLine($"Changes API error: {ex.Message}");
 await changes.EnsureConnectedNow();
 Console.WriteLine($"Connected: {changes.Connected}");
 ```
+
+</Panel>
+
+<Panel heading="Changes interfaces">
+
+`IDatabaseChanges` and `ISingleNodeDatabaseChanges` are composed of the following interfaces.  
+Each interface groups the `For...` methods of one kind of notification, and each method returns an `IChangesObservable<TChange>`.
+
+```csharp
+public interface IDatabaseChanges :
+    IDocumentChanges<DocumentChange>,
+    IIndexChanges<IndexChange>,
+    ICounterChanges<CounterChange>,
+    ITimeSeriesChanges<TimeSeriesChange>,
+    IConnectableChanges<IDatabaseChanges>
+{
+}
+
+public interface ISingleNodeDatabaseChanges :
+    IDocumentChanges<DocumentChange>,
+    IIndexChanges<IndexChange>,
+    IOperationChanges<OperationStatusChange>,
+    ICounterChanges<CounterChange>,
+    ITimeSeriesChanges<TimeSeriesChange>,
+    IConnectableChanges<ISingleNodeDatabaseChanges>
+{
+}
+```
+
+| Interface                        | Methods                                                                                                                               | Described in |
+|----------------------------------|---------------------------------------------------------------------------------------------------------------------------------------|--------------|
+| `IDocumentChanges<TChange>`      | `ForDocument`, `ForAllDocuments`, `ForDocumentsStartingWith`, `ForDocumentsInCollection(string)`, `ForDocumentsInCollection<TEntity>()` | [Document changes](../../../client-api/changes/how-to-subscribe-to-document-changes.mdx) |
+| `IIndexChanges<TChange>`         | `ForIndex`, `ForAllIndexes`                                                                                                           | [Index changes](../../../client-api/changes/how-to-subscribe-to-index-changes.mdx) |
+| `IOperationChanges<TChange>`     | `ForOperationId`, `ForAllOperations`                                                                                                  | [Operation changes](../../../client-api/changes/how-to-subscribe-to-operation-changes.mdx) |
+| `ICounterChanges<TChange>`       | `ForAllCounters`, `ForCounter`, `ForCounterOfDocument`, `ForCountersOfDocument`                                                       | [Counter changes](../../../client-api/changes/how-to-subscribe-to-counter-changes.mdx) |
+| `ITimeSeriesChanges<TChange>`    | `ForAllTimeSeries`, `ForTimeSeries`, `ForTimeSeriesOfDocument(string)`, `ForTimeSeriesOfDocument(string, string)`                     | [Time series changes](../../../client-api/changes/how-to-subscribe-to-time-series-changes.mdx) |
+
+Because the interfaces are generic, you can write code against a single kind of notification.  
+For example, a method that accepts `IDocumentChanges<DocumentChange>` works with both `IDatabaseChanges` and `ISingleNodeDatabaseChanges`:
+
+```csharp
+IDisposable WatchOrders(IDocumentChanges<DocumentChange> changes)
+{
+    return changes
+        .ForDocumentsInCollection("Orders")
+        .Subscribe(change => Console.WriteLine($"{change.Type} on {change.Id}"));
+}
+
+IDisposable subscription = WatchOrders(store.Changes());
+```
+
+<Admonition type="note" title="">
+The server also sends a topology notification (`TopologyChange`, with the `Url` and `Database` of a node) over the Changes API connection.
+The client uses it internally to refresh the cluster topology of its request executor.  
+It is not delivered to subscribers, and there is no `For...` method for it.
+</Admonition>
 
 </Panel>
 
