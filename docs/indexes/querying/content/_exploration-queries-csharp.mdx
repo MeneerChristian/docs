@@ -175,14 +175,14 @@ IFilterFactory<T> Equals(string fieldName, object value);
 IFilterFactory<T> Equals(string fieldName, MethodCall value);
 IFilterFactory<T> Equals<TValue>(Expression<Func<T, object>> propertySelector, TValue value);
 IFilterFactory<T> Equals<TValue>(Expression<Func<T, object>> propertySelector, MethodCall value);
-IFilterFactory<T> Equals(WhereParams whereParams);
+IFilterFactory<T> Equals(WhereParams WhereParams);
 
 // Inequality
 IFilterFactory<T> NotEquals(string fieldName, object value);
 IFilterFactory<T> NotEquals(string fieldName, MethodCall value);
 IFilterFactory<T> NotEquals<TValue>(Expression<Func<T, object>> propertySelector, TValue value);
 IFilterFactory<T> NotEquals<TValue>(Expression<Func<T, object>> propertySelector, MethodCall value);
-IFilterFactory<T> NotEquals(WhereParams whereParams);
+IFilterFactory<T> NotEquals(WhereParams WhereParams);
 
 // Comparison
 IFilterFactory<T> GreaterThan(string fieldName, object value);
@@ -209,7 +209,7 @@ IFilterFactory<T> CloseSubclause();
     | **fieldName** | `string` | The name of the field to compare |
     | **propertySelector** | `Expression<Func<T, object>>` | Selects the field to compare |
     | **value** | `object` / `TValue` / `MethodCall` | The value to compare the field with |
-    | **whereParams** | `WhereParams` | The comparison, defined as a `WhereParams` object |
+    | **WhereParams** | `WhereParams` | The comparison, defined as a `WhereParams` object |
 
     | Method | Description |
     | ------ | ----------- |
