@@ -467,6 +467,102 @@ class DatabaseSmugglerImportOptions
 </TabItem>
 </Tabs>
 
+### Smuggler result and progress
+
+The `Operation` returned by `ExportAsync` and `ImportAsync` completes with a `SmugglerResult`.  
+Pass `SmugglerResult` to `WaitForCompletion` to read it.
+
+```csharp
+var exportOperation = await store
+    .Smuggler
+    .ExportAsync(
+        new DatabaseSmugglerExportOptions(),
+        @"C:\ravendb-exports\Northwind.ravendbdump",
+        token);
+
+SmugglerResult result = await exportOperation.WaitForCompletionAsync<SmugglerResult>();
+
+Console.WriteLine($"Exported {result.Documents.ReadCount} documents");
+```
+
+<Tabs groupId='smuggler-result-classes'>
+<TabItem value="SmugglerResult" label="SmugglerResult">
+
+```csharp
+class SmugglerResult : SmugglerProgressBase
+{
+    string Message { get; }
+    TimeSpan Elapsed { get; }
+    IOperationProgress Progress { get; }
+    IReadOnlyList<string> Messages { get; }
+    long GetLastEtag()
+    long GetLastRaftIndex()
+}
+```
+
+| Member | Type | Description |
+|--------|------|-------------|
+| **Message** | `string` | The last message reported by the operation. |
+| **Elapsed** | `TimeSpan` | The time elapsed since the result object was created. |
+| **Progress** | `IOperationProgress` | The progress object (`SmugglerResult.SmugglerProgress`) that reports the same counters while the operation runs. |
+| **Messages** | `IReadOnlyList<string>` | The messages recorded by the operation. |
+| **GetLastEtag()** | `long` | The highest `LastEtag` among documents, revisions, tombstones, conflicts, counters, time series and time series deleted ranges. |
+| **GetLastRaftIndex()** | `long` | The higher of the `LastEtag` of `Identities` and `CompareExchange`. |
+
+</TabItem>
+<TabItem value="SmugglerProgressBase" label="SmugglerProgressBase">
+
+`SmugglerResult` and `SmugglerResult.SmugglerProgress` derive from `SmugglerProgressBase`,  
+which holds one counters object per item type.
+
+```csharp
+abstract class SmugglerProgressBase : IOperationProgress
+{
+    DatabaseRecordProgress DatabaseRecord { get; set; }
+    CountsWithSkippedCountAndLastEtagAndAttachments Documents { get; set; }
+    CountsWithSkippedCountAndLastEtagAndAttachments RevisionDocuments { get; set; }
+    CountsWithLastEtag Tombstones { get; set; }
+    CountsWithLastEtag Conflicts { get; set; }
+    CountsWithLastEtag Identities { get; set; }
+    Counts Indexes { get; set; }
+    CountsWithLastEtag CompareExchange { get; set; }
+    Counts CompareExchangeTombstones { get; set; }
+    Counts Subscriptions { get; set; }
+    Counts ReplicationHubCertificates { get; set; }
+    CountsWithSkippedCountAndLastEtag Counters { get; set; }
+    CountsWithSkippedCountAndLastEtag TimeSeries { get; set; }
+    CountsWithSkippedCountAndLastEtag TimeSeriesDeletedRanges { get; set; }
+}
+```
+
+| Counters class | Properties |
+|----------------|------------|
+| **Counts** | `StartTime` (`DateTime?`), `Processed` (`bool`), `ReadCount` (`long`), `Skipped` (`bool`), `ErroredCount` (`long`), `SizeInBytes` (`long`) |
+| **CountsWithLastEtag** | The `Counts` properties, and `LastEtag` (`long`) |
+| **CountsWithSkippedCountAndLastEtag** | The `CountsWithLastEtag` properties, and `SkippedCount` (`long`) |
+| **CountsWithSkippedCountAndLastEtagAndAttachments** | The `CountsWithSkippedCountAndLastEtag` properties, and `Attachments` (`Counts`) |
+
+`DatabaseRecordProgress` derives from `Counts` and adds a `bool` flag per database record item that was updated,  
+for example `SortersUpdated`, `AnalyzersUpdated`, `RevisionsConfigurationUpdated` and `ExpirationConfigurationUpdated`.
+
+</TabItem>
+<TabItem value="DatabaseSmugglerOptions" label="DatabaseSmugglerOptions">
+
+`DatabaseSmugglerExportOptions` and `DatabaseSmugglerImportOptions` derive from the `DatabaseSmugglerOptions` base class,  
+which holds the options they share: `OperateOnTypes`, `OperateOnDatabaseRecordTypes`, `IncludeExpired`, `IncludeArtificial`,  
+`IncludeArchived`, `RemoveAnalyzers`, `TransformScript`, `MaxStepsForTransformScript`, `EncryptionKey`, `Collections`,  
+`MaxReadOpsPerSecond` and `SkipCorruptedData` (see the tables above).
+
+The defaults of `OperateOnTypes` and `OperateOnDatabaseRecordTypes` are available as constants:
+
+```csharp
+public const DatabaseItemType DefaultOperateOnTypes;
+public const DatabaseRecordItemType DefaultOperateOnDatabaseRecordTypes;
+```
+
+</TabItem>
+</Tabs>
+
 </ContentFrame>
 
 </Panel>
