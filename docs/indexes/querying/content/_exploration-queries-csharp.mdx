@@ -38,6 +38,7 @@ import CodeBlock from '@theme/CodeBlock';
    * [Syntax](../../../indexes/querying/exploration-queries.mdx#syntax)
    * [Usage examples](../../../indexes/querying/exploration-queries.mdx#usage-examples)
       * [With collection queries](../../../indexes/querying/exploration-queries.mdx#with-collection-queries)
+      * [With comparison operators in `DocumentQuery.Filter`](../../../indexes/querying/exploration-queries.mdx#with-comparison-operators-in-documentqueryfilter)
       * [With queries that use an index](../../../indexes/querying/exploration-queries.mdx#with-queries-that-use-an-index)
       * [With projections](../../../indexes/querying/exploration-queries.mdx#with-projections)
       * [With user-defined JavaScript functions (`declare`)](../../../indexes/querying/exploration-queries.mdx#with-user-defined-javascript-functions-)
@@ -165,6 +166,60 @@ filter_limit 500 // limit the number of filtered records
     | **builder** | `Action<IFilterFactory<T>>` | Your filter |
     | **limit** | `int ` | Limits the number of filtered records (Recommended) <br/> Default: all retrieved records |
 
+* `IFilterFactory<T>`  
+  The builder that `DocumentQuery.Filter` passes to your delegate. Each method adds a condition to the filter and returns the same `IFilterFactory<T>`, so the calls can be chained.  
+<TabItem value="csharp" label="csharp">
+<CodeBlock language="csharp">
+{`// Equality
+IFilterFactory<T> Equals(string fieldName, object value);
+IFilterFactory<T> Equals(string fieldName, MethodCall value);
+IFilterFactory<T> Equals<TValue>(Expression<Func<T, object>> propertySelector, TValue value);
+IFilterFactory<T> Equals<TValue>(Expression<Func<T, object>> propertySelector, MethodCall value);
+IFilterFactory<T> Equals(WhereParams whereParams);
+
+// Inequality
+IFilterFactory<T> NotEquals(string fieldName, object value);
+IFilterFactory<T> NotEquals(string fieldName, MethodCall value);
+IFilterFactory<T> NotEquals<TValue>(Expression<Func<T, object>> propertySelector, TValue value);
+IFilterFactory<T> NotEquals<TValue>(Expression<Func<T, object>> propertySelector, MethodCall value);
+IFilterFactory<T> NotEquals(WhereParams whereParams);
+
+// Comparison
+IFilterFactory<T> GreaterThan(string fieldName, object value);
+IFilterFactory<T> GreaterThan<TValue>(Expression<Func<T, object>> propertySelector, TValue value);
+IFilterFactory<T> GreaterThanOrEqual(string fieldName, object value);
+IFilterFactory<T> GreaterThanOrEqual<TValue>(Expression<Func<T, object>> propertySelector, TValue value);
+IFilterFactory<T> LessThan(string fieldName, object value);
+IFilterFactory<T> LessThan<TValue>(Expression<Func<T, object>> propertySelector, TValue value);
+IFilterFactory<T> LessThanOrEqual(string fieldName, object value);
+IFilterFactory<T> LessThanOrEqual<TValue>(Expression<Func<T, object>> propertySelector, TValue value);
+
+// Logical operators and grouping
+IFilterFactory<T> AndAlso();
+IFilterFactory<T> OrElse();
+IFilterFactory<T> Not();
+IFilterFactory<T> OpenSubclause();
+IFilterFactory<T> CloseSubclause();
+`}
+</CodeBlock>
+</TabItem>
+
+    | Parameters | Type | Description |
+    | ---------- | ---- | ----------- |
+    | **fieldName** | `string` | The name of the field to compare |
+    | **propertySelector** | `Expression<Func<T, object>>` | Selects the field to compare |
+    | **value** | `object` / `TValue` / `MethodCall` | The value to compare the field with |
+    | **whereParams** | `WhereParams` | The comparison, defined as a `WhereParams` object |
+
+    | Method | Description |
+    | ------ | ----------- |
+    | **Equals** / **NotEquals** | The field matches, or does not match, the value |
+    | **GreaterThan** / **GreaterThanOrEqual** | The field is greater than, or greater than or equal to, the value |
+    | **LessThan** / **LessThanOrEqual** | The field is less than, or less than or equal to, the value |
+    | **AndAlso** / **OrElse** | Adds an AND, or an OR, between conditions |
+    | **Not** | Negates the next condition |
+    | **OpenSubclause** / **CloseSubclause** | Opens, or closes, a parenthesized group of conditions |
+
 * **RQL**  
    * In an RQL query, use:  
      The `filter` keyword, followed by the filtering condition.  
@@ -218,6 +273,24 @@ Use `filter` with a collection query to scan and filter the entire collection.
 Filtering a sizable collection will burden the server and prolong user waiting time.  
 Set a `filter_limit` to restrict the number of filtered records.  
 </Admonition>
+
+#### With comparison operators in `DocumentQuery.Filter`
+
+Use the comparison methods of `IFilterFactory<T>` and join the conditions with `AndAlso` or `OrElse`.
+
+<TabItem value="DocumentQuery" label="DocumentQuery">
+<CodeBlock language="csharp">
+{`var products = session.Advanced.DocumentQuery<Product>()
+    .Filter(f => f
+        .GreaterThanOrEqual(x => x.UnitsInStock, 10)
+        .AndAlso()
+        .LessThan(x => x.PricePerUnit, 20m),
+        limit: 500)
+    .ToList();
+`}
+</CodeBlock>
+</TabItem>
+
 #### With queries that use an index
 
 Use `filter` after a `where` clause to filter the results retrieved by an index query.  
