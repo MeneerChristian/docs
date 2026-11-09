@@ -16,6 +16,20 @@ import CodeBlock from '@theme/CodeBlock';
 | **CutoffEtag** | long? | The cutoff Etag is used to check if the index has already processed a document with the given Etag. |
 | **DisableCaching** | bool | Indicates if the query results should be read from the cache (if cached previously), or added to the cache (if there were no cached items prior). |
 | **SkipDuplicateChecking** | bool | Allows to skip duplicate checking during queries. |
+| **SkipStatistics** | bool | When set to true, the client asks the server to skip the query statistics. A query made from a session sets it to true unless the query asked for statistics with `Statistics`. |
 | **ExplainScores** | bool | When a query result should contain an explanation about how docs are scored against a query. |
-	
 
+### Methods
+
+<TabItem value="index_query_hash" label="index_query_hash">
+<CodeBlock language="csharp">
+{`public ulong GetQueryHash(
+    JsonOperationContext ctx,
+    DocumentConventions conventions,
+    IJsonSerializer serializer);
+`}
+</CodeBlock>
+</TabItem>
+
+`GetQueryHash` returns a hash that is calculated from `Query`, `WaitForNonStaleResults`,
+`SkipDuplicateChecking`, `SkipStatistics`, `WaitForNonStaleResultsTimeout` and `QueryParameters`.

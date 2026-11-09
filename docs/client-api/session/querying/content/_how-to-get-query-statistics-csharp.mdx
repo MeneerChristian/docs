@@ -19,6 +19,9 @@ import Panel from '@site/src/components/Panel';
     and the previously-requested statistics will not be carried over.
     In such cases, the resulting `QueryStatistics` object will remain with its default values.
     
+* When a query does not call `Statistics`, the client sets `IndexQuery.SkipStatistics` to `true` on the request,
+  so the server can skip work that only the statistics need, such as counting all the matches.
+
 * In this article:  
    * [Get query statistics](../../../../client-api/session/querying/how-to-get-query-statistics.mdx#get-query-statistics)  
    * [Syntax](../../../../client-api/session/querying/how-to-get-query-statistics.mdx#syntax)  
