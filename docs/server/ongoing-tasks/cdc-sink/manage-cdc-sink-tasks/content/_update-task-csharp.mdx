@@ -71,6 +71,8 @@ await store.Maintenance.SendAsync(new UpdateCdcSinkOperation(taskId, config));
 </TabItem>
 </Tabs>
 
+`UpdateCdcSinkOperation` returns an `UpdateCdcSinkOperationResult` with the properties `RaftCommandIndex` (`long`) and `TaskId` (`long`).
+
 ---
     
 <Admonition type="note" title="">  

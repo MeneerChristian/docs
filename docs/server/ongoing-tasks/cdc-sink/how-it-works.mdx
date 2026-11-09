@@ -226,7 +226,7 @@ CDC Sink stores processing progress in a single **state document per task**, sep
    The document is named `@cdc-states/<task name>` (here, `@cdc-states/MyCdcSinkTask`).
 
 3. **The document contents**  
-   The JSON tracks both streaming progress and initial-load progress:  
+   The JSON is the serialized form of the client class `CdcSinkTaskState` (namespace `Raven.Client.Documents.Operations.CdcSink`). It tracks both streaming progress and initial-load progress:  
    * **`ConfigurationName`**  
      The name of the CDC Sink task this state belongs to.
    * **`LastLsn`**  
@@ -235,6 +235,7 @@ CDC Sink stores processing progress in a single **state document per task**, sep
      A per-table map, keyed by `schema.tableName`, that stores initial-load progress:
      * **`InitialLoadCompleted`** - whether the full scan for that table has finished.
      * **`LastKeyValues`** - the last primary-key values read, used to resume an interrupted initial load.    
+     * **`KeyColumns`** - a list of column names. Each per-table entry is a `CdcSinkTableLoadState` object with `InitialLoadCompleted` (`bool`), `LastKeyValues` (`List<string>`) and `KeyColumns` (`List<string>`).
     
      In this example both tables show `InitialLoadCompleted: true` and an empty `LastKeyValues`,  
      meaning the initial load has finished and the task is now streaming changes driven by `LastLsn`.
