@@ -838,6 +838,23 @@ WktField Wkt(Expression<Func<T, object>> wktPath);
 | Parameters                                         | Type                          | Description                                                                  |
 |----------------------------------------------------|-------------------------------|------------------------------------------------------------------------------|
 | **latitudePath** / **longitudePath** / **wktPath** | `Expression<Func<T, object>>` | Path to the field in a document containing either longitude, latitude or WKT |
+
+### `DynamicSpatialField`
+
+```csharp
+public abstract class DynamicSpatialField
+{
+    public double RoundFactor { get; private set; }
+
+    public DynamicSpatialField RoundTo(double factor);
+}
+```
+<br/>
+
+| Member          | Type     | Description                                                                                                                                                                                              |
+|-----------------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **RoundTo**     | method   | Sets `RoundFactor` and returns the same field. Call it on the `PointField` or `WktField` that is passed to `OrderByDistance` or `OrderByDistanceDescending`.                                           |
+| **RoundFactor** | `double` | The round factor that was set with `RoundTo`. It is read-only. `OrderByDistance` and `OrderByDistanceDescending` pass it on as their `roundFactor` argument (see [Sort results by rounded distance](../../../../client-api/session/querying/how-to-make-a-spatial-query.mdx#sort-results-by-rounded-distance)). |
     
 ### `SpatialCriteriaFactory`
 
