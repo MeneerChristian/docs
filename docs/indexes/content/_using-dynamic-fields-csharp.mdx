@@ -28,6 +28,7 @@ import Panel from '@site/src/components/Panel';
       * [Example - list](../../indexes/using-dynamic-fields.mdx#example---list)
   * [Indexing dynamic fields for full-text search](../../indexes/using-dynamic-fields.mdx#indexing-dynamic-fields-for-full-text-search)
       * [Configuring analyzers for dynamic fields](../../indexes/using-dynamic-fields.mdx#configuring-analyzers-for-dynamic-fields)
+      * [Setting field options by field name](../../indexes/using-dynamic-fields.mdx#setting-field-options-by-field-name)
       * [Which analyzer is used for the query term?](../../indexes/using-dynamic-fields.mdx#which-analyzer-is-used-for-the-query-term)
   * [`CreateField` syntax](../../indexes/using-dynamic-fields.mdx#createfield-syntax)
   * [Indexed fields & terms view](../../indexes/using-dynamic-fields.mdx#indexed-fields-terms-view)
@@ -865,6 +866,58 @@ public class Products_ByLocalizedDescription_JS : AbstractJavaScriptIndexCreatio
 
 </Admonition> 
     
+<Admonition type="note" title="">
+    
+### Setting field options by field name
+
+Fields that are generated at indexing time cannot be selected with a lambda expression.  
+For these fields, an index class derived from `AbstractIndexCreationTask` can set the options by the field name,  
+with the following protected methods. Each one has an overload that takes an expression and an overload that takes the field name:
+
+| Method with a field name                                          | Adds the option to |
+|-------------------------------------------------------------------|--------------------|
+| `Index(string field, FieldIndexing indexing)`                     | `IndexesStrings` |
+| `Store(string field, FieldStorage storage)`                       | `StoresStrings` |
+| `StoreAllFields(FieldStorage storage)`                            | `StoresStrings`, under the `AllFields` key |
+| `Analyze(string field, string analyzer)`                          | `AnalyzersStrings` |
+| `TermVector(string field, FieldTermVector termVector)`            | `TermVectorsStrings` |
+| `Spatial(string field, Func<SpatialOptionsFactory, SpatialOptions> indexing)` | `SpatialIndexesStrings` |
+| `Vector(string field, Func<VectorOptionsFactory, VectorOptionsFactory> indexing)` | `VectorIndexesStrings` |
+
+* The dictionaries (`IndexesStrings`, `StoresStrings`, `AnalyzersStrings`, `TermVectorsStrings`, `SpatialIndexesStrings`  
+  and `VectorIndexesStrings`) are protected properties of the index class, keyed by field name.  
+  You can add entries to them directly instead of calling the methods.
+
+* The same dictionaries exist on `IndexDefinitionBuilder`, where they are public.
+
+* If the same field is registered both with an expression and with a field name for the same kind of option,  
+  creating the index definition fails with an `IndexCompilationException` whose inner exception is an `InvalidOperationException`.
+
+```csharp
+public class Products_ByLocalizedDescription : AbstractIndexCreationTask<Product>
+{
+    public Products_ByLocalizedDescription()
+    {
+        Map = products => from product in products
+            select new
+            {
+                _ = product.Descriptions.Select(x =>
+                    CreateField("Description_" + x.Key, x.Value))
+            };
+
+        // Options of a generated field, set by its name
+        Index("Description_English", FieldIndexing.Search);
+        Store("Description_English", FieldStorage.Yes);
+        TermVector("Description_English", FieldTermVector.WithPositionsAndOffsets);
+
+        // The same, by adding to the dictionary
+        AnalyzersStrings["Description_English"] = "StopAnalyzer";
+    }
+}
+```
+
+</Admonition>
+
 <Admonition type="note" title="">
     
 ### Which analyzer is used for the query term?    
