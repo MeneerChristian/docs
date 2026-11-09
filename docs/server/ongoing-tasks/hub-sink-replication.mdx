@@ -200,6 +200,28 @@ To **Remove** an existing Access, use `UnregisterReplicationHubAccessOperation`.
 </TabItem>
 </Admonition>
 
+<Admonition type="info" title="">
+To **list** the Accesses that are defined for a hub, use `GetReplicationHubAccessOperation`.  
+It returns a page of `DetailedReplicationHubAccess` items.
+
+* **`GetReplicationHubAccessOperation` definition**:
+<TabItem value="csharp" label="csharp">
+<CodeBlock language="csharp">
+{`public GetReplicationHubAccessOperation(string hubName, int start = 0, int pageSize = 25)
+
+// Example:
+DetailedReplicationHubAccess[] accesses =
+    store.Maintenance.Send(new GetReplicationHubAccessOperation("MyHub"));
+`}
+</CodeBlock>
+</TabItem>
+
+* The operation throws an `ArgumentException` when the command is created with a `hubName` that is null or whitespace.
+* `DetailedReplicationHubAccess` has the fields `Name`, `Thumbprint`, `Certificate`, `Subject` and `Issuer` (all `string`),
+  `NotBefore` and `NotAfter` (`DateTime`), `AllowedHubToSinkPaths` and `AllowedSinkToHubPaths` (`string[]`),
+  and the property `RaftCommandIndex` (`long`).
+</Admonition>
+
 
 ## Defining a Replication Sink  
 
