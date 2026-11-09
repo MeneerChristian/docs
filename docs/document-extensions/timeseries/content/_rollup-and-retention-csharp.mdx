@@ -135,6 +135,37 @@ store.Maintenance.Send(new ConfigureRawTimeSeriesPolicyOperation(
 </CodeBlock>
 </TabItem>
 
+#### Manage policies with `store.TimeSeries`:
+
+* The `store.TimeSeries` property (`TimeSeriesOperations`) sets and removes policies without building the operations yourself.  
+  `SetPolicy` wraps `ConfigureTimeSeriesPolicyOperation`, `SetRawPolicy` wraps `ConfigureRawTimeSeriesPolicyOperation`,  
+  and `RemovePolicy` wraps `RemoveTimeSeriesPolicyOperation`.
+
+* Each method has a `<TCollection>` overload, which resolves the collection name from the type using the store's conventions,  
+  and an overload that takes the collection name as a string.
+
+* Each method has an `Async` counterpart (`SetPolicyAsync`, `SetRawPolicyAsync`, `RemovePolicyAsync`).
+
+<TabItem value="rollup_and_retention_set_policy" label="rollup_and_retention_set_policy">
+<CodeBlock language="csharp">
+{`// Add (or update) a rollup policy that aggregates each day and keeps the rollups for five years
+store.TimeSeries.SetPolicy<Company>(
+    "ByDayFor5Years", TimeValue.FromDays(1), TimeValue.FromYears(5));
+
+// Retain the raw entries of the collection for one year
+store.TimeSeries.SetRawPolicy<Company>(TimeValue.FromYears(1));
+
+// Remove the rollup policy by its name
+store.TimeSeries.RemovePolicy<Company>("ByDayFor5Years");
+
+// The same, using the collection name and the async methods
+await store.TimeSeries.SetPolicyAsync(
+    "Companies", "ByDayFor5Years", TimeValue.FromDays(1), TimeValue.FromYears(5));
+await store.TimeSeries.RemovePolicyAsync("Companies", "ByDayFor5Years");
+`}
+</CodeBlock>
+</TabItem>
+
 #### Retrieve rollup data:
 
 * Retrieving entries from a rollup time series is similar to getting the raw time series data.
@@ -249,7 +280,8 @@ because a calendar month is not a standard unit of time (as it can range from 28
 <CodeBlock language="csharp">
 {`public class TimeSeriesConfiguration
 \{
-    public Dictionary<string, TimeSeriesCollectionConfiguration> Collections;
+    public Dictionary<string, TimeSeriesCollectionConfiguration> Collections \{ get; set; \}
+    public TimeSpan? PolicyCheckFrequency \{ get; set; \}
 \}
 
 public class TimeSeriesCollectionConfiguration
@@ -265,6 +297,7 @@ public class TimeSeriesCollectionConfiguration
 | Property        | Description                                                                                                               |
 |-----------------|---------------------------------------------------------------------------------------------------------------------------|
 | **Collections** | Populate this `Dictionary` with the collection names and their corresponding `TimeSeriesCollectionConfiguration` objects. |
+| **PolicyCheckFrequency** | How often the server checks the policies (rollup and retention). Must be positive. When not set, the default of 10 minutes is used. |
 | **Disabled**    | If set to `true`, rollup processes will stop, and time series data will not be deleted by retention policies.             |
 | **Policies**    | Populate this `List` with your rollup policies.                                                                           |
 | **RawPolicy**   | The `RawTimeSeriesPolicy`, the retention policy for the raw time series.                                                  |
@@ -285,6 +318,39 @@ public class TimeSeriesCollectionConfiguration
 `}
 </CodeBlock>
 </TabItem>
+
+### The `store.TimeSeries` policy methods
+
+<TabItem value="csharp-ts-ops" label="csharp">
+<CodeBlock language="csharp">
+{`// Rollup policy
+public void SetPolicy<TCollection>(string name, TimeValue aggregation, TimeValue retention);
+public void SetPolicy(string collection, string name, TimeValue aggregation, TimeValue retention);
+public Task SetPolicyAsync<TCollection>(string name, TimeValue aggregation, TimeValue retention);
+public Task SetPolicyAsync(string collection, string name, TimeValue aggregation, TimeValue retention);
+
+// Raw policy
+public void SetRawPolicy<TCollection>(TimeValue retention);
+public void SetRawPolicy(string collection, TimeValue retention);
+public Task SetRawPolicyAsync<TCollection>(TimeValue retention);
+public Task SetRawPolicyAsync(string collection, TimeValue retention);
+
+// Remove a rollup policy
+public void RemovePolicy<TCollection>(string name);
+public void RemovePolicy(string collection, string name);
+public Task RemovePolicyAsync<TCollection>(string name);
+public Task RemovePolicyAsync(string collection, string name);
+`}
+</CodeBlock>
+</TabItem>
+
+| Parameter       | Type        | Description                                                                         |
+|-----------------|-------------|-------------------------------------------------------------------------------------|
+| **TCollection** | Type        | The type whose collection name is used                                              |
+| **collection**  | `string`    | The collection name (when `TCollection` is not provided)                            |
+| **name**        | `string`    | The name of the rollup policy                                                       |
+| **aggregation** | `TimeValue` | The aggregation time of the rollup policy                                           |
+| **retention**   | `TimeValue` | The retention time of the rollup policy, or of the raw time series for `SetRawPolicy` |
 
 Learn more about operations in: [What are operations](../../../client-api/operations/what-are-operations.mdx).  
 ### Casting time series entries

@@ -263,6 +263,76 @@ The named values can be managed from the [Time Series Settings View](../../../..
 | **name**             | `string `        | Time series name                                                        |
 | **valueNames**       | `string[]`       | Names to register (name per value)                                      | 
 
+#### Register asynchronously
+
+Each `Register` method has an `Async` counterpart that returns a `Task`. The sync methods call these and wait for them.
+
+<TabItem value="RegisterAsync-Definition-1" label="RegisterAsync-Definition-1">
+<CodeBlock language="csharp">
+{`public Task RegisterAsync<TCollection, TTimeSeriesEntry>(string name = null)
+`}
+</CodeBlock>
+</TabItem>
+<TabItem value="RegisterAsync-Definition-2" label="RegisterAsync-Definition-2">
+<CodeBlock language="csharp">
+{`public Task RegisterAsync<TCollection>(string name, string[] valueNames)
+`}
+</CodeBlock>
+</TabItem>
+<TabItem value="RegisterAsync-Definition-3" label="RegisterAsync-Definition-3">
+<CodeBlock language="csharp">
+{`public Task RegisterAsync(string collection, string name, string[] valueNames)
+`}
+</CodeBlock>
+</TabItem>
+
+<TabItem value="timeseries_region_Named-Values-RegisterAsync" label="timeseries_region_Named-Values-RegisterAsync">
+<CodeBlock language="csharp">
+{`await store.TimeSeries.RegisterAsync<Company, StockPrice>();
+
+await store.TimeSeries.RegisterAsync("Companies", "StockPrices",
+    new[] \{ "Open", "Close", "High", "Low", "Volume" \});
+`}
+</CodeBlock>
+</TabItem>
+
+* When `name` is not provided, the collection name of `TTimeSeriesEntry` is used as the time series name.
+* `TTimeSeriesEntry` must have a member marked with `[TimeSeriesValue]`, otherwise an `InvalidOperationException` is thrown.
+* Registering a time series that is already registered updates its registered names.
+
+#### The named values in the time series configuration
+
+The registered names are kept in the `NamedValues` property of the `TimeSeriesConfiguration` object  
+(keyed by collection name, then by time series name). Collection and time series names are matched case-insensitively.
+
+<TabItem value="NamedValues-Definition" label="NamedValues-Definition">
+<CodeBlock language="csharp">
+{`public Dictionary<string, Dictionary<string, string[]>> NamedValues \{ get; set; \}
+
+// Set the value names of a time series. Replaces names that are already set.
+public void AddValueName(string collection, string timeSeries, string[] names);
+
+// Set the value names of a time series only if none are set yet.
+// Returns 'false' (and changes nothing) if the time series already has names.
+public bool TryAddValueName(string collection, string timeSeries, string[] names);
+`}
+</CodeBlock>
+</TabItem>
+
+<TabItem value="timeseries_region_Named-Values-Configuration" label="timeseries_region_Named-Values-Configuration">
+<CodeBlock language="csharp">
+{`var configuration = new TimeSeriesConfiguration();
+
+configuration.AddValueName("Companies", "StockPrices",
+    new[] \{ "Open", "Close", "High", "Low", "Volume" \});
+
+// Returns false: names are already set for this time series
+var added = configuration.TryAddValueName("Companies", "StockPrices",
+    new[] \{ "Price" \});
+`}
+</CodeBlock>
+</TabItem>
+
 
 
 
