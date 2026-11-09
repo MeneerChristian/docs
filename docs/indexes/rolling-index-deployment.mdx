@@ -32,6 +32,7 @@ import LanguageContent from "@site/src/components/LanguageContent";
      * [Server-Wide Deployment Mode](../indexes/rolling-index-deployment.mdx#server-wide-deployment-mode)  
      * [Database Deployment Mode](../indexes/rolling-index-deployment.mdx#database-deployment-mode)  
      * [Deployment Mode in an Index Definition](../indexes/rolling-index-deployment.mdx#deployment-mode-in-an-index-definition)  
+  * [Reading the state of a rolling deployment](../indexes/rolling-index-deployment.mdx#reading-the-state-of-a-rolling-deployment)  
 
 </Admonition>
 ## Why Rolling Index Deployment
@@ -164,3 +165,58 @@ and [database](../indexes/rolling-index-deployment.mdx#database-deployment-mode)
 
 
 
+## Reading the state of a rolling deployment
+
+The database record keeps an entry for each index that is being deployed in a rolling manner,  
+in its `RollingIndexes` field: a `Dictionary<string, RollingIndex>` keyed by index name.  
+The cluster removes the entry of an index when the deployment is `Done` on every node.
+
+<TabItem value="rolling_state_syntax" label="syntax">
+<CodeBlock language="csharp">
+{`public sealed class RollingIndex
+\{
+    // Keyed by node tag
+    public Dictionary<string, RollingIndexDeployment> ActiveDeployments;
+    public long RaftCommandIndex;
+\}
+
+public sealed class RollingIndexDeployment
+\{
+    public RollingIndexState State \{ get; set; \}
+    public DateTime CreatedAt \{ get; set; \}
+    public DateTime? StartedAt \{ get; set; \}
+    public DateTime? FinishedAt \{ get; set; \}
+\}
+
+public enum RollingIndexState
+\{
+    Pending,
+    Running,
+    Done
+\}
+`}
+</CodeBlock>
+</TabItem>
+
+| `RollingIndexState` | Description |
+| - | - |
+| `Pending` | The node was added to the deployment and was not assigned the indexing yet |
+| `Running` | The node is the one assigned to index |
+| `Done` | The node finished indexing and confirmed it |
+
+<TabItem value="rolling_state_sample" label="sample">
+<CodeBlock language="csharp">
+{`DatabaseRecordWithEtag record = store.Maintenance.Server.Send(
+    new GetDatabaseRecordOperation(store.Database));
+
+if (record.RollingIndexes != null &&
+    record.RollingIndexes.TryGetValue("Orders/ByCompany", out RollingIndex rollingIndex))
+\{
+    foreach (KeyValuePair<string, RollingIndexDeployment> node in rollingIndex.ActiveDeployments)
+    \{
+        Console.WriteLine(node.Key + ": " + node.Value.State);
+    \}
+\}
+`}
+</CodeBlock>
+</TabItem>
