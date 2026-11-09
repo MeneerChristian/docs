@@ -23,6 +23,7 @@ import Panel from "@site/src/components/Panel";
     * [Database state exceptions](../../client-api/exceptions.mdx#database-state-exceptions)
     * [Cluster and node exceptions](../../client-api/exceptions.mdx#cluster-and-node-exceptions)
     * [Attachment, counter, revisions and license exceptions](../../client-api/exceptions.mdx#attachment-counter-revisions-and-license-exceptions)
+    * [Bulk insert, sharding, security and compilation exceptions](../../client-api/exceptions.mdx#bulk-insert-sharding-security-and-compilation-exceptions)
 
 </Admonition>
 
@@ -211,6 +212,30 @@ All of these derive from `RavenException`.
 | `CounterOverflowException`        | Incrementing a counter overflows a `long`, or the sum of a counter's per-node values overflows when it is read and the value is not capped on overflow. |
 | `RevisionsDisabledException`      | Revisions are deleted before a given time while no revisions configuration exists on the database. |
 | `LicenseActivationException`      | A license activation or update fails and the caller asked to throw on failure. The original exception is the inner exception. |
+
+</Panel>
+
+<Panel heading="Bulk insert, sharding, security and compilation exceptions">
+
+| Exception                                 | Namespace under `Raven.Client.Exceptions` | Derives from | Thrown when |
+|-------------------------------------------|-------------------------------------------|--------------|-------------|
+| `BulkInsertClientException` (abstract)    | `Documents.BulkInsert`                    | `RavenException` | Base class of the bulk insert client exceptions below. |
+| `BulkInsertInvalidOperationException`     | `Documents.BulkInsert`                    | `BulkInsertClientException` | Bulk insert is started without a database name, or its store methods are called concurrently ("Bulk Insert store methods cannot be executed concurrently."). |
+| `BulkInsertProtocolViolationException`    | `Documents.BulkInsert`                    | `RavenException` | The bulk insert stream cannot be closed ("Unable to close the stream"); the stream's exception is the inner exception. |
+| `SubscriptionConnectionDownException`     | `Documents.Subscriptions`                 | `SubscriptionException` | The server gets no reply from the subscription client (the stream ended). |
+| `DocumentUnderActiveMigrationException`   | `Documents.Subscriptions`                 | `SubscriptionException` | A sharded subscription batch contains a document that is under active migration, or that was migrated so that the shard is not its owner. |
+| `ShardMismatchException`                  | `Sharding`                                | `RavenException` | An operation is performed on a shard that does not own the document's bucket. |
+| `ShardedPatchBehaviorViolationException`  | `Sharding`                                | `RavenException` | A patch script on a sharded database refers to an ID that is in a different bucket than the original document ID. |
+| `ExecutionForShardException`              | `Sharding`                                | `RavenException` | The server wraps the exception that an execution on one shard threw, together with the shard number. |
+| `ReplicationHubNotFoundException`         | (none: `Raven.Client.Exceptions`) | `RavenException` | `RegisterReplicationHubAccessOperation` gets status 404: the replication hub is not defined on the database. |
+| `AuthenticationException`                 | `Security`                                | `SecurityException` | A server-side connection that uses a certificate fails, for example an FTP backup destination with a certificate error. |
+| `CertificateNameMismatchException`        | `Security`                                | `AuthenticationException` | The client finds that the host name of the server URL does not match the CN or SAN of the server certificate. |
+| `BadRequestException`                     | (none: `Raven.Client.Exceptions`)         | `RavenException` | The server rejects a request as invalid. It is thrown from many places in the server, and the message states the reason. |
+| `SecurityException`                       | `Security`                                | `RavenException` | For example, a backup configuration with an external script is set up by a user who is not a cluster admin. |
+| `CompilationException` (abstract)         | `Compilation`                             | `RavenException` | Base class of `IndexCompilationException`, `AnalyzerCompilationException` and `SorterCompilationException`. |
+| `AnalyzerCompilationException`            | `Documents.Compilation`                   | `CompilationException` | A custom analyzer's code fails to compile, or the analyzer's type is not found in the given assembly. |
+| `SorterCompilationException`              | `Documents.Compilation`                   | `CompilationException` | A custom sorter's code fails to compile, or the sorter's type is not found in the given assembly. |
+| `JavaScriptParseException`                | `Documents.Patching`                      | `JavaScriptException` | The server fails to parse a JavaScript script (for example a patch script). The script is part of the message. |
 
 </Panel>
 
