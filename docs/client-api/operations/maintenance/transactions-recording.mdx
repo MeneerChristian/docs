@@ -1,0 +1,69 @@
+---
+title: "Record and Replay Transactions"
+sidebar_label: Record and Replay Transactions
+description: "Record the transactions of a database to a file and replay them with StartTransactionsRecordingOperation, StopTransactionsRecordingOperation and ReplayTransactionsRecordingOperation."
+sidebar_position: 3
+---
+
+import Admonition from '@theme/Admonition';
+import TabItem from '@theme/TabItem';
+import CodeBlock from '@theme/CodeBlock';
+
+<Admonition type="note" title="">
+
+* Three maintenance operations (namespace `Raven.Client.Documents.Operations.TransactionsRecording`) record the transactions of a database to a file and replay them:
+  `StartTransactionsRecordingOperation`, `StopTransactionsRecordingOperation` and `ReplayTransactionsRecordingOperation`.
+  The source describes recording as typically used for debugging or analysis.
+
+* A sharded database does not support these operations. The server answers that the database is sharded and does not support the operation.
+
+</Admonition>
+
+## Example
+
+<TabItem value="transactions_recording" label="transactions_recording">
+<CodeBlock language="csharp">
+{`// Start recording. The recording is saved to this path.
+store.Maintenance.Send(new StartTransactionsRecordingOperation("transactions.record"));
+
+// ... run the workload you want to record ...
+
+// Stop recording
+store.Maintenance.Send(new StopTransactionsRecordingOperation());
+
+// Replay a recording
+using (var stream = File.OpenRead("transactions.record"))
+\{
+    ReplayTxOperationResult result = store.Maintenance.Send(
+        new ReplayTransactionsRecordingOperation(stream, operationId: 1));
+
+    long executed = result.ExecutedCommandsAmount;
+\}
+`}
+</CodeBlock>
+</TabItem>
+
+## Syntax
+
+<TabItem value="syntax" label="syntax">
+<CodeBlock language="csharp">
+{`public StartTransactionsRecordingOperation(string filePath)
+public StopTransactionsRecordingOperation()
+public ReplayTransactionsRecordingOperation(Stream replayStream, long operationId)
+`}
+</CodeBlock>
+</TabItem>
+
+| Operation | Parameter | Description |
+|---|---|---|
+| `StartTransactionsRecordingOperation` | **filePath** (`string`) | The file path where the recording is saved. The operation throws when the path is null or empty. It sends the path in a `File` property (`StartTransactionsRecordingOperation.Parameters.File`). |
+| `StopTransactionsRecordingOperation` | | Stops the recording that was started with the start operation. |
+| `ReplayTransactionsRecordingOperation` | **replayStream** (`Stream`) | The stream that contains the recording. The constructor throws an `ArgumentException` when the stream position is not zero. |
+| | **operationId** (`long`) | The ID to use for the replay operation. |
+
+`ReplayTransactionsRecordingOperation` returns a `ReplayTxOperationResult` with the property `ExecutedCommandsAmount` (`long`).
+
+* The replay request is a multipart form upload, and the server reads the first file section of it.
+  When the request is not a form, the server answers with status 400 and the error "Transactions replay requires form content type".
+* While the replay runs, the server reports its progress as an `IndeterminateProgressCount` (with the property `Processed`).
+* When the replay fails, the server throws an `InvalidOperationException` with the message "Failed to process replay transaction commands", with the original exception as its inner exception.
