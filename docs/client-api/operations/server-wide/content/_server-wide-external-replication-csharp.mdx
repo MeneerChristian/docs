@@ -1,0 +1,100 @@
+import Admonition from '@theme/Admonition';
+import TabItem from '@theme/TabItem';
+import CodeBlock from '@theme/CodeBlock';
+
+<Admonition type="note" title="">
+
+* A server-wide external replication task is defined once on the server, instead of once per database.  
+  The operations below are server operations: send them with `store.Maintenance.Server.Send`.
+
+* The server checks that the caller is a cluster admin when it applies the `PutServerWideExternalReplicationOperation` command.
+
+* In this page:
+  * [Example](../../../../client-api/operations/server-wide/server-wide-external-replication.mdx#example)
+  * [Syntax](../../../../client-api/operations/server-wide/server-wide-external-replication.mdx#syntax)
+  * [Server-side behavior of Put](../../../../client-api/operations/server-wide/server-wide-external-replication.mdx#server-side-behavior-of-put)
+
+</Admonition>
+
+## Example
+
+<TabItem value="server_wide_replication" label="server_wide_replication">
+<CodeBlock language="csharp">
+{`// Define the task
+var configuration = new ServerWideExternalReplication
+\{
+    Name = "ReplicateToBackupCluster",
+    TopologyDiscoveryUrls = new[] \{ "http://backup-node:8080" \},
+    DelayReplicationFor = TimeSpan.FromMinutes(5),
+    ExcludedDatabases = new[] \{ "ScratchDatabase" \}
+\};
+
+// Put it
+ServerWideExternalReplicationResponse response =
+    store.Maintenance.Server.Send(new PutServerWideExternalReplicationOperation(configuration));
+
+// Get it back by name, or get all of them
+ServerWideExternalReplication single =
+    store.Maintenance.Server.Send(new GetServerWideExternalReplicationOperation(response.Name));
+
+ServerWideExternalReplication[] all =
+    store.Maintenance.Server.Send(new GetServerWideExternalReplicationsOperation());
+
+// Disable it, then delete it
+store.Maintenance.Server.Send(
+    new ToggleServerWideTaskStateOperation(response.Name, OngoingTaskType.Replication, disable: true));
+
+store.Maintenance.Server.Send(
+    new DeleteServerWideTaskOperation(response.Name, OngoingTaskType.Replication));
+`}
+</CodeBlock>
+</TabItem>
+
+## Syntax
+
+All of these types are in the namespace `Raven.Client.ServerWide.Operations.OngoingTasks`.
+
+<TabItem value="syntax" label="syntax">
+<CodeBlock language="csharp">
+{`public PutServerWideExternalReplicationOperation(ServerWideExternalReplication configuration)
+public GetServerWideExternalReplicationOperation(string name)
+public GetServerWideExternalReplicationsOperation()
+public ToggleServerWideTaskStateOperation(string name, OngoingTaskType type, bool disable)
+public DeleteServerWideTaskOperation(string name, OngoingTaskType type)
+`}
+</CodeBlock>
+</TabItem>
+
+| Operation | Returns | Notes |
+|---|---|---|
+| `PutServerWideExternalReplicationOperation` | `ServerWideExternalReplicationResponse` | Sends a `PUT` to `/admin/configuration/server-wide/external-replication`. The constructor throws `ArgumentNullException` for `null`. |
+| `GetServerWideExternalReplicationOperation` | `ServerWideExternalReplication` | Returns `null` when the server has no response body or no task with that name. Throws `ArgumentNullException` for a `null` name. When the server returns more than one result, the operation throws an `InvalidDataException`. |
+| `GetServerWideExternalReplicationsOperation` | `ServerWideExternalReplication[]` | Returns all server-wide external replication tasks (all server-wide tasks of the type `Replication`). |
+| `ToggleServerWideTaskStateOperation` | none | `disable` set to `true` disables the task, `false` enables it. Throws `ArgumentNullException` for a `null` name. |
+| `DeleteServerWideTaskOperation` | none | Deletes the server-wide task with that name and type. Throws `ArgumentNullException` for a `null` name. |
+
+#### `ServerWideExternalReplication`
+
+It implements `IExternalReplication` and `IServerWideTask`.
+
+| Property | Type | Description |
+|---|---|---|
+| **Name** | `string` | The task name. When it is null, empty or whitespace, the server generates one (see below). |
+| **TaskId** | `long` | The task ID. The server sets it to the index of the Raft command that stored the task. |
+| **Disabled** | `bool` | Whether the task is disabled |
+| **MentorNode** | `string` | The mentor node |
+| **PinToMentorNode** | `bool` | Whether the task is pinned to the mentor node |
+| **DelayReplicationFor** | `TimeSpan` | The replication delay |
+| **TopologyDiscoveryUrls** | `string[]` | The URLs of the destination cluster |
+| **ExcludedDatabases** | `string[]` | The databases that are excluded from the task (`IServerWideTask`) |
+
+`ServerWideExternalReplicationResponse` derives from `ServerWideTaskResponse`, which has the properties `Name` (`string`) and `RaftCommandIndex` (`long`).
+
+## Server-side behavior of Put
+
+* When `Name` is empty, the server builds a name from the URLs, in the form `External Replication to <the URLs joined by a comma>`.
+  When that name already exists (the comparison ignores case), the server appends ` #2`, ` #3` and so on until the name is unique.
+* The server fails the command when `ExcludedDatabases` contains a null, empty or whitespace name.
+* When a task with the same `TaskId` exists under another name, the stored task is replaced, so the name of a task can be changed.
+* For each database, the server derives a regular external replication task named `Server Wide External Replication, <name>`.
+  It uses a Raven connection string named `Server Wide Raven Connection String for <name>`, which holds the database name and the `TopologyDiscoveryUrls`.
