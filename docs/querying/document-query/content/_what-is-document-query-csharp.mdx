@@ -420,6 +420,53 @@ bool IsDistinct { get; }                                       // both
 
 </Panel>
 
+<Panel heading="Get the index query">
+
+* `GetIndexQuery` is a method of `DocumentQuery`. It returns the `IndexQuery` that the query sends to the server.  
+  The RQL text is in `IndexQuery.Query`.
+
+* For a query made with `session.Query`, the `IRavenQueryable` that the session returns is a `RavenQueryInspector<T>`,
+  which implements `IRavenQueryInspector`.  
+  Cast the query to `IRavenQueryInspector` to get the same `IndexQuery`.  
+  Pass `isAsync: false` for a query made in a sync session and `isAsync: true` for a query made in an async session.
+  A query that does not match the type of its session throws `InvalidOperationException`.
+
+<Tabs groupId="languageSyntax">
+<TabItem value="DocumentQuery" label="DocumentQuery">
+```csharp
+IDocumentQuery<Order> docQuery = session.Advanced
+    .DocumentQuery<Order>()
+    .WhereGreaterThan(x => x.Freight, 25);
+
+IndexQuery indexQuery = docQuery.GetIndexQuery();
+string rql = indexQuery.Query;
+```
+</TabItem>
+<TabItem value="Query" label="Query">
+```csharp
+IRavenQueryable<Order> query = session.Query<Order>()
+    .Where(x => x.Freight > 25);
+
+var inspector = (IRavenQueryInspector)query;
+
+string indexName = inspector.IndexName;
+IndexQuery indexQuery = inspector.GetIndexQuery(isAsync: false);
+string rql = indexQuery.Query;
+```
+</TabItem>
+</Tabs>
+
+```csharp
+public interface IRavenQueryInspector
+{
+    string IndexName { get; }
+    InMemoryDocumentSessionOperations Session { get; }
+    IndexQuery GetIndexQuery(bool isAsync);
+}
+```
+
+</Panel>
+
 <Panel heading="MethodCall">
 
 * `RavenDocumentQuery.Now()`, `RavenDocumentQuery.Now(string offset)`, `RavenDocumentQuery.Today()` and `RavenDocumentQuery.CmpXchg(string key)`
