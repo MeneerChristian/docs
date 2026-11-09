@@ -506,3 +506,67 @@ select key() as Employee, sum(Freight) as Sum
 
 
 
+## Syntax - group by in `DocumentQuery`
+
+`GroupBy` on a `DocumentQuery` returns a group-by query object that has the members that select the key and the aggregations.  
+`IGroupByDocumentQuery<T>` is returned in a sync session and `IAsyncGroupByDocumentQuery<T>` in an async session.  
+`SelectSum` and `SelectCount` return the regular `IDocumentQuery<T>` (or `IAsyncDocumentQuery<T>`) again.
+
+<TabItem value="groupby_syntax_1" label="groupby_syntax_1">
+<CodeBlock language="csharp">
+{`// IDocumentQuery<T>
+IGroupByDocumentQuery<T> GroupBy(string fieldName, params string[] fieldNames);
+IGroupByDocumentQuery<T> GroupBy(
+    (string Name, GroupByMethod Method) field,
+    params (string Name, GroupByMethod Method)[] fields);
+
+// IAsyncDocumentQuery<T>
+IAsyncGroupByDocumentQuery<T> GroupBy(string fieldName, params string[] fieldNames);
+IAsyncGroupByDocumentQuery<T> GroupBy(
+    (string Name, GroupByMethod Method) field,
+    params (string Name, GroupByMethod Method)[] fields);
+`}
+</CodeBlock>
+</TabItem>
+
+<TabItem value="groupby_syntax_2" label="groupby_syntax_2">
+<CodeBlock language="csharp">
+{`public interface IGroupByDocumentQuery<T>
+{
+    IGroupByDocumentQuery<T> SelectKey(string fieldName = null, string projectedName = null);
+    IDocumentQuery<T> SelectSum(GroupByField field, params GroupByField[] fields);
+    IDocumentQuery<T> SelectCount(string projectedName = null);
+    IGroupByDocumentQuery<T> Filter(Action<IFilterFactory<T>> builder, int limit = int.MaxValue);
+}
+
+public interface IAsyncGroupByDocumentQuery<T>
+{
+    IAsyncGroupByDocumentQuery<T> SelectKey(string fieldName = null, string projectedName = null);
+    IAsyncDocumentQuery<T> SelectSum(GroupByField field, params GroupByField[] fields);
+    IAsyncDocumentQuery<T> SelectCount(string projectedName = null);
+    IAsyncGroupByDocumentQuery<T> Filter(Action<IFilterFactory<T>> builder, int limit = int.MaxValue);
+}
+
+public sealed class GroupByField
+{
+    public string FieldName { get; set; }
+    public string ProjectedName { get; set; }
+}
+
+public enum GroupByMethod
+{
+    None,
+    Array
+}
+`}
+</CodeBlock>
+</TabItem>
+
+| Member | Description |
+|--------|-------------|
+| **SelectKey** | Includes the group-by key in the projection. `fieldName` is the group-by field and `projectedName` is its alias in the results. |
+| **SelectSum** | Sums the numeric values of each `GroupByField.FieldName`, projected as `GroupByField.ProjectedName`. |
+| **SelectCount** | Returns the number of elements in each group. `projectedName` is the alias of the count field. |
+| **Filter** | Filters with an exploration query. See [Exploration queries](../../../../indexes/querying/exploration-queries.mdx). |
+| **GroupByMethod.None** | Each value of the field is treated separately. |
+| **GroupByMethod.Array** | The whole array is treated as a single value. |
