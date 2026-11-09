@@ -16,6 +16,269 @@ import Admonition from '@theme/Admonition';
 
 </Admonition>
 
+## `Raven.Client`
+
+```csharp
+public enum Constants.Documents.SubscriptionChangeVectorSpecialStates
+{
+    DoNotChange,
+    LastDocument,
+    BeginningOfTime,
+}
+```
+
+## `Raven.Client.Documents`
+
+```csharp
+public abstract class DocumentStoreBase : IDocumentStore
+{
+    AiOperations AI { get; }
+    X509Certificate2 Certificate { get; set; }
+    DocumentConventions Conventions { get; set; }
+    string Database { get; set; }
+    IHiLoIdGenerator HiLoIdGenerator { get; }
+    string Identifier { get; set; }
+    MaintenanceOperationExecutor Maintenance { get; }
+    OperationExecutor Operations { get; }
+    DatabaseSmuggler Smuggler { get; }
+    DocumentSubscriptions Subscriptions { get; }
+    TimeSeriesOperations TimeSeries { get; }
+    string[] Urls { get; set; }
+    bool WasDisposed { get; }
+    IDisposable AggressivelyCache(string database);
+    ValueTask<IDisposable> AggressivelyCacheAsync(string database);
+    IDisposable AggressivelyCacheFor(TimeSpan cacheDuration, string database);
+    IDisposable AggressivelyCacheFor(TimeSpan cacheDuration, AggressiveCacheMode mode, string database);
+    ValueTask<IDisposable> AggressivelyCacheForAsync(TimeSpan cacheDuration, string database);
+    ValueTask<IDisposable> AggressivelyCacheForAsync(TimeSpan cacheDuration, AggressiveCacheMode mode, string database);
+    BulkInsertOperation BulkInsert(string database, CancellationToken token);
+    BulkInsertOperation BulkInsert(string database, BulkInsertOptions options, CancellationToken token);
+    BulkInsertOperation BulkInsert(BulkInsertOptions options, CancellationToken token);
+    IDatabaseChanges Changes(string database);
+    ISingleNodeDatabaseChanges Changes(string database, string nodeTag);
+    IDisposable DisableAggressiveCaching(string database);
+    void Dispose();
+    void ExecuteIndex(IAbstractIndexCreationTask task, string database);
+    Task ExecuteIndexAsync(IAbstractIndexCreationTask task, string database, CancellationToken token);
+    void ExecuteIndexes(IEnumerable<IAbstractIndexCreationTask> tasks, string database);
+    Task ExecuteIndexesAsync(IEnumerable<IAbstractIndexCreationTask> tasks, string database, CancellationToken token);
+    Task ExecuteIndexesAsync(IEnumerable<IAbstractIndexCreationTask> tasks, DocumentConventions conventions, string database, CancellationToken token);
+    RequestExecutor GetRequestExecutor(string databaseName);
+    IDocumentStore Initialize();
+    IAsyncDocumentSession OpenAsyncSession();
+    IAsyncDocumentSession OpenAsyncSession(string database);
+    IAsyncDocumentSession OpenAsyncSession(SessionOptions sessionOptions);
+    IDocumentSession OpenSession();
+    IDocumentSession OpenSession(string database);
+    IDocumentSession OpenSession(SessionOptions sessionOptions);
+    IDisposable SetRequestTimeout(TimeSpan timeout, string database);
+    event EventHandler<BeforeRequestEventArgs> _onBeforeRequest;
+    event EventHandler<FailedRequestEventArgs> _onFailedRequest;
+    event EventHandler<SucceedRequestEventArgs> _onSucceedRequest;
+    event EventHandler<TopologyUpdatedEventArgs> _onTopologyUpdated;
+    event EventHandler AfterDispose;
+    event EventHandler BeforeDispose;
+    event EventHandler<AfterConversionToDocumentEventArgs> OnAfterConversionToDocument;
+    event EventHandler<AfterConversionToEntityEventArgs> OnAfterConversionToEntity;
+    event EventHandler<AfterSaveChangesEventArgs> OnAfterSaveChanges;
+    event EventHandler<BeforeConversionToDocumentEventArgs> OnBeforeConversionToDocument;
+    event EventHandler<BeforeConversionToEntityEventArgs> OnBeforeConversionToEntity;
+    event EventHandler<BeforeDeleteEventArgs> OnBeforeDelete;
+    event EventHandler<BeforeQueryEventArgs> OnBeforeQuery;
+    event EventHandler<BeforeRequestEventArgs> OnBeforeRequest;
+    event EventHandler<BeforeStoreEventArgs> OnBeforeStore;
+    event EventHandler<FailedRequestEventArgs> OnFailedRequest;
+    event EventHandler<SessionCreatedEventArgs> OnSessionCreated;
+    event EventHandler<SessionDisposingEventArgs> OnSessionDisposing;
+    event EventHandler<SucceedRequestEventArgs> OnSucceedRequest;
+    event EventHandler<TopologyUpdatedEventArgs> OnTopologyUpdated;
+}
+```
+
+```csharp
+public static class LinqExtensions
+{
+    static IAggregationQuery<T> AggregateBy<T>(IQueryable<T> source, FacetBase facet);
+    static IAggregationQuery<T> AggregateBy<T>(IQueryable<T> source, IEnumerable<FacetBase> facets);
+    static IAggregationQuery<T> AggregateBy<T>(IQueryable<T> source, Action<IFacetBuilder<T>> builder);
+    static IAggregationQuery<T> AggregateUsing<T>(IQueryable<T> source, string facetSetupDocumentId);
+    static Task<bool> AnyAsync<TSource>(IQueryable<TSource> source, CancellationToken token);
+    static Task<bool> AnyAsync<TSource>(IQueryable<TSource> source, Expression<Func<TSource, bool>> predicate, CancellationToken token);
+    static IQueryable<TResult> As<TResult>(IQueryable queryable);
+    static Task<int> CountAsync<TSource>(IQueryable<TSource> source, CancellationToken token);
+    static Task<int> CountAsync<TSource>(IQueryable<TSource> source, Expression<Func<TSource, bool>> predicate, CancellationToken token);
+    static Lazy<int> CountLazily<T>(IQueryable<T> source);
+    static Lazy<Task<int>> CountLazilyAsync<T>(IQueryable<T> source, CancellationToken token);
+    static IRavenQueryable<T> Filter<T>(IRavenQueryable<T> source, Expression<Func<T, bool>> predicate, int limit);
+    static IRavenQueryable<T> Filter<T>(IQueryable<T> source, Expression<Func<T, bool>> predicate, int limit);
+    static Task<TSource> FirstAsync<TSource>(IQueryable<TSource> source, CancellationToken token);
+    static Task<TSource> FirstAsync<TSource>(IQueryable<TSource> source, Expression<Func<TSource, bool>> predicate, CancellationToken token);
+    static Task<TSource> FirstOrDefaultAsync<TSource>(IQueryable<TSource> source, CancellationToken token);
+    static Task<TSource> FirstOrDefaultAsync<TSource>(IQueryable<TSource> source, Expression<Func<TSource, bool>> predicate, CancellationToken token);
+    static IRavenQueryable<IGrouping<IEnumerable<TKey>, TSource>> GroupByArrayContent<TSource, TKey>(IQueryable<TSource> source, Expression<Func<TSource, IEnumerable<TKey>>> fieldSelector);
+    static IRavenQueryable<IGrouping<TKey, TSource>> GroupByArrayValues<TSource, TKey>(IQueryable<TSource> source, Expression<Func<TSource, IEnumerable<TKey>>> fieldSelector);
+    static IRavenQueryable<TResult> Include<TResult>(IQueryable<TResult> source, Expression<Func<TResult, object>> path);
+    static IRavenQueryable<TResult> Include<TResult, TInclude>(IQueryable<TResult> source, Expression<Func<TResult, object>> path);
+    static IRavenQueryable<TResult> Include<TResult>(IQueryable<TResult> source, string path);
+    static IRavenQueryable<TResult> Include<TResult>(IQueryable<TResult> source, Action<IQueryIncludeBuilder<TResult>> includes);
+    static IRavenQueryable<T> Intersect<T>(IQueryable<T> self);
+    static Lazy<IEnumerable<T>> Lazily<T>(IQueryable<T> source);
+    static Lazy<IEnumerable<T>> Lazily<T>(IQueryable<T> source, Action<IEnumerable<T>> onEval);
+    static Lazy<Task<IEnumerable<T>>> LazilyAsync<T>(IQueryable<T> source);
+    static Lazy<Task<IEnumerable<T>>> LazilyAsync<T>(IQueryable<T> source, Action<IEnumerable<T>> onEval);
+    static long LongCount<TSource>(IQueryable<TSource> source);
+    static Task<long> LongCountAsync<TSource>(IQueryable<TSource> source, CancellationToken token);
+    static Lazy<long> LongCountLazily<T>(IQueryable<T> source);
+    static Lazy<Task<long>> LongCountLazilyAsync<T>(IQueryable<T> source, CancellationToken token);
+    static IRavenQueryable<T> MoreLikeThis<T>(IQueryable<T> source, MoreLikeThisBase moreLikeThis);
+    static IRavenQueryable<T> MoreLikeThis<T>(IQueryable<T> source, Action<IMoreLikeThisBuilder<T>> builder);
+    static IOrderedQueryable<T> OrderBy<T>(IQueryable<T> source, Expression<Func<T, object>> path, string sorterName);
+    static IOrderedQueryable<T> OrderBy<T>(IQueryable<T> source, string path, string sorterName);
+    static IOrderedQueryable<T> OrderBy<T>(IQueryable<T> source, Expression<Func<T, object>> path, OrderingType ordering);
+    static IOrderedQueryable<T> OrderBy<T>(IQueryable<T> source, Expression<Func<T, object>> path, NullsOrdering nulls, OrderingType ordering);
+    static IOrderedQueryable<T> OrderBy<T>(IQueryable<T> source, string path, OrderingType ordering);
+    static IOrderedQueryable<T> OrderBy<T>(IQueryable<T> source, string path, NullsOrdering nulls, OrderingType ordering);
+    static IOrderedQueryable<T> OrderByDescending<T>(IQueryable<T> source, Expression<Func<T, object>> path, string sorterName);
+    static IOrderedQueryable<T> OrderByDescending<T>(IQueryable<T> source, string path, string sorterName);
+    static IOrderedQueryable<T> OrderByDescending<T>(IQueryable<T> source, Expression<Func<T, object>> path, OrderingType ordering);
+    static IOrderedQueryable<T> OrderByDescending<T>(IQueryable<T> source, Expression<Func<T, object>> path, NullsOrdering nulls, OrderingType ordering);
+    static IOrderedQueryable<T> OrderByDescending<T>(IQueryable<T> source, string path, OrderingType ordering);
+    static IOrderedQueryable<T> OrderByDescending<T>(IQueryable<T> source, string path, NullsOrdering nulls, OrderingType ordering);
+    static IOrderedQueryable<T> OrderByDistance<T>(IQueryable<T> source, Func<DynamicSpatialFieldFactory<T>, DynamicSpatialField> field, double latitude, double longitude);
+    static IOrderedQueryable<T> OrderByDistance<T>(IQueryable<T> source, DynamicSpatialField field, double latitude, double longitude);
+    static IOrderedQueryable<T> OrderByDistance<T>(IQueryable<T> source, Expression<Func<T, object>> path, double latitude, double longitude);
+    static IOrderedQueryable<T> OrderByDistance<T>(IQueryable<T> source, Expression<Func<T, object>> path, double latitude, double longitude, double roundFactor);
+    static IOrderedQueryable<T> OrderByDistance<T>(IQueryable<T> source, string fieldName, double latitude, double longitude);
+    static IOrderedQueryable<T> OrderByDistance<T>(IQueryable<T> source, string fieldName, double latitude, double longitude, double roundFactor);
+    static IOrderedQueryable<T> OrderByDistance<T>(IQueryable<T> source, Func<DynamicSpatialFieldFactory<T>, DynamicSpatialField> field, string shapeWkt);
+    static IOrderedQueryable<T> OrderByDistance<T>(IQueryable<T> source, DynamicSpatialField field, string shapeWkt);
+    static IOrderedQueryable<T> OrderByDistance<T>(IQueryable<T> source, Expression<Func<T, object>> path, string shapeWkt);
+    static IOrderedQueryable<T> OrderByDistance<T>(IQueryable<T> source, string fieldName, string shapeWkt);
+    static IOrderedQueryable<T> OrderByDistanceDescending<T>(IQueryable<T> source, Func<DynamicSpatialFieldFactory<T>, DynamicSpatialField> field, double latitude, double longitude);
+    static IOrderedQueryable<T> OrderByDistanceDescending<T>(IQueryable<T> source, DynamicSpatialField field, double latitude, double longitude);
+    static IOrderedQueryable<T> OrderByDistanceDescending<T>(IQueryable<T> source, Expression<Func<T, object>> path, double latitude, double longitude);
+    static IOrderedQueryable<T> OrderByDistanceDescending<T>(IQueryable<T> source, Expression<Func<T, object>> path, double latitude, double longitude, double roundFactor);
+    static IOrderedQueryable<T> OrderByDistanceDescending<T>(IQueryable<T> source, string fieldName, double latitude, double longitude);
+    static IOrderedQueryable<T> OrderByDistanceDescending<T>(IQueryable<T> source, string fieldName, double latitude, double longitude, double roundFactor);
+    static IOrderedQueryable<T> OrderByDistanceDescending<T>(IQueryable<T> source, Func<DynamicSpatialFieldFactory<T>, DynamicSpatialField> field, string shapeWkt);
+    static IOrderedQueryable<T> OrderByDistanceDescending<T>(IQueryable<T> source, DynamicSpatialField field, string shapeWkt);
+    static IOrderedQueryable<T> OrderByDistanceDescending<T>(IQueryable<T> source, Expression<Func<T, object>> path, string shapeWkt);
+    static IOrderedQueryable<T> OrderByDistanceDescending<T>(IQueryable<T> source, Expression<Func<T, object>> path, string shapeWkt, double roundFactor);
+    static IOrderedQueryable<T> OrderByDistanceDescending<T>(IQueryable<T> source, string fieldName, string shapeWkt);
+    static IOrderedQueryable<T> OrderByDistanceDescending<T>(IQueryable<T> source, string fieldName, string shapeWkt, double roundFactor);
+    static IOrderedQueryable<T> OrderByScore<T>(IQueryable<T> self);
+    static IOrderedQueryable<T> OrderByScoreDescending<T>(IQueryable<T> self);
+    static IRavenQueryable<TResult> ProjectInto<TResult>(IQueryable queryable);
+    static IRavenQueryable<T> Search<T>(IQueryable<T> self, Expression<Func<T, object>> fieldSelector, string searchTerms, decimal boost, SearchOptions options, SearchOperator operator);
+    static IRavenQueryable<T> Search<T>(IQueryable<T> self, Expression<Func<T, object>> fieldSelector, IEnumerable<string> searchTerms, decimal boost, SearchOptions options, SearchOperator operator);
+    static Task<TSource> SingleAsync<TSource>(IQueryable<TSource> source, CancellationToken token);
+    static Task<TSource> SingleAsync<TSource>(IQueryable<TSource> source, Expression<Func<TSource, bool>> predicate, CancellationToken token);
+    static Task<TSource> SingleOrDefaultAsync<TSource>(IQueryable<TSource> source, CancellationToken token);
+    static Task<TSource> SingleOrDefaultAsync<TSource>(IQueryable<TSource> source, Expression<Func<TSource, bool>> predicate, CancellationToken token);
+    static IRavenQueryable<T> Skip<T>(IQueryable<T> source, long count);
+    static IRavenQueryable<T> Spatial<T>(IQueryable<T> source, Expression<Func<T, object>> path, Func<SpatialCriteriaFactory, SpatialCriteria> clause);
+    static IRavenQueryable<T> Spatial<T>(IQueryable<T> source, string fieldName, Func<SpatialCriteriaFactory, SpatialCriteria> clause);
+    static IRavenQueryable<T> Spatial<T>(IQueryable<T> source, Func<DynamicSpatialFieldFactory<T>, DynamicSpatialField> field, Func<SpatialCriteriaFactory, SpatialCriteria> clause);
+    static IRavenQueryable<T> Spatial<T>(IQueryable<T> source, DynamicSpatialField field, Func<SpatialCriteriaFactory, SpatialCriteria> clause);
+    static ISuggestionQuery<T> SuggestUsing<T>(IQueryable<T> source, SuggestionBase suggestion);
+    static ISuggestionQuery<T> SuggestUsing<T>(IQueryable<T> source, Action<ISuggestionBuilder<T>> builder);
+    static IOrderedQueryable<T> ThenBy<T>(IOrderedQueryable<T> source, Expression<Func<T, object>> path, string sorterName);
+    static IOrderedQueryable<T> ThenBy<T>(IOrderedQueryable<T> source, string path, string sorterName);
+    static IOrderedQueryable<T> ThenBy<T>(IOrderedQueryable<T> source, Expression<Func<T, object>> path, OrderingType ordering);
+    static IOrderedQueryable<T> ThenBy<T>(IOrderedQueryable<T> source, Expression<Func<T, object>> path, NullsOrdering nulls, OrderingType ordering);
+    static IOrderedQueryable<T> ThenBy<T>(IOrderedQueryable<T> source, string path, OrderingType ordering);
+    static IOrderedQueryable<T> ThenBy<T>(IOrderedQueryable<T> source, string path, NullsOrdering nulls, OrderingType ordering);
+    static IOrderedQueryable<T> ThenByDescending<T>(IOrderedQueryable<T> source, Expression<Func<T, object>> path, string sorterName);
+    static IOrderedQueryable<T> ThenByDescending<T>(IOrderedQueryable<T> source, string path, string sorterName);
+    static IOrderedQueryable<T> ThenByDescending<T>(IOrderedQueryable<T> source, Expression<Func<T, object>> path, OrderingType ordering);
+    static IOrderedQueryable<T> ThenByDescending<T>(IOrderedQueryable<T> source, Expression<Func<T, object>> path, NullsOrdering nulls, OrderingType ordering);
+    static IOrderedQueryable<T> ThenByDescending<T>(IOrderedQueryable<T> source, string path, OrderingType ordering);
+    static IOrderedQueryable<T> ThenByDescending<T>(IOrderedQueryable<T> source, string path, NullsOrdering nulls, OrderingType ordering);
+    static IOrderedQueryable<T> ThenByScore<T>(IOrderedQueryable<T> self);
+    static IOrderedQueryable<T> ThenByScoreDescending<T>(IOrderedQueryable<T> self);
+    static Task<T[]> ToArrayAsync<T>(IQueryable<T> source, CancellationToken token);
+    static IAsyncDocumentQuery<T> ToAsyncDocumentQuery<T>(IQueryable<T> source);
+    static IDocumentQuery<T> ToDocumentQuery<T>(IQueryable<T> source);
+    static Task<List<T>> ToListAsync<T>(IQueryable<T> source, CancellationToken token);
+    static void ToStream<T>(IQueryable<T> self, Stream stream);
+    static void ToStream<T>(IDocumentQuery<T> self, Stream stream);
+    static Task ToStreamAsync<T>(IQueryable<T> self, Stream stream, CancellationToken token);
+    static Task ToStreamAsync<T>(IAsyncDocumentQuery<T> self, Stream stream, CancellationToken token);
+    static IRavenQueryable<T> VectorSearch<T>(IQueryable<T> source, Func<IVectorFieldFactory<T>, IVectorEmbeddingTextField> textFieldFactory, Action<IVectorEmbeddingTextFieldValueFactory> textValueFactory, float? minimumSimilarity, int? numberOfCandidates, bool isExact);
+    static IRavenQueryable<T> VectorSearch<T>(IQueryable<T> source, Func<IVectorFieldFactory<T>, IVectorEmbeddingField> embeddingFieldFactory, Action<IVectorEmbeddingFieldValueFactory> embeddingValueFactory, float? minimumSimilarity, int? numberOfCandidates, bool isExact);
+    static IRavenQueryable<T> VectorSearch<T>(IQueryable<T> source, Func<IVectorFieldFactory<T>, IVectorField> embeddingFieldFactory, Action<IVectorFieldValueFactory> embeddingValueFactory, float? minimumSimilarity, int? numberOfCandidates, bool isExact);
+    static IRavenQueryable<T> Where<T>(IQueryable<T> source, Expression<Func<T, int, bool>> predicate, bool exact);
+    static IRavenQueryable<T> Where<T>(IQueryable<T> source, Expression<Func<T, bool>> predicate, bool exact);
+}
+```
+
+## `Raven.Client.Documents.AI`
+
+```csharp
+public class AiOperations
+{
+    AiOperations(IDocumentStore store, string databaseName);
+    IAiConversationOperations Conversation(string agentId, string conversationId, AiConversationCreationOptions creationOptions, string changeVector);
+    AiAgentConfigurationResult CreateAgent(AiAgentConfiguration configuration);
+    AiAgentConfigurationResult CreateAgent<TSchema>(AiAgentConfiguration configuration, TSchema sampleObject);
+    Task<AiAgentConfigurationResult> CreateAgentAsync<TSchema>(AiAgentConfiguration configuration, TSchema sampleObject, CancellationToken token);
+    Task<AiAgentConfigurationResult> CreateAgentAsync(AiAgentConfiguration configuration, CancellationToken token);
+    AiAgentConfigurationResult DeleteAgent(string agentId);
+    Task<AiAgentConfigurationResult> DeleteAgentAsync(string agentId, CancellationToken token);
+    AiOperations ForDatabase(string databaseName);
+    AiAgentConfiguration GetAgent(string agentId);
+    Task<AiAgentConfiguration> GetAgentAsync(string agentId, CancellationToken token);
+    GetAiAgentsResponse GetAgents();
+    Task<GetAiAgentsResponse> GetAgentsAsync(CancellationToken token);
+    AiConversationMessagesResult GetConversationMessages(string conversationId);
+    AiConversationMessagesResult GetConversationMessages(GetConversationMessagesOptions parameters);
+    Task<AiConversationMessagesResult> GetConversationMessagesAsync(string conversationId, CancellationToken token);
+    Task<AiConversationMessagesResult> GetConversationMessagesAsync(GetConversationMessagesOptions parameters, CancellationToken token);
+}
+```
+
+## `Raven.Client.Documents.BulkInsert`
+
+```csharp
+public abstract class BulkInsertOperation.TimeSeriesBulkInsertBase : IDisposable
+{
+    void Dispose();
+}
+```
+
+```csharp
+public abstract class BulkInsertOperationBase<T>
+{
+    Task AbortAsync();
+    Task StoreAsync(T entity, string id);
+}
+```
+
+## `Raven.Client.Documents.Changes`
+
+```csharp
+public abstract class DatabaseChange
+{
+}
+```
+
+```csharp
+public sealed class IndexRenameChange : IndexChange
+{
+    IndexRenameChange();
+    string OldIndexName { get; set; }
+}
+```
+
+```csharp
+public enum TrafficWatchType
+{
+    Http,
+    Tcp,
+    Postgres,
+}
+```
+
 ## `Raven.Client.Documents.Commands`
 
 ```csharp
@@ -78,6 +341,31 @@ public abstract class TimeSeriesCommandData : ICommandData
     void OnBeforeSaveChanges(InMemoryDocumentSessionOperations session);
     DynamicJsonValue ToJson();
     DynamicJsonValue ToJson(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+## `Raven.Client.Documents.Conventions`
+
+```csharp
+public sealed class DocumentConventions.AggressiveCacheConventions
+{
+    TimeSpan Duration { get; set; }
+    AggressiveCacheMode Mode { get; set; }
+}
+```
+
+```csharp
+public sealed class DocumentConventions.BulkInsertConventions
+{
+    int TimeSeriesBatchSize { get; set; }
+    Func<object, IMetadataDictionary, StreamWriter, bool> TrySerializeEntityToJsonStream { get; set; }
+}
+```
+
+```csharp
+public sealed class DocumentConventions.ShardingConventions
+{
+    ShardedBatchBehavior BatchBehavior { get; set; }
 }
 ```
 
@@ -661,6 +949,165 @@ public sealed class RevertResult : OperationResult
     void MergeWith(IOperationProgress progress);
     DynamicJsonValue ToJson();
     void WarnAboutFailedCollection(string message);
+}
+```
+
+## `Raven.Client.Documents.Queries`
+
+```csharp
+public interface IIndexQuery
+{
+    TimeSpan? WaitForNonStaleResultsTimeout { get; }
+}
+```
+
+```csharp
+public abstract class IndexQueryBase<T> : IIndexQuery, IEquatable<IndexQueryBase<T>>
+{
+    ProjectionBehavior? ProjectionBehavior { get; set; }
+    string Query { get; set; }
+    T QueryParameters { get; set; }
+    string Tag { get; set; }
+    bool WaitForNonStaleResults { get; set; }
+    TimeSpan? WaitForNonStaleResultsTimeout { get; set; }
+    bool Equals(IndexQueryBase<T> other);
+    bool Equals(object obj);
+    int GetHashCode();
+    string ToString();
+}
+```
+
+```csharp
+public abstract class QueryResultBase<TResult, TInclude>
+{
+    BlittableJsonReaderObject CompareExchangeValueIncludes { get; set; }
+    BlittableJsonReaderObject CounterIncludes { get; set; }
+    Dictionary<string, string[]> IncludedCounterNames { get; set; }
+    string[] IncludedPaths { get; set; }
+    TInclude Includes { get; set; }
+    string IndexName { get; set; }
+    DateTime IndexTimestamp { get; set; }
+    bool IsStale { get; set; }
+    DateTime LastQueryTime { get; set; }
+    string NodeTag { get; set; }
+    long ResultEtag { get; set; }
+    TResult Results { get; set; }
+    BlittableJsonReaderArray RevisionIncludes { get; set; }
+    BlittableJsonReaderObject TimeSeriesIncludes { get; set; }
+    QueryTimings Timings { get; set; }
+}
+```
+
+## `Raven.Client.Documents.Queries.Highlighting`
+
+```csharp
+public sealed class LinqQueryHighlightings
+{
+    LinqQueryHighlightings();
+}
+```
+
+```csharp
+public sealed class QueryHighlightings
+{
+    QueryHighlightings();
+}
+```
+
+## `Raven.Client.Documents.Queries.MoreLikeThis`
+
+```csharp
+public interface IMoreLikeThisBuilderBase<T>
+{
+    IMoreLikeThisOperations<T> UsingAnyDocument();
+    IMoreLikeThisOperations<T> UsingDocument(string documentJson);
+}
+```
+
+```csharp
+public interface IMoreLikeThisBuilderForAsyncDocumentQuery<T> : IMoreLikeThisBuilderBase<T>
+{
+    IMoreLikeThisOperations<T> UsingDocument(Action<IFilterDocumentQueryBase<T, IAsyncDocumentQuery<T>>> predicate);
+}
+```
+
+```csharp
+public sealed class MoreLikeThisUsingAnyDocument : MoreLikeThisBase
+{
+    MoreLikeThisUsingAnyDocument();
+}
+```
+
+```csharp
+public sealed class MoreLikeThisUsingDocument : MoreLikeThisBase
+{
+    MoreLikeThisUsingDocument(string documentJson);
+    string DocumentJson { get; set; }
+}
+```
+
+## `Raven.Client.Documents.Queries.Spatial`
+
+```csharp
+public sealed class CircleCriteria : SpatialCriteria
+{
+    CircleCriteria(double radius, double latitude, double longitude, SpatialUnits? radiusUnits, SpatialRelation relation, double distErrorPercent);
+}
+```
+
+```csharp
+public sealed class WktCriteria : SpatialCriteria
+{
+}
+```
+
+## `Raven.Client.Documents.Replication`
+
+```csharp
+public sealed class ReplicationClientConfiguration
+{
+    ReplicationClientConfiguration();
+    DynamicJsonValue ToJson();
+}
+```
+
+```csharp
+public enum StraightforwardConflictResolution
+{
+    None,
+    ResolveToLatest,
+}
+```
+
+## `Raven.Client.Documents.Replication.Messages`
+
+```csharp
+public sealed class ReplicationInitialRequest
+{
+    ReplicationInitialRequest();
+    string Database { get; set; }
+    string DatabaseGroupId { get; set; }
+    TcpConnectionInfo Info { get; set; }
+    string PullReplicationDefinitionName { get; set; }
+    string PullReplicationSinkTaskName { get; set; }
+    string SourceUrl { get; set; }
+}
+```
+
+```csharp
+public sealed class ReplicationLatestEtagRequest
+{
+    ReplicationLatestEtagRequest();
+    long MigrationIndex { get; set; }
+    ReplicationLatestEtagRequest.ReplicationType ReplicationsType { get; set; }
+    string ShardedDatabaseId { get; set; }
+    string SourceDatabaseBase64Id { get; set; }
+    string SourceDatabaseId { get; set; }
+    string SourceDatabaseName { get; set; }
+    string SourceMachineName { get; set; }
+    string SourceTag { get; set; }
+    string SourceUrl { get; set; }
+    bool SupportsPullReplicationCompositeChangeVectors { get; set; }
 }
 ```
 
@@ -1708,6 +2155,24 @@ public sealed class SubscriptionCreationException : SubscriptionException
 }
 ```
 
+## `Raven.Client.Extensions`
+
+```csharp
+public static class TaskExtensions
+{
+    static Task AssertNotFailed(Task task);
+    static Task<T> ContinueWithTask<T>(Task task, Func<Task<T>> result);
+    static Task ContinueWithTask(Task task, Func<Task> result);
+    static Task IgnoreUnobservedExceptions(Task task);
+    static Task<bool> WaitWithTimeout(Task task, TimeSpan? timeout);
+    static Task WithCancellation(Task task, CancellationToken token);
+    static Task<T> WithCancellation<T>(Task<T> task, CancellationToken token);
+    static Task<T> WithResult<T>(Task task, T result);
+    static Task<T> WithResult<T>(Task task, Func<T> result);
+    static Task<T> WithResult<T>(Task task, Task<T> result);
+}
+```
+
 ## `Raven.Client.Http`
 
 ```csharp
@@ -1718,11 +2183,41 @@ public sealed class AttachmentStreamContent : HttpContent
 ```
 
 ```csharp
+public sealed class HttpCache.HttpCacheItem : IDisposable
+{
+    HttpCacheItem();
+    AllocatedMemoryData Allocation;
+    HttpCache Cache;
+    string ChangeVector;
+    HttpCache.ItemFlags Flags;
+    int Generation;
+    DateTime LastServerUpdate;
+    Byte* Ptr;
+    int Size;
+    bool AddRef();
+    void Dispose();
+    void ReleaseRef();
+}
+```
+
+```csharp
 public enum HttpCache.ItemFlags
 {
     None,
     NotFound,
     AggressivelyCached,
+}
+```
+
+```csharp
+public struct HttpCache.ReleaseCacheItem : IDisposable
+{
+    ReleaseCacheItem(HttpCache.HttpCacheItem item);
+    HttpCache.HttpCacheItem Item;
+    TimeSpan Age { get; }
+    bool MightHaveBeenModified { get; }
+    void Dispose();
+    void NotModified();
 }
 ```
 
@@ -1757,6 +2252,16 @@ public interface IBlittableJsonConverterBase
 ```csharp
 public interface IJsonReader : IDisposable
 {
+}
+```
+
+## `Raven.Client.Json.Serialization.NewtonsoftJson`
+
+```csharp
+public struct DefaultRavenContractResolver.ClearExtensionData : IDisposable
+{
+    ClearExtensionData(ExtensionDataSetter setter, ExtensionDataGetter getter);
+    void Dispose();
 }
 ```
 
