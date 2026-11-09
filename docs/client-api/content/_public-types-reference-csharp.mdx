@@ -12914,6 +12914,7 @@ public interface ILowMemoryHandler
 public struct MemoryInfoResult
 {
     // Current commit charge; shown out of the total committable memory in the extended memory information text.
+    // On Linux the server fills it from the committed memory of /proc/meminfo; on Windows from the page file values.
     Size CurrentCommitCharge;
     // Size of the installed memory.
     Size InstalledMemory;
@@ -12922,6 +12923,7 @@ public struct MemoryInfoResult
     // Shared clean memory amount.
     Size SharedCleanMemory;
     // Total committable memory amount.
+    // On Linux the server fills it from the commit limit of /proc/meminfo.
     Size TotalCommittableMemory;
     // Total physical memory amount.
     Size TotalPhysicalMemory;
