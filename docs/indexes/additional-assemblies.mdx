@@ -32,6 +32,7 @@ import LanguageContent from "@site/src/components/LanguageContent";
 
 * In this page:  
    * [Syntax](../indexes/additional-assemblies.mdx#syntax)  
+   * [Adding assemblies from an index class](../indexes/additional-assemblies.mdx#adding-assemblies-from-an-index-class)  
    * [Examples](../indexes/additional-assemblies.mdx#examples)  
        * [Basic Example](../indexes/additional-assemblies.mdx#basic-example)
        * [Complex Example](../indexes/additional-assemblies.mdx#complex-example)
@@ -56,6 +57,9 @@ Additional assemblies are defined using the `AdditionalAssembly` object.
                                                string packageVersion, 
                                                string packageSourceUrl = null, 
                                                HashSet<string> usings = null);
+
+    // Adds only 'using' directives, without referencing an assembly
+    public static AdditionalAssembly OnlyUsings(HashSet<string> usings);
 \}
 `}
 </CodeBlock>
@@ -66,9 +70,28 @@ Additional assemblies are defined using the `AdditionalAssembly` object.
 | **assemblyName** | `string` | The name of an assembly to import from runtime |
 | **assemblyPath** | `string` | Local path to an assembly |
 | **packageName** | `string` | Name of a NuGet package to import |
-| **packageVersion** | `string` | The version number of the NuGet package - optional |
+| **packageVersion** | `string` | The version number of the NuGet package |
 | **packageSourceUrl** | `string` | The URL of the package's original source - optional |
-| **usings** | `HashSet<string>` | A set of namespaces to attach to the compiled index with `using` - optional |
+| **usings** | `HashSet<string>` | A set of namespaces to attach to the compiled index with `using` - optional for `FromRuntime`, `FromPath` and `FromNuGet`. In `OnlyUsings` it is required. |
+
+* `FromRuntime`, `FromPath` and `FromNuGet` throw an `ArgumentException` when `assemblyName`, `assemblyPath`,  
+  or `packageName` and `packageVersion` are null, empty, or white space.
+* `OnlyUsings` throws an `ArgumentNullException` when `usings` is null or empty.
+
+#### Properties of `AdditionalAssembly`
+
+The `FromRuntime`, `FromPath`, `FromNuGet` and `OnlyUsings` factory methods are the only way to create an instance.  
+The properties can be read, but not set:
+
+| Property | Type | Description |
+| - | - | - |
+| **AssemblyName** | `string` | The runtime assembly name. Set by `FromRuntime`, otherwise `null`. |
+| **AssemblyPath** | `string` | The local path of the assembly. Set by `FromPath`, otherwise `null`. |
+| **PackageName** | `string` | The NuGet package name. Set by `FromNuGet`, otherwise `null`. |
+| **PackageVersion** | `string` | The NuGet package version. Set by `FromNuGet`, otherwise `null`. |
+| **PackageSourceUrl** | `string` | The NuGet package source URL. Set by `FromNuGet`, otherwise `null`. |
+| **Usings** | `HashSet<string>` | The namespaces passed in `usings`. |
+
 The `AdditionalAssembly`s are collected in `AdditionalAssemblies`, a property of 
 `IndexDefinition`:  
 
@@ -80,6 +103,47 @@ The `AdditionalAssembly`s are collected in `AdditionalAssemblies`, a property of
 </TabItem>
 
 
+
+## Adding assemblies from an index class
+
+* A class that derives from `AbstractIndexCreationTask<TDocument>` or `AbstractMultiMapIndexCreationTask<TReduceResult>`  
+  can call the protected method `AddAssembly(AdditionalAssembly assembly)` in its constructor.  
+  The assembly is added to the `AdditionalAssemblies` property of the task.  
+  `AddAssembly` throws an `ArgumentNullException` when `assembly` is null.
+
+* `AdditionalAssemblies` is also a public settable property of the task,  
+  so a task can instead assign a whole `HashSet<AdditionalAssembly>`.
+
+<TabItem value="add_assembly_index" label="add_assembly_index">
+<CodeBlock language="csharp">
+{`public class Companies_ByName : AbstractIndexCreationTask<Company>
+\{
+    public Companies_ByName()
+    \{
+        Map = companies => from company in companies
+                          select new
+                          \{
+                              company.Name
+                          \};
+
+        AddAssembly(AdditionalAssembly.FromRuntime("System.Memory"));
+        AddAssembly(AdditionalAssembly.FromNuGet("Microsoft.ML", "1.5.2"));
+    \}
+\}
+`}
+</CodeBlock>
+</TabItem>
+
+#### Adding only `using` directives
+
+<TabItem value="only_usings" label="only_usings">
+<CodeBlock language="csharp">
+{`AdditionalAssemblies = \{
+    AdditionalAssembly.OnlyUsings(new HashSet<string> \{ "System.Text" \})
+\}
+`}
+</CodeBlock>
+</TabItem>
 
 ## Examples
 
