@@ -19,6 +19,7 @@ import CodeBlock from '@theme/CodeBlock';
     * [Include timings in a query](../../../../../client-api/session/querying/debugging/query-timings.mdx#include-timings-in-a-query)
     * [View timings](../../../../../client-api/session/querying/debugging/query-timings.mdx#view-timings)
     * [Syntax](../../../../../client-api/session/querying/debugging/query-timings.mdx#syntax)
+    * [Query plan](../../../../../client-api/session/querying/debugging/query-timings.mdx#query-plan)
     * [Timings in a sharded database](../../../../../client-api/session/querying/debugging/query-timings.mdx#timings-in-a-sharded-database)
 
 </Admonition>
@@ -163,7 +164,66 @@ include timings()
 |------------------|-------------------------------------|---------------------------------------------------|
 | __DurationInMs__ | `long`                              | Total duration                                    |
 | __Timings__      | `IDictionary<string, QueryTimings>` | Dictionary with `QueryTimings` info per time part |
+| __QueryPlan__    | `IDynamicJson`                      | The query plan, if the server returned one. See [Query plan](../../../../../client-api/session/querying/debugging/query-timings.mdx#query-plan) |
 
+<TabItem value="syntax_plan" label="syntax_plan">
+<CodeBlock language="csharp">
+{`public sealed class QueryInspectionNode
+{
+    public string Operation { get; set; }
+    public Dictionary<string, string> Parameters { get; set; }
+    public List<QueryInspectionNode> Children { get; set; }
+}
+`}
+</CodeBlock>
+</TabItem>
+
+| `QueryInspectionNode` |                                    |                                                         |
+|-----------------------|------------------------------------|---------------------------------------------------------|
+| __Operation__         | `string`                           | The operation of this node of the plan                  |
+| __Parameters__        | `Dictionary<string, string>`       | The parameters of the operation                         |
+| __Children__          | `List<QueryInspectionNode>`        | The child nodes                                         |
+
+
+
+## Query plan
+
+* `QueryTimings.QueryPlan` holds a tree of `QueryInspectionNode` objects that describes how the query was executed.  
+  `QueryPlan` and `QueryInspectionNode` are in the `Raven.Client.Documents.Queries.Timings` namespace.
+
+* The server sets the plan from the Corax index read operations.  
+  If the server returns no plan, `QueryPlan` stays `null`.
+
+* When the client reads the response, it creates the plan as a `QueryInspectionNode`.  
+  The same `QueryTimings` object that you got from `Timings` is filled after the query is executed.
+
+<TabItem value="query_plan" label="query_plan">
+<CodeBlock language="csharp">
+{`QueryTimings timings = null;
+
+var results = session.Query<Product>()
+    .Customize(x => x.Timings(out timings))
+    .Search(x => x.Name, "Syrup Lager")
+    .ToList();
+
+if (timings.QueryPlan is QueryInspectionNode plan)
+{
+    // The root of the plan
+    string operation = plan.Operation;
+    Dictionary<string, string> parameters = plan.Parameters;
+
+    // The plan is a tree
+    if (plan.Children != null)
+    {
+        foreach (QueryInspectionNode child in plan.Children)
+        {
+            string childOperation = child.Operation;
+        }
+    }
+}
+`}
+</CodeBlock>
+</TabItem>
 
 
 ## Timings in a sharded database
