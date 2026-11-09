@@ -342,5 +342,32 @@ foreach (string nodeTag in allMemberNodes)
 | | | **Note**: Either _Documents_ or _Indexes_ (or both) must be specified |
 
 
+## Progress and result
 
+`CompactDatabaseOperation` returns an `OperationIdResult`.
+While the operation runs, progress is reported as a `CompactionProgress`,
+and the final result of `WaitForCompletion` is a `CompactionResult`.
+Both derive from `CompactionProgressBase<T>`, so they share these properties:
+
+| Property         | Type                       | Description |
+|------------------|----------------------------|-------------|
+| `Message`        | `string`                   | The latest message |
+| `TreeName`       | `string`                   | The name of the tree being compacted |
+| `TreeProgress`   | `long`                     | Progress within the current tree |
+| `TreeTotal`      | `long`                     | Total for the current tree |
+| `GlobalProgress` | `long`                     | Overall progress |
+| `GlobalTotal`    | `long`                     | Overall total |
+| `Skipped`        | `bool`                     | Whether the item was skipped. The server sets it, for example, for an index that does not exist. |
+| `Processed`      | `bool`                     | Whether the item was processed |
+| `IndexesResults` | `Dictionary<string, T>`    | Per-index progress or result, keyed by index name |
+
+`CompactionResult` adds:
+
+| Property                   | Type                  | Description |
+|----------------------------|-----------------------|-------------|
+| `Name`                     | `string`              | The name the result was created with (the database name for the overall result, the index name for an index result) |
+| `SizeBeforeCompactionInMb` | `long`                | Size before compaction, in MB |
+| `SizeAfterCompactionInMb`  | `long`                | Size after compaction, in MB |
+| `Messages`                 | `IEnumerable<string>` | All messages that were recorded |
+| `Progress`                 | `CompactionProgress`  | A progress view over the same result |
 
