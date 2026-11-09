@@ -160,8 +160,8 @@ All of these derive from `RavenException`.
 | Exception                         | Thrown when |
 |-----------------------------------|-------------|
 | `IndexDoesNotExistException`      | The query result is null, so the client throws "Could not find index ...". The server also throws it for a missing index ("There is no index with '...' name.") or a missing auto index ("There is no auto index with '...' name."). |
-| `IndexAlreadyExistException`      | An index definition that differs from the existing one is put while the existing index's lock mode is `IndexLockMode.LockedError`. The message is "Cannot edit existing index ... with lock mode ...". |
-| `IndexCreationException`          | The server cannot create an index, for example: a JavaScript index definition has a problem, the index configuration contains an unrecognized option key, or a license limit blocks the creation (the `LicenseLimitException` is the inner exception). |
+| `IndexAlreadyExistException`      | `DatabaseRecord.AddIndex` throws it when an index definition that differs from the existing one is added while the existing index's lock mode is `IndexLockMode.LockedError`; the message is "Cannot edit existing index ... with lock mode ...". In a test against a running 7.2 server, putting such a definition with `PutIndexesOperation` or `AbstractIndexCreationTask.Execute` threw `IndexCreationException`, not this exception. |
+| `IndexCreationException`          | The server cannot create an index, for example: a JavaScript index definition has a structural problem (a JavaScript map with a syntax error threw `IndexCompilationException` in a test against a running server), the index configuration contains an unrecognized option key, or a license limit blocks the creation (the `LicenseLimitException` is the inner exception). |
 | `IndexDeletionException`          | The server fails to delete or reset an index. The original exception is the inner exception. |
 | `IndexInvalidException`           | The server finds an invalid index definition detail, for example an unsupported or duplicated-field pattern in the references pattern of a map-reduce output to a collection. |
 | `PendingRollingIndexException`    | A query uses an index on a node where a rolling index deployment is still pending. |
@@ -199,7 +199,7 @@ All of these derive from `RavenException`.
 | `InvalidNetworkTopologyException`   | `Exception`        | A TCP connection attempt (for example from replication) is answered with the `InvalidNetworkTopology` status. |
 | `UnsuccessfulRequestException`      | `Exception`        | The request executor records it per failed node: it is the inner exception of `AllTopologyNodesDownException`, and it is stored for a node when a request is no longer relevant for that node. |
 | `ClientVersionMismatchException`    | `RavenException`   | The server rejects a client of major version 3, or a client with a newer build version than the server. |
-| `RouteNotFoundException`            | `RavenException`   | The server has no handler for the requested HTTP method and path. |
+| `RouteNotFoundException`            | `RavenException`   | The server has no handler for the requested HTTP method and path. `RequestExecutor` catches a `ClientVersionMismatchException` whose message contains the name of this exception, and in a test against a running server a request to an unknown route surfaced as `ClientVersionMismatchException`. |
 
 </Panel>
 

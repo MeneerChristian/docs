@@ -49,10 +49,11 @@ Allow overriding the stream containing the database dump loaded when calling Imp
 
 #### `GetDocumentStore`
 Get an IDocumentStore instance for the requested database.  
+The optional `GetDocumentStoreOptions` object has one property, `WaitForIndexingTimeout` (`TimeSpan?`).  
 <TabItem value="csharp" label="csharp">
 <CodeBlock language="csharp">
-{`public IDocumentStore GetDocumentStore([CallerMemberName] string database = null, 
-                                                TimeSpan? waitForIndexingTimeout = null)
+{`protected internal IDocumentStore GetDocumentStore(GetDocumentStoreOptions options = null, 
+                                                    [CallerMemberName] string database = null)
 `}
 </CodeBlock>
 </TabItem>  
@@ -106,7 +107,7 @@ Configure the server before running it
 Wait for indexes to become non-stale  
 <TabItem value="csharp" label="csharp">
 <CodeBlock language="csharp">
-{`public void WaitForIndexing(IDocumentStore store, string database = null, 
+{`protected void WaitForIndexing(IDocumentStore store, string database = null, 
                                                     TimeSpan? timeout = null)
 `}
 </CodeBlock>
@@ -116,7 +117,7 @@ Wait for indexes to become non-stale
 Pause the test and launch Studio to examine database state  
 <TabItem value="csharp" label="csharp">
 <CodeBlock language="csharp">
-{`public void WaitForUserToContinueTheTest(IDocumentStore store)
+{`protected void WaitForUserToContinueTheTest(IDocumentStore store)
 `}
 </CodeBlock>
 </TabItem>  
