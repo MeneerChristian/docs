@@ -54,3 +54,25 @@ CertificateMetadata[] byName = store.Maintenance.Server.Send(new GetCertificates
 </CodeBlock>
 </TabItem>
 </Tabs>
+
+## Get the metadata of one certificate
+
+`GetCertificateMetadataOperation` (singular) returns the `CertificateMetadata` of the certificate with the given thumbprint.
+
+<TabItem value="single" label="single">
+<CodeBlock language="csharp">
+{`// Syntax:
+public GetCertificateMetadataOperation(string thumbprint)
+
+// Example:
+CertificateMetadata metadata = store.Maintenance.Server.Send(
+    new GetCertificateMetadataOperation("A1B2C3D4E5F6A1B2C3D4E5F6A1B2C3D4E5F6A1B2"));
+`}
+</CodeBlock>
+</TabItem>
+
+* The constructor throws an `ArgumentNullException` when `thumbprint` is `null`.
+* When the server returns a body, the operation expects exactly one result. Any other number of results makes it throw an `InvalidDataException`.
+* When the server returns no body, `Result` is `null`.
+* `CertificateUsage` (the type of `CertificateMetadata.Usage`, nullable) has the values `RavenServer`, `RavenServerForCommunication`, `Client`, `SsoServer`, `SsoClient` and `WellKnownIssuer`.
+

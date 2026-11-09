@@ -1,0 +1,58 @@
+import Admonition from '@theme/Admonition';
+import TabItem from '@theme/TabItem';
+import CodeBlock from '@theme/CodeBlock';
+
+<Admonition type="note" title="">
+
+* Use `EditClientCertificateOperation` to change the settings of a client certificate that is already registered on the server.  
+  It is a server operation: send it with `store.Maintenance.Server.Send`. It does not return a value.
+
+* To register a new certificate, see [Put client certificate](../../../../../client-api/operations/server-wide/certificates/put-client-certificate.mdx).
+
+</Admonition>
+
+## Example
+
+<TabItem value="edit_certificate" label="edit_certificate">
+<CodeBlock language="csharp">
+{`store.Maintenance.Server.Send(new EditClientCertificateOperation(
+    new EditClientCertificateOperation.Parameters
+    \{
+        Thumbprint = "A1B2C3D4E5F6A1B2C3D4E5F6A1B2C3D4E5F6A1B2",
+        Name = "my-client-cert",
+        Clearance = SecurityClearance.ValidUser,
+        Permissions = new Dictionary<string, DatabaseAccess>
+        \{
+            \{ "Northwind", DatabaseAccess.ReadWrite \}
+        \},
+        Disabled = false
+    \}));
+`}
+</CodeBlock>
+</TabItem>
+
+## Syntax
+
+All of these types are in the namespace `Raven.Client.ServerWide.Operations.Certificates`.
+
+<TabItem value="syntax" label="syntax">
+<CodeBlock language="csharp">
+{`public EditClientCertificateOperation(EditClientCertificateOperation.Parameters parameters)
+`}
+</CodeBlock>
+</TabItem>
+
+The constructor throws an `ArgumentNullException` when `parameters` is `null`, or when `Name`, `Thumbprint` or `Permissions` is `null`.
+
+| `Parameters` property | Type | Description |
+|---|---|---|
+| **Thumbprint** | `string` | The thumbprint of the certificate to edit. Required. |
+| **Name** | `string` | The certificate name. Required. |
+| **Permissions** | `Dictionary<string, DatabaseAccess>` | The database permissions, keyed by database name. Required. `DatabaseAccess` is `ReadWrite`, `Admin` or `Read`. |
+| **Clearance** | `SecurityClearance` | `UnauthenticatedClients`, `ClusterAdmin`, `ClusterNode`, `Operator` or `ValidUser` |
+| **Disabled** | `bool` | Whether the certificate is disabled |
+| **SsoServerPublicKeyPinningHashes** | `List<string>` | SSO setting. When it is `null`, the stored value is left untouched. Any non-null value (even an empty list) replaces the stored value. |
+| **AllowAnySsoServer** | `bool?` | SSO setting, with the same `null` rule |
+| **SsoIdentifiers** | `List<SsoIdentifier>` | SSO setting, with the same `null` rule. `SsoIdentifier` has the fields `Provider` (`SsoProvider`: `Github`, `Google`, `Microsoft` or `Windows`), `Domain` (`string`) and `Identifier` (`string`). |
+
+The request goes to the `/admin/certificates/edit` endpoint of the server.

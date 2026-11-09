@@ -1,0 +1,41 @@
+import Admonition from '@theme/Admonition';
+import TabItem from '@theme/TabItem';
+import CodeBlock from '@theme/CodeBlock';
+
+<Admonition type="note" title="">
+
+* Use `ReplaceClusterCertificateOperation` to replace the cluster's server certificate with a new one.  
+  It is a server operation: send it with `store.Maintenance.Server.Send`. It does not return a value.
+
+* The certificate bytes are sent with their private key, because this is a server certificate.
+
+* To learn how server certificates are renewed and rotated, see
+  [Certificate renewal and rotation](../../../../../server/security/authentication/certificate-renewal-and-rotation.mdx).
+
+</Admonition>
+
+## Example
+
+<TabItem value="replace_cluster_certificate" label="replace_cluster_certificate">
+<CodeBlock language="csharp">
+{`byte[] certificateBytes = File.ReadAllBytes("new-server-certificate.pfx");
+
+store.Maintenance.Server.Send(
+    new ReplaceClusterCertificateOperation(certificateBytes, replaceImmediately: false));
+`}
+</CodeBlock>
+</TabItem>
+
+## Syntax
+
+<TabItem value="syntax" label="syntax">
+<CodeBlock language="csharp">
+{`public ReplaceClusterCertificateOperation(byte[] certBytes, bool replaceImmediately)
+`}
+</CodeBlock>
+</TabItem>
+
+| Parameter | Type | Description |
+|---|---|---|
+| **certBytes** | `byte[]` | The raw bytes of the new certificate. The constructor throws an `ArgumentNullException` when it is `null`. |
+| **replaceImmediately** | `bool` | Whether the server should replace the certificate immediately. It is sent as the `replaceImmediately` query string parameter of the `/admin/certificates/replace-cluster-cert` endpoint. |
