@@ -380,7 +380,7 @@ IndexSourceType source = definition.DetectStaticIndexSourceType(); // IndexSourc
   It throws an `ArgumentNullException` when `Maps` is empty, and an `InvalidOperationException` when the maps have different source types.
 
 * **Type** and **SourceType**  
-  When no value was assigned to them, the getters return the result of the matching `Detect` method  
+  The setters are internal. When no value has been set, the getters return the result of the matching `Detect` method  
   (and throw the same exceptions when `Maps` is empty).
 
 * **RemoveDefaultValues**  
