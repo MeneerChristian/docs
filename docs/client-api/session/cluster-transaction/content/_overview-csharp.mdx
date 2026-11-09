@@ -144,3 +144,20 @@ using (var session = store.OpenSession())
 For a detailed description of transactions in RavenDB please refer to the [Transaction support in RavenDB](../../../../client-api/faq/transaction-support.mdx) article.
 
 </Admonition>
+
+
+## The `ClusterTransaction` session interfaces
+
+`session.Advanced.ClusterTransaction` returns `IClusterTransactionOperations` for a sync session and `IClusterTransactionOperationsAsync` for an async session
+(namespace `Raven.Client.Documents.Session`). Both derive from `IClusterTransactionOperationsBase`.
+The members below are the compare-exchange operations that take part in the cluster-wide transaction.
+Learn more in [Compare exchange](../../../../compare-exchange/overview.mdx).
+
+| Interface | Members |
+|---|---|
+| `IClusterTransactionOperationsBase` | `CompareExchangeValue<T> CreateCompareExchangeValue<T>(string key, T value)`<br/>`void DeleteCompareExchangeValue(string key, long index)`<br/>`void DeleteCompareExchangeValue<T>(CompareExchangeValue<T> item)` |
+| `IClusterTransactionOperations` | `GetCompareExchangeValue<T>(string key)`<br/>`GetCompareExchangeValues<T>(string[] keys)`<br/>`GetCompareExchangeValues<T>(string startsWith, int start = 0, int pageSize = 25)`<br/>`Lazily` (`ILazyClusterTransactionOperations`) |
+| `IClusterTransactionOperationsAsync` | `GetCompareExchangeValueAsync<T>(string key, CancellationToken token = default)`<br/>`GetCompareExchangeValuesAsync<T>(string[] keys, CancellationToken token = default)`<br/>`GetCompareExchangeValuesAsync<T>(string startsWith, int start = 0, int pageSize = 25, CancellationToken token = default)`<br/>`Lazily` (`ILazyClusterTransactionOperationsAsync`) |
+| `ILazyClusterTransactionOperations` | `Lazy<CompareExchangeValue<T>> GetCompareExchangeValue<T>(string key)`, and an overload with `Action<CompareExchangeValue<T>> onEval`<br/>`Lazy<Dictionary<string, CompareExchangeValue<T>>> GetCompareExchangeValues<T>(string[] keys)`, and an overload with `Action<Dictionary<string, CompareExchangeValue<T>>> onEval` |
+| `ILazyClusterTransactionOperationsAsync` | The same methods as the sync lazy interface, named `GetCompareExchangeValueAsync` and `GetCompareExchangeValuesAsync`, returning `Lazy<Task<...>>` and taking an optional `CancellationToken`. |
+
