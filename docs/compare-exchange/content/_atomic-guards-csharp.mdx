@@ -15,6 +15,7 @@ import CodeBlock from '@theme/CodeBlock';
   * [Atomic guard creation and update](../../compare-exchange/atomic-guards.mdx#atomic-guard-creation-and-update)
   * [Atomic guard usage example](../../compare-exchange/atomic-guards.mdx#atomic-guard-creation-and-update)
   * [Atomic guard database scope](../../compare-exchange/atomic-guards.mdx#atomic-guard-database-scope)  
+  * [Atomic guard keys cannot be modified from a cluster-wide session](../../compare-exchange/atomic-guards.mdx#atomic-guard-keys-cannot-be-modified-from-a-cluster-wide-session)  
   * [Disabling atomic guards](../../compare-exchange/atomic-guards.mdx#disabling-atomic-guards)  
   * [When are atomic guards removed](../../compare-exchange/atomic-guards.mdx#when-are-atomic-guards-removed)  
   * [Best practice when storing a document in a cluster-wide transaction](../../compare-exchange/atomic-guards.mdx#best-practice-when-storing-a-document-in-a-cluster-wide-transaction)  
@@ -162,6 +163,35 @@ in the Studio:
 * Since atomic guards are implemented as compare-exchange items,  
   they are Not externally replicated to other databases by any ongoing replication task.  
   Learn more in [why compare-exchange items are not replicated](../../compare-exchange/overview.mdx#why-compare-exchange-items-are-not-replicated-to-external-databases).
+
+---
+
+## Atomic guard keys cannot be modified from a cluster-wide session
+
+Atomic guard keys start with the prefix `rvn-atomic/`.  
+A cluster-wide session that creates, updates, or deletes a compare-exchange item whose key starts with this prefix is rejected by the server with a
+`CompareExchangeInvalidKeyException` (namespace `Raven.Client.Exceptions`, derives from `RavenException`):  
+_"You cannot manipulate the atomic guard '...' via the cluster-wide session"_.  
+
+The check is skipped when [atomic guards are disabled](../../compare-exchange/atomic-guards.mdx#disabling-atomic-guards) for the session.
+
+```csharp
+using (var session = store.OpenSession(new SessionOptions
+{
+    TransactionMode = TransactionMode.ClusterWide
+}))
+{
+    try
+    {
+        session.Advanced.ClusterTransaction.CreateCompareExchangeValue("rvn-atomic/users/johndoe", "value");
+        session.SaveChanges();
+    }
+    catch (CompareExchangeInvalidKeyException e)
+    {
+        Console.WriteLine(e.Message);
+    }
+}
+```
 
 ---
 

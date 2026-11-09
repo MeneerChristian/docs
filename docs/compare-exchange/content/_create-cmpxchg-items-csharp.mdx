@@ -569,3 +569,24 @@ The returned `CompareExchangeValue` contains:
 | **key**    | `string` | The compare-exchange item key. This string can be up to 512 bytes. |
 | **value**  | `T`      | The value associated with the key.                                 |
 | **index**  | `long`   | The index used for concurrency control.<br/>Will be `0` when calling `CreateCompareExchangeValue`. |   
+
+---
+
+### Key length
+
+The server rejects a key whose UTF-8 encoding is longer than 512 bytes.  
+This applies when an item is created or updated with `PutCompareExchangeValueOperation`, and when a cluster-wide session saves a compare-exchange item.  
+The server throws a `CompareExchangeKeyTooBigException` (namespace `Raven.Client.Exceptions`, derives from `RavenException`), 
+and its message contains the key and its size in bytes.
+
+```csharp
+try
+{
+    var longKey = new string('a', 600);
+    store.Operations.Send(new PutCompareExchangeValueOperation<string>(longKey, "value", 0));
+}
+catch (CompareExchangeKeyTooBigException e)
+{
+    Console.WriteLine(e.Message);
+}
+```
