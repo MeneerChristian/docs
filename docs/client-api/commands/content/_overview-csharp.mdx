@@ -223,5 +223,76 @@ Task ExecuteAsync<TResult>(RavenCommand<TResult> command,
 </TabItem>
 
 
+## Writing a custom command
 
+You can execute your own request by deriving from `RavenCommand<TResult>` (namespace `Raven.Client.Http`)
+and passing the command to the request executor as shown above.
+Derive from the non-generic `RavenCommand` when the command has no typed result; its `Result` is an `object`,
+and its `IsReadRequest` is `false`.
+
+A command must implement `IsReadRequest` and `CreateRequest`.
+When the response is a JSON object, it must also override `SetResponse`.
+
+<TabItem value="custom_command" label="custom_command">
+<CodeBlock language="csharp">
+{`public sealed class GetDatabaseIdCommand : RavenCommand<string>
+\{
+    public override bool IsReadRequest => true;
+
+    public override HttpRequestMessage CreateRequest(JsonOperationContext ctx, ServerNode node, out string url)
+    \{
+        url = $"\{node.Url\}/databases/\{node.Database\}/stats";
+        return new HttpRequestMessage
+        \{
+            Method = HttpMethod.Get
+        \};
+    \}
+
+    public override void SetResponse(JsonOperationContext context, BlittableJsonReaderObject response, bool fromCache)
+    \{
+        response.TryGet("DatabaseId", out string databaseId);
+        Result = databaseId;
+    \}
+\}
+
+using (store.GetRequestExecutor().ContextPool.AllocateOperationContext(out var context))
+\{
+    var cmd = new GetDatabaseIdCommand();
+    store.GetRequestExecutor().Execute(cmd, context);
+    string databaseId = cmd.Result;
+\}
+`}
+</CodeBlock>
+</TabItem>
+
+#### Members of `RavenCommand<TResult>`
+
+| Member | Type | Description |
+|---|---|---|
+| **IsReadRequest** | `bool` (abstract) | Whether the command only reads. |
+| **CreateRequest**(ctx, node, out url) | `HttpRequestMessage` (abstract) | Creates the HTTP request and returns the URL for the given node. |
+| **SetResponse**(context, response, fromCache) | `void` (virtual) | Receives the JSON response when `ResponseType` is `Object`. The default implementation throws an `InvalidDataException` when `ResponseType` is `Empty` or `Raw`, and otherwise an `InvalidOperationException` that asks you to override the method. |
+| **SetResponseRaw**(response, stream, context) | `void` (virtual) | Receives the response stream when `ResponseType` is `Raw`. The default implementation throws a `NotSupportedException`. `SetResponseRawAsync` calls it by default. |
+| **ProcessResponse**(context, cache, response, url) | `Task<ResponseDisposeHandling>` (virtual) | Reads the response. It returns without reading the body when `ResponseType` is `Empty` or the status is 204 (No Content). For `Object`, it skips an empty body, otherwise reads the JSON, caches it when the command can cache and the response has an ETag header, and calls `SetResponse` with `fromCache: false`. For `Raw`, it calls `SetResponseRawAsync` and does not cache. |
+| **OnBeforeRequest**(request) | `void` (virtual) | Called with the HTTP request before it is sent. The default does nothing. |
+| **OnResponseFailure**(response) | `void` (virtual) | Called with an unsuccessful response. The default does nothing. |
+| **Result** | `TResult` (field) | The command result. |
+| **ResponseType** | `RavenCommandResponseType` | `Empty`, `Object` or `Raw`. Default: `Object`. |
+| **Timeout** | `TimeSpan?` | A timeout for the command. Default: `null`. |
+| **CanCache** | `bool` | Whether the response may be cached. Default: `true`. |
+| **CanCacheAggressively** | `bool` | Whether the response may be cached aggressively. Default: `true`. |
+| **SelectedNodeTag** | `string` | The tag of the node to send the command to. Default: `null`. |
+| **CancellationToken** | `CancellationToken` (field) | Default: `CancellationToken.None`. |
+| **StatusCode** | `HttpStatusCode` (field) | The status code of the response. |
+| **FailedNodes** | `Dictionary<ServerNode, Exception>` (field) | The nodes the command failed on, with their exceptions. |
+| **NumberOfAttempts** | `int` | The number of attempts made for the command. Its setter is internal. |
+
+The setters of `ResponseType`, `Timeout`, `CanCache`, `CanCacheAggressively` and `SelectedNodeTag` are `protected internal`, so a derived command sets them (for example in its constructor).
+
+Related types:
+
+* `RavenCommandResponseType`: `Empty`, `Object`, `Raw`.
+* `ResponseDisposeHandling`: `Manually`, `Automatic`. It is the return value of `ProcessResponse`; the default implementation returns `Automatic`.
+* `IRaftCommand`: a command can implement it. It has the property `string RaftUniqueRequestId { get; }`.
+* `IBroadcast`: a command can implement it. It has the method `IBroadcast PrepareToBroadcast(JsonOperationContext context, DocumentConventions conventions)`.
 
