@@ -2759,3 +2759,68 @@ enum AiAgentParameterValueType
 </ContentFrame>
 
 </Panel>
+
+<Panel heading="Running a conversation step with RunConversationOperation">
+
+`RunConversationOperation<TSchema>` (namespace `Raven.Client.Documents.Operations.AI.Agents`) is the maintenance operation that sends one step of a conversation to an agent.
+It returns a `ConversationResult<TSchema>`. It has several constructors, and the longest public one takes these parameters:
+
+| Parameter | Type | Description |
+|---|---|---|
+| **agentId** | `string` | The agent ID. Must not be null or empty. |
+| **conversationId** | `string` | The conversation document ID. Must not be null or empty. |
+| **promptParts** | `IEnumerable<ContentPart>` | The user prompt, for example `new TextPart("text")` (namespace `Raven.Client.Documents.AI`) |
+| **actionResponses** | `List<AiAgentActionResponse>` | Responses to action requests from a previous step |
+| **artificialActions** | `List<AiAgentArtificialActionResponse>` | Manually injected responses to tool calls |
+| **options** | `AiConversationCreationOptions` | Creation options, including conversation expiration and tool parameters |
+| **changeVector** | `string` | An optional change vector of the conversation document, for optimistic concurrency |
+| **attachmentsCommands** | `List<ICommandData>` | Optional commands that put attachments |
+| **streamPropertyPath** | `string` | The JSON path of the response property to stream |
+| **streamedChunksCallback** | `Func<string, Task>` | Called with each streamed chunk. It must be specified together with `streamPropertyPath`, otherwise the constructor throws an `InvalidOperationException`. |
+| **outputOptions** | `AiOutputOptions` | Optional output options (default: `null`) |
+
+Shorter constructors omit some of these parameters.
+The constructor that takes a `string userPrompt` is marked obsolete in the source.
+
+<TabItem value="run_conversation" label="run_conversation">
+<CodeBlock language="csharp">
+{`ConversationResult<string> result = store.Maintenance.Send(
+    new RunConversationOperation<string>(
+        agentId: "support-agent",
+        conversationId: "chats/1",
+        promptParts: new List<ContentPart> \{ new TextPart("How can I reset my password?") \},
+        actionResponses: null,
+        options: null,
+        changeVector: null));
+
+string answer = result.Response;
+`}
+</CodeBlock>
+</TabItem>
+
+#### `ConversationResult<TAnswer>`
+
+| Property | Type | Description |
+|---|---|---|
+| **ConversationId** | `string` | The ID of the conversation document that holds the chat state |
+| **ChangeVector** | `string` | The current change vector of the conversation document |
+| **Response** | `TAnswer` | The model response. For `string` it is the response text, otherwise it is deserialized to `TAnswer`. |
+| **TotalUsage** | `AiUsage` | Aggregated token usage for the step |
+| **Usage** | `AiUsage` | Token usage |
+| **Elapsed** | `TimeSpan` | The elapsed time |
+| **ActionRequests** | `List<AiAgentActionRequest>` | The tool action requests that the model emitted and that need responses. `null` when the response has none. |
+
+`AiUsage` has the `long` properties `PromptTokens`, `CompletionTokens`, `TotalTokens`, `CachedTokens` and `ReasoningTokens`.
+
+#### Action requests and responses
+
+| Class | Members |
+|---|---|
+| `AiAgentActionRequest` | `Name` (`string`, the tool name), `ToolId` (`string`, the tool call ID), `Arguments` (`string`, the arguments as JSON) |
+| `AiAgentActionResponse` | `ToolId` (`string`), `Content` (`string`, the tool response) |
+| `AiAgentArtificialActionResponse` | `ToolId` (`string`), `Content` (`string`), and `Validate()`, which throws an `ArgumentException` when `ToolId` or `Content` is null or whitespace |
+
+`AiAgentActionRequestType` has the values `UserAction` and `SubAgent`.
+
+</Panel>
+
