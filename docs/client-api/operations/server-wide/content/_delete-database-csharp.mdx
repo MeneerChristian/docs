@@ -92,3 +92,25 @@ In order to delete just one database from a server, you can also use this simpli
 </TabItem>
 </Tabs>
 
+## Return value and server checks
+
+`DeleteDatabasesOperation` returns a `DeleteDatabaseResult`:
+
+| Property          | Type       | Description |
+|-------------------|------------|-------------|
+| `RaftCommandIndex` | `long`    | The index of the deletion in the Raft log. The server sends the index of the deletion that succeeded. |
+| `PendingDeletes`  | `string[]` | The node tags from `FromNodes` that this request removed from the database topology. It is empty when `FromNodes` was not used. |
+
+For every database in `DatabaseNames`, the server checks the database lock mode:
+
+| Lock mode                                  | Result |
+|--------------------------------------------|--------|
+| `DatabaseLockMode.Unlock`                  | The database is deleted. |
+| `DatabaseLockMode.PreventDeletesIgnore`    | The database is skipped, without an error. |
+| `DatabaseLockMode.PreventDeletesError`     | The server rejects the request with an `InvalidOperationException`. |
+
+When `FromNodes` is used, the server also rejects the request with an `InvalidOperationException` if:
+
+* the database is an entire sharded database (a single shard can be removed from a node, the entire sharded database cannot), or
+* the database does not reside on one of the listed nodes.
+
