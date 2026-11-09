@@ -420,6 +420,27 @@ bool IsDistinct { get; }                                       // both
 
 </Panel>
 
+<Panel heading="MethodCall">
+
+* `RavenDocumentQuery.Now()`, `RavenDocumentQuery.Now(string offset)`, `RavenDocumentQuery.Today()` and `RavenDocumentQuery.CmpXchg(string key)`
+  return a `MethodCall`. It represents a server-side function that can be passed as the value to `DocumentQuery` filter methods such as `WhereEquals` or `WhereGreaterThan`.
+
+* `MethodCall` is an abstract class with two public fields:
+
+  | Field | Type | Description |
+  |-------|------|-------------|
+  | **Args** | `object[]` | The arguments of the method call, e.g. the compare-exchange key. |
+  | **AccessPath** | `string` | The path of the members accessed on the call's result, set when the `MethodCall` is used within a LINQ expression. `null` otherwise. |
+
+```csharp
+List<Order> orders = session.Advanced
+    .DocumentQuery<Order>()
+    .WhereGreaterThan(x => x.OrderedAt, RavenDocumentQuery.Now("-30d"))
+    .ToList();
+```
+
+</Panel>
+
 <Panel heading="Syntax">
 
 The available `DocumentQuery` overloads are listed in this [Syntax section](../../../querying/overview.mdx#syntax) in the [Query Overview](../../../querying/overview.mdx).

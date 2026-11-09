@@ -37,7 +37,9 @@ import ContentFrame from "@site/src/components/ContentFrame";
     while keeping track of changes.
    
   * Basic document CRUD actions and document Queries are available through the `Session`.  
-    More advanced options are available using the `Advanced` Session operations.
+    More advanced options are available using the `Advanced` Session operations.  
+    `session.Advanced` returns `IAdvancedSessionOperations` for `IDocumentSession` and `IAsyncAdvancedSessionOperations` for `IAsyncDocumentSession`;
+    both derive from `IAdvancedDocumentSessionOperations`. See [Advanced session members and their types](../../../client-api/session/what-is-a-session-and-how-does-it-work.mdx#advanced-session-members-and-their-types).
 
 * **Batching modifications**:  
   A business transaction usually involves multiple requests such as loading of documents or execution of queries.  
@@ -171,6 +173,62 @@ using (IAsyncDocumentSession asyncSession = store.OpenAsyncSession())
 
     asyncSession.SaveChangesAsync();
     // At this point, the change made is persisted to the existing document in the database
+}
+```
+</TabItem>
+</Tabs>
+
+---
+
+### Advanced session members and their types
+
+| Member | Sync session type | Async session type |
+|--------|-------------------|--------------------|
+| `session.Advanced` | `IAdvancedSessionOperations` | `IAsyncAdvancedSessionOperations` |
+| `session.Advanced.Lazily` | `ILazySessionOperations` | `IAsyncLazySessionOperations` |
+| `session.Advanced.Eagerly` | `IEagerSessionOperations` | `IAsyncEagerSessionOperations` |
+| `session.Advanced.Revisions` | `IRevisionsSessionOperations` | `IRevisionsSessionOperationsAsync` |
+| `session.Advanced.Attachments` | `IAttachmentsSessionOperations` | `IAttachmentsSessionOperationsAsync` |
+| `session.Advanced.ClusterTransaction` | `IClusterTransactionOperations` | `IClusterTransactionOperationsAsync` |
+
+### Inspecting the session state
+
+* `session.Advanced.ExternalState` is a `IDictionary<string, object>` that extensions can use to keep additional state per session.  
+  RavenDB does not read or write it, and it lives as long as the session.
+
+* The number of entities held by the session's unit of work, and the number of [deferred commands](../../../client-api/session/how-to/defer-operations.mdx) waiting for `SaveChanges()`,
+  are exposed by the session implementation classes (`DocumentSession` and `AsyncDocumentSession`, which derive from `InMemoryDocumentSessionOperations`):
+  * `NumberOfEntitiesInUnitOfWork` - the number of entities the session tracks.
+  * `DeferredCommandsCount` - the number of commands registered with `Advanced.Defer`.
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="Sync" label="Sync">
+```csharp
+using (IDocumentSession session = store.OpenSession())
+{
+    session.Advanced.ExternalState["my-extension"] = new MyExtensionState();
+
+    session.Store(new Employee { FirstName = "John" }, "employees/1-A");
+
+    var sessionOperations = (InMemoryDocumentSessionOperations)session;
+
+    int trackedEntities = sessionOperations.NumberOfEntitiesInUnitOfWork; // 1
+    int deferredCommands = sessionOperations.DeferredCommandsCount;       // 0
+}
+```
+</TabItem>
+<TabItem value="Async" label="Async">
+```csharp
+using (IAsyncDocumentSession asyncSession = store.OpenAsyncSession())
+{
+    asyncSession.Advanced.ExternalState["my-extension"] = new MyExtensionState();
+
+    await asyncSession.StoreAsync(new Employee { FirstName = "John" }, "employees/1-A");
+
+    var sessionOperations = (InMemoryDocumentSessionOperations)asyncSession;
+
+    int trackedEntities = sessionOperations.NumberOfEntitiesInUnitOfWork; // 1
+    int deferredCommands = sessionOperations.DeferredCommandsCount;       // 0
 }
 ```
 </TabItem>

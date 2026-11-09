@@ -77,6 +77,10 @@ import ContentFrame from "@site/src/components/ContentFrame";
   RavenDB passes the document ID provided in the _ByDocumentId/s_ methods to a hashing algorithm, which determines the bucket ID and therefore the shard to query.  
   Learn about the hashing method and bucket population in [How documents are distributed among shards](../sharding/overview.mdx#how-documents-are-distributed-among-shards).  
 
+* `ShardContext` takes an `Action<IQueryShardedContextBuilder>`. The builder has the methods
+  `ByDocumentId(string id)`, `ByDocumentIds(IEnumerable<string> ids)`,
+  `ByPrefix(string prefix)` and `ByPrefixes(IEnumerable<string> prefixes)`, and each returns the builder.
+
 * The document ID parameter is not required to be one of the documents you are querying for;  
   it is used only to determine the target shard to query. See the following examples:  
 
