@@ -1,0 +1,98 @@
+---
+title: "Get Replication Performance Statistics"
+sidebar_label: Replication Performance Statistics
+description: "Get the performance statistics of the incoming and outgoing replication of a database with GetReplicationPerformanceStatisticsOperation."
+sidebar_position: 2
+---
+
+import Admonition from '@theme/Admonition';
+import TabItem from '@theme/TabItem';
+import CodeBlock from '@theme/CodeBlock';
+
+<Admonition type="note" title="">
+
+* Use `GetReplicationPerformanceStatisticsOperation` (namespace `Raven.Client.Documents.Operations.Replication`)
+  to get statistics about the replication batches of a database, for each destination (outgoing) and each source (incoming).
+
+* It is a maintenance operation and has a parameterless constructor.
+  It applies to the store's database; use `ForDatabase` to target another one.
+
+</Admonition>
+
+## Example
+
+<TabItem value="replication_performance" label="replication_performance">
+<CodeBlock language="csharp">
+{`ReplicationPerformance performance =
+    store.Maintenance.Send(new GetReplicationPerformanceStatisticsOperation());
+
+foreach (ReplicationPerformance.OutgoingStats outgoing in performance.Outgoing)
+\{
+    string destination = outgoing.Destination;
+
+    foreach (OutgoingReplicationPerformanceStats batch in outgoing.Performance)
+    \{
+        double durationInMs = batch.DurationInMs;
+        long? batchSize = batch.BatchSizeInBytes;
+    \}
+\}
+
+foreach (ReplicationPerformance.IncomingStats incoming in performance.Incoming)
+\{
+    string source = incoming.Source;
+\}
+`}
+</CodeBlock>
+</TabItem>
+
+## Result types
+
+`ReplicationPerformance` (namespace `Raven.Client.Documents.Replication`):
+
+| Member | Type | Description |
+|---|---|---|
+| **Outgoing** | `ReplicationPerformance.OutgoingStats[]` | One item per destination. `OutgoingStats` has `Destination` (`string`) and `Performance` (`OutgoingReplicationPerformanceStats[]`). |
+| **Incoming** | `ReplicationPerformance.IncomingStats[]` | One item per source. `IncomingStats` has `Source` (`string`) and `Performance` (`IncomingReplicationPerformanceStats[]`). |
+
+Both `OutgoingReplicationPerformanceStats` and `IncomingReplicationPerformanceStats` derive from `ReplicationPerformanceBase`:
+
+| `ReplicationPerformanceBase` member | Type | Description |
+|---|---|---|
+| **Id** | `int` | The batch ID |
+| **Started** | `DateTime` | When the batch started |
+| **Completed** | `DateTime?` | When the batch completed |
+| **DurationInMs** | `double` | The duration of the batch |
+| **BatchSizeInBytes** | `long?` | The size of the batch |
+| **Details** | `ReplicationPerformanceOperation` | A tree of the batch's operations. Each node has `Name` (`string`), `DurationInMs` (`double`, read-only) and `Operations` (`ReplicationPerformanceOperation[]`). |
+| **Errors** | `List<ReplicationError>` | The errors of the batch. `ReplicationError` has `Error` (`string`) and `Timestamp` (`DateTime`). |
+
+#### `OutgoingReplicationPerformanceStats`
+
+| Member | Type |
+|---|---|
+| **SendLastEtag** | `long` |
+| **LastAcceptedChangeVector** | `string` |
+| **Storage** | `OutgoingReplicationPerformanceStats.StorageStats`: `InputCount`, `ArtificialDocumentSkipCount`, `SystemDocumentSkipCount`, `ChangeVectorSkipCount` (all `int`) |
+| **Network** | `OutgoingReplicationPerformanceStats.NetworkStats` (below) |
+
+`NetworkStats` holds an `int` count and a `long` size in bytes for each item type that was sent:
+`AttachmentOutputCount` / `AttachmentOutputSizeInBytes`, `AttachmentStreamOutputCount` / `AttachmentStreamOutputSizeInBytes`,
+`AttachmentTombstoneOutputCount` / `AttachmentTombstoneOutputSizeInBytes`, `DocumentTombstoneOutputCount` / `DocumentTombstoneOutputSizeInBytes`,
+`DocumentOutputCount` / `DocumentOutputSizeInBytes`, `RevisionOutputCount` / `RevisionOutputSizeInBytes`,
+`RevisionTombstoneOutputCount` / `RevisionTombstoneOutputSizeInBytes`, `CounterOutputCount` / `CounterOutputSizeInBytes`,
+`TimeSeriesSegmentsOutputCount` / `TimeSeriesSegmentsSizeInBytes` and `TimeSeriesDeletedRangeOutputCount` / `TimeSeriesDeletedRangeOutputSizeInBytes`.
+
+#### `IncomingReplicationPerformanceStats`
+
+| Member | Type |
+|---|---|
+| **ReceivedLastEtag** | `long` |
+| **DatabaseChangeVector** | `string` |
+| **Network** | `IncomingReplicationPerformanceStats.NetworkStats` (below) |
+
+`NetworkStats` has `InputCount` (`int`), and an `int` count and a `long` size in bytes for each item type that was read:
+`DocumentReadCount` / `DocumentReadSizeInBytes`, `DocumentTombstoneReadCount` / `DocumentTombstoneReadSizeInBytes`,
+`RevisionReadCount` / `RevisionReadSizeInBytes`, `RevisionTombstoneReadCount` / `RevisionTombstoneReadSizeInBytes`,
+`AttachmentReadCount` / `AttachmentReadSizeInBytes`, `AttachmentStreamReadCount` / `AttachmentStreamReadSizeInBytes`,
+`AttachmentTombstoneReadCount` / `AttachmentTombstoneReadSizeInBytes`, `CounterReadCount` / `CounterReadSizeInBytes`,
+`TimeSeriesReadCount` / `TimeSeriesReadSizeInBytes` and `TimeSeriesDeletedRangeReadCount` / `TimeSeriesDeletedRangeReadSizeInBytes`.
