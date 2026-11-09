@@ -30,6 +30,6 @@ import CodeBlock from '@theme/CodeBlock';
 </CodeBlock>
 </TabItem>
 
-`CreateSnapshot` returns a new `QueryResult` with the values of the current one.
+`CreateSnapshot` returns a new `QueryResult` that copies the properties of the current one, except `CappedMaxResults`.
 The new result refers to the same `Results` and `Includes` objects.
 The highlightings, explanations and timings are copied.
