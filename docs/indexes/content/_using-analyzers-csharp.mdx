@@ -675,6 +675,34 @@ store.Maintenance.ForDatabase("MyDatabase").Send(putAnalyzerOp);
 </ContentFrame>
 <ContentFrame>
 
+### Delete a custom analyzer via Client API
+
+* Use `DeleteAnalyzerOperation` (namespace `Raven.Client.Documents.Operations.Analyzers`) to delete a custom analyzer from a database.  
+  It is a maintenance operation, so it applies to the default database of the store unless you use `ForDatabase`.
+
+* Use `DeleteServerWideAnalyzerOperation` (namespace `Raven.Client.ServerWide.Operations.Analyzers`) to delete a server-wide analyzer from the server.  
+  It is a server operation, sent with `store.Maintenance.Server.Send`.
+
+* Both constructors take the analyzer name and throw an `ArgumentNullException` when it is `null`.  
+  Neither operation returns a value.
+
+```csharp
+// Syntax:
+public DeleteAnalyzerOperation(string analyzerName)
+public DeleteServerWideAnalyzerOperation(string analyzerName)
+```
+
+```csharp
+// Delete an analyzer from a database
+store.Maintenance.ForDatabase("MyDatabase").Send(new DeleteAnalyzerOperation("MyAnalyzer"));
+
+// Delete a server-wide analyzer
+store.Maintenance.Server.Send(new DeleteServerWideAnalyzerOperation("MyAnalyzer"));
+```
+
+</ContentFrame>
+<ContentFrame>
+
 ### Add custom analyzer directly to RavenDB's binaries
 
 Another way to add custom analyzers to RavenDB is by placing them next to RavenDB's binaries.
