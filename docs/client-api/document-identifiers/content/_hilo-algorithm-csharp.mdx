@@ -376,4 +376,37 @@ using (var session = store.OpenSession())
       [GenerateDocumentIdAsync](../../../client-api/document-identifiers/hilo-algorithm.mdx#get-next-id---full-document-id) through `store.HiLoIdGenerator`
       will throw an exception.
 
+---
+
+### The HiLo generator types
+
+All of these types are in the namespace `Raven.Client.Documents.Identity`, unless noted otherwise.
+
+* `store.HiLoIdGenerator` has the type `IHiLoIdGenerator`, which has these members:
+  * `Task<long> GenerateNextIdForAsync(string database, object entity)`, `(string database, Type type)` and `(string database, string collectionName)`
+  * `Task<string> GenerateDocumentIdAsync(string database, object entity)`, `(string database, Type type)` and `(string database, string collectionName)`
+
+* The default implementation is `AsyncMultiDatabaseHiLoIdGenerator`. It keeps one `AsyncMultiTypeHiLoIdGenerator` per database
+  (created by its virtual method `GenerateAsyncMultiTypeHiLoFunc(string database)`), and has the method `Task ReturnUnusedRange()`,
+  which calls `ReturnUnusedRange()` on each of them.
+
+* `AsyncMultiTypeHiLoIdGenerator` keeps one `AsyncHiLoIdGenerator` per collection prefix (the collection name, transformed by the `TransformTypeCollectionNameToDocumentIdPrefix` convention).
+  Its methods are `GenerateDocumentIdAsync(string collectionName)`, `GenerateNextIdForAsync(string collectionName)` and `ReturnUnusedRange()`.
+  The overload `GenerateDocumentIdAsync(object entity)` is marked obsolete in the source, with the message to use the overload that takes `collectionName`.
+
+* `AsyncHiLoIdGenerator.NextId` is a struct with the fields `Id` (`long`) and `ServerTag` (`string`).
+
+* `HiLoResult` is the result of `NextHiLoCommand` (namespace `Raven.Client.Documents.Commands`), the request that asks the server for the next range:
+
+| Property | Type | Description |
+|---|---|---|
+| **Prefix** | `string` | The ID prefix |
+| **Low** | `long` | The low end of the range |
+| **High** | `long` | The high end of the range |
+| **LastSize** | `long` | The size of the previous range |
+| **ServerTag** | `string` | The tag of the server that allocated this range |
+| **LastRangeAt** | `DateTime` | When the previous range was allocated |
+
+* `HiloDocument` has the single property `Max` (`long`). It is the shape of the `Raven/Hilo/<collection>` documents described [above](../../../client-api/document-identifiers/hilo-algorithm.mdx#using-hilo-documents).
+
 </Panel>
