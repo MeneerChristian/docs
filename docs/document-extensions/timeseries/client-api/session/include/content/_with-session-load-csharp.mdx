@@ -98,6 +98,8 @@ either the entries of the last time span (a `TimeValue`) or the last `count` ent
 * `TimeSeriesRangeType` has two values: `None` and `Last`.  
   An `InvalidOperationException` is thrown if `None` is passed together with a `TimeValue` or a `count`.
 
+* A `TimeValue` that is not positive throws an `InvalidOperationException`, and a `count` that is not positive throws an `ArgumentException`.
+
 * The overloads that take `string[] names` include the same range from each of the listed time series.
 
 ## Syntax
