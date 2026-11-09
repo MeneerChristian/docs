@@ -12,11 +12,18 @@ import Admonition from '@theme/Admonition';
   A type is listed here because it is public in the assembly, which does not mean that a public API creates or returns it:
   for example, `AiAgentTruncateChat` is public, but the only constructor and property of the client that accept it are `internal`.
 
-* Types that are described in an article are not repeated here. To find them, search this documentation for the type name.
+* The page has two parts:
+  * [Types that have no dedicated article](#types-that-have-no-dedicated-article): each type is listed with all of its declared members.
+  * [Members that no article mentions](#members-that-no-article-mentions): types that are described in an article, but that declare public members whose names appear nowhere else in this documentation.
+    Only those members are listed, by their signatures.
+
+* Types and members that are described in an article are not repeated here. To find them, search this documentation for the name.
 
 </Admonition>
 
-## `Raven.Client`
+## Types that have no dedicated article
+
+### `Raven.Client`
 
 ```csharp
 public enum Constants.Documents.SubscriptionChangeVectorSpecialStates
@@ -27,7 +34,7 @@ public enum Constants.Documents.SubscriptionChangeVectorSpecialStates
 }
 ```
 
-## `Raven.Client.Documents`
+### `Raven.Client.Documents`
 
 ```csharp
 public abstract class DocumentStoreBase : IDocumentStore
@@ -212,7 +219,7 @@ public static class LinqExtensions
 }
 ```
 
-## `Raven.Client.Documents.AI`
+### `Raven.Client.Documents.AI`
 
 ```csharp
 public class AiOperations
@@ -237,7 +244,7 @@ public class AiOperations
 }
 ```
 
-## `Raven.Client.Documents.BulkInsert`
+### `Raven.Client.Documents.BulkInsert`
 
 ```csharp
 public abstract class BulkInsertOperation.TimeSeriesBulkInsertBase : IDisposable
@@ -254,7 +261,7 @@ public abstract class BulkInsertOperationBase<T>
 }
 ```
 
-## `Raven.Client.Documents.Changes`
+### `Raven.Client.Documents.Changes`
 
 ```csharp
 public abstract class DatabaseChange
@@ -279,7 +286,7 @@ public enum TrafficWatchType
 }
 ```
 
-## `Raven.Client.Documents.Commands`
+### `Raven.Client.Documents.Commands`
 
 ```csharp
 public abstract class AbstractQueryCommand<TResult, TParameters> : RavenCommand<TResult>
@@ -327,7 +334,7 @@ public sealed class GetConflictsResult
 }
 ```
 
-## `Raven.Client.Documents.Commands.Batches`
+### `Raven.Client.Documents.Commands.Batches`
 
 ```csharp
 public abstract class TimeSeriesCommandData : ICommandData
@@ -344,7 +351,7 @@ public abstract class TimeSeriesCommandData : ICommandData
 }
 ```
 
-## `Raven.Client.Documents.Conventions`
+### `Raven.Client.Documents.Conventions`
 
 ```csharp
 public sealed class DocumentConventions.AggressiveCacheConventions
@@ -369,7 +376,7 @@ public sealed class DocumentConventions.ShardingConventions
 }
 ```
 
-## `Raven.Client.Documents.Indexes`
+### `Raven.Client.Documents.Indexes`
 
 ```csharp
 public interface IJsonObject : IEnumerable<KeyValuePair<string, object>>
@@ -406,7 +413,7 @@ public sealed class RavenIndexMetadataAttribute : Attribute
 }
 ```
 
-## `Raven.Client.Documents.Indexes.Counters`
+### `Raven.Client.Documents.Indexes.Counters`
 
 ```csharp
 public abstract class AbstractGenericCountersIndexCreationTask<TReduceResult> : AbstractCountersIndexCreationTask
@@ -432,7 +439,7 @@ public sealed class CountersIndexDefinitionBuilder<TDocument> : CountersIndexDef
 }
 ```
 
-## `Raven.Client.Documents.Linq`
+### `Raven.Client.Documents.Linq`
 
 ```csharp
 public sealed class FieldToFetch
@@ -479,7 +486,7 @@ public interface IRavenQueryProvider : IQueryProvider
 }
 ```
 
-## `Raven.Client.Documents.Operations`
+### `Raven.Client.Documents.Operations`
 
 ```csharp
 public abstract class AbstractDatabaseStatistics<TIndexInformation>
@@ -610,7 +617,7 @@ public abstract class ShardNodeOperationResult<TResult> : IShardNodeOperationRes
 }
 ```
 
-## `Raven.Client.Documents.Operations.AI`
+### `Raven.Client.Documents.Operations.AI`
 
 ```csharp
 public enum AiConnectorType
@@ -652,7 +659,7 @@ public static class OpenAiReasoningEffortExtensions
 }
 ```
 
-## `Raven.Client.Documents.Operations.AI.Agents`
+### `Raven.Client.Documents.Operations.AI.Agents`
 
 ```csharp
 public class AiAgentTruncateChat
@@ -664,7 +671,7 @@ public class AiAgentTruncateChat
 }
 ```
 
-## `Raven.Client.Documents.Operations.Backups`
+### `Raven.Client.Documents.Operations.Backups`
 
 ```csharp
 public abstract class AbstractGetPeriodicBackupStatusOperationResult
@@ -690,7 +697,7 @@ public enum RestoreType
 }
 ```
 
-## `Raven.Client.Documents.Operations.CdcSink`
+### `Raven.Client.Documents.Operations.CdcSink`
 
 ```csharp
 public class CdcSinkConfiguration.TableInfo
@@ -715,7 +722,7 @@ public class CdcSinkProcessState : IDatabaseTaskStatus
 }
 ```
 
-## `Raven.Client.Documents.Operations.CdcSink.Schema`
+### `Raven.Client.Documents.Operations.CdcSink.Schema`
 
 ```csharp
 public class CdcSinkSourceColumn : IDynamicJson
@@ -773,7 +780,7 @@ public class CdcSinkSourceTable : IDynamicJson
 }
 ```
 
-## `Raven.Client.Documents.Operations.Configuration`
+### `Raven.Client.Documents.Operations.Configuration`
 
 ```csharp
 public enum StudioConfiguration.StudioEnvironment
@@ -785,7 +792,7 @@ public enum StudioConfiguration.StudioEnvironment
 }
 ```
 
-## `Raven.Client.Documents.Operations.Counters`
+### `Raven.Client.Documents.Operations.Counters`
 
 ```csharp
 public sealed class CounterGroupDetail : IDisposable
@@ -800,7 +807,7 @@ public sealed class CounterGroupDetail : IDisposable
 }
 ```
 
-## `Raven.Client.Documents.Operations.ETL`
+### `Raven.Client.Documents.Operations.ETL`
 
 ```csharp
 public sealed class EtlProcessState : IDatabaseTaskStatus
@@ -833,7 +840,7 @@ public enum EtlType
 }
 ```
 
-## `Raven.Client.Documents.Operations.ETL.OLAP`
+### `Raven.Client.Documents.Operations.ETL.OLAP`
 
 ```csharp
 public enum OlapEtlFileFormat
@@ -842,7 +849,7 @@ public enum OlapEtlFileFormat
 }
 ```
 
-## `Raven.Client.Documents.Operations.ETL.SQL`
+### `Raven.Client.Documents.Operations.ETL.SQL`
 
 ```csharp
 public enum SqlProvider
@@ -856,7 +863,7 @@ public enum SqlProvider
 }
 ```
 
-## `Raven.Client.Documents.Operations.QueueSink`
+### `Raven.Client.Documents.Operations.QueueSink`
 
 ```csharp
 public class QueueSinkProcessState : IDatabaseTaskStatus
@@ -870,7 +877,7 @@ public class QueueSinkProcessState : IDatabaseTaskStatus
 }
 ```
 
-## `Raven.Client.Documents.Operations.Replication`
+### `Raven.Client.Documents.Operations.Replication`
 
 ```csharp
 public abstract class ExternalReplicationBase : ReplicationNode, IDatabaseTask
@@ -936,7 +943,7 @@ public sealed class ReplicationHubAccessResult
 }
 ```
 
-## `Raven.Client.Documents.Operations.Revisions`
+### `Raven.Client.Documents.Operations.Revisions`
 
 ```csharp
 public sealed class RevertResult : OperationResult
@@ -952,7 +959,7 @@ public sealed class RevertResult : OperationResult
 }
 ```
 
-## `Raven.Client.Documents.Queries`
+### `Raven.Client.Documents.Queries`
 
 ```csharp
 public interface IIndexQuery
@@ -998,7 +1005,7 @@ public abstract class QueryResultBase<TResult, TInclude>
 }
 ```
 
-## `Raven.Client.Documents.Queries.Highlighting`
+### `Raven.Client.Documents.Queries.Highlighting`
 
 ```csharp
 public sealed class LinqQueryHighlightings
@@ -1014,7 +1021,7 @@ public sealed class QueryHighlightings
 }
 ```
 
-## `Raven.Client.Documents.Queries.MoreLikeThis`
+### `Raven.Client.Documents.Queries.MoreLikeThis`
 
 ```csharp
 public interface IMoreLikeThisBuilderBase<T>
@@ -1046,7 +1053,7 @@ public sealed class MoreLikeThisUsingDocument : MoreLikeThisBase
 }
 ```
 
-## `Raven.Client.Documents.Queries.Spatial`
+### `Raven.Client.Documents.Queries.Spatial`
 
 ```csharp
 public sealed class CircleCriteria : SpatialCriteria
@@ -1061,7 +1068,7 @@ public sealed class WktCriteria : SpatialCriteria
 }
 ```
 
-## `Raven.Client.Documents.Replication`
+### `Raven.Client.Documents.Replication`
 
 ```csharp
 public sealed class ReplicationClientConfiguration
@@ -1079,7 +1086,7 @@ public enum StraightforwardConflictResolution
 }
 ```
 
-## `Raven.Client.Documents.Replication.Messages`
+### `Raven.Client.Documents.Replication.Messages`
 
 ```csharp
 public sealed class ReplicationInitialRequest
@@ -1111,7 +1118,7 @@ public sealed class ReplicationLatestEtagRequest
 }
 ```
 
-## `Raven.Client.Documents.Session`
+### `Raven.Client.Documents.Session`
 
 ```csharp
 public abstract class AbstractDocumentQuery<T, TSelf> : IDocumentQueryCustomization, IAbstractDocumentQuery<T>
@@ -1893,7 +1900,7 @@ public abstract class SessionTimeSeriesBase
 }
 ```
 
-## `Raven.Client.Documents.Session.Operations.Lazy`
+### `Raven.Client.Documents.Session.Operations.Lazy`
 
 ```csharp
 public interface ILazyOperation
@@ -1906,7 +1913,7 @@ public interface ILazyOperation
 }
 ```
 
-## `Raven.Client.Documents.Session.TimeSeries`
+### `Raven.Client.Documents.Session.TimeSeries`
 
 ```csharp
 public sealed class TimeSeriesValueAttribute : Attribute
@@ -1916,7 +1923,7 @@ public sealed class TimeSeriesValueAttribute : Attribute
 }
 ```
 
-## `Raven.Client.Documents.Session.Tokens`
+### `Raven.Client.Documents.Session.Tokens`
 
 ```csharp
 public sealed class CounterIncludesToken : QueryToken
@@ -2085,7 +2092,7 @@ public sealed class WhereToken.WhereOptions
 }
 ```
 
-## `Raven.Client.Documents.Subscriptions`
+### `Raven.Client.Documents.Subscriptions`
 
 ```csharp
 public sealed class GetSubscriptionsResult
@@ -2111,7 +2118,7 @@ public sealed class UpdateSubscriptionResult : CreateSubscriptionResult
 }
 ```
 
-## `Raven.Client.Exceptions.Cluster`
+### `Raven.Client.Exceptions.Cluster`
 
 ```csharp
 public sealed class CommandExecutionException : RavenException
@@ -2122,7 +2129,7 @@ public sealed class CommandExecutionException : RavenException
 }
 ```
 
-## `Raven.Client.Exceptions.Commercial`
+### `Raven.Client.Exceptions.Commercial`
 
 ```csharp
 public sealed class PortInUseException : RavenException
@@ -2133,7 +2140,7 @@ public sealed class PortInUseException : RavenException
 }
 ```
 
-## `Raven.Client.Exceptions.Documents.Analyzers`
+### `Raven.Client.Exceptions.Documents.Analyzers`
 
 ```csharp
 public sealed class AnalyzerDoesNotExistException : RavenException
@@ -2145,7 +2152,7 @@ public sealed class AnalyzerDoesNotExistException : RavenException
 }
 ```
 
-## `Raven.Client.Exceptions.Documents.Subscriptions`
+### `Raven.Client.Exceptions.Documents.Subscriptions`
 
 ```csharp
 public sealed class SubscriptionCreationException : SubscriptionException
@@ -2155,7 +2162,7 @@ public sealed class SubscriptionCreationException : SubscriptionException
 }
 ```
 
-## `Raven.Client.Extensions`
+### `Raven.Client.Extensions`
 
 ```csharp
 public static class TaskExtensions
@@ -2173,7 +2180,7 @@ public static class TaskExtensions
 }
 ```
 
-## `Raven.Client.Http`
+### `Raven.Client.Http`
 
 ```csharp
 public sealed class AttachmentStreamContent : HttpContent
@@ -2239,7 +2246,7 @@ public sealed class NodeSelector : IDisposable
 }
 ```
 
-## `Raven.Client.Json.Serialization`
+### `Raven.Client.Json.Serialization`
 
 ```csharp
 public interface IBlittableJsonConverterBase
@@ -2255,7 +2262,7 @@ public interface IJsonReader : IDisposable
 }
 ```
 
-## `Raven.Client.Json.Serialization.NewtonsoftJson`
+### `Raven.Client.Json.Serialization.NewtonsoftJson`
 
 ```csharp
 public struct DefaultRavenContractResolver.ClearExtensionData : IDisposable
@@ -2265,7 +2272,7 @@ public struct DefaultRavenContractResolver.ClearExtensionData : IDisposable
 }
 ```
 
-## `Raven.Client.ServerWide`
+### `Raven.Client.ServerWide`
 
 ```csharp
 public enum DatabaseStateStatus
@@ -2338,7 +2345,7 @@ public enum RachisState
 }
 ```
 
-## `Raven.Client.ServerWide.Commands`
+### `Raven.Client.ServerWide.Commands`
 
 ```csharp
 public sealed class IsDatabaseLoadedCommand.CommandResult
@@ -2385,7 +2392,7 @@ public sealed class TcpConnectionInfo
 }
 ```
 
-## `Raven.Client.ServerWide.Operations`
+### `Raven.Client.ServerWide.Operations`
 
 ```csharp
 public sealed class BackupInfo : IDynamicJson
@@ -2580,7 +2587,7 @@ public sealed class ServerWideOperation : Operation
 }
 ```
 
-## `Raven.Client.ServerWide.Operations.Certificates`
+### `Raven.Client.ServerWide.Operations.Certificates`
 
 ```csharp
 public sealed class ClientCertificateGenerationResult : IOperationResult
@@ -2592,7 +2599,7 @@ public sealed class ClientCertificateGenerationResult : IOperationResult
 }
 ```
 
-## `Raven.Client.ServerWide.Operations.Configuration`
+### `Raven.Client.ServerWide.Operations.Configuration`
 
 ```csharp
 public sealed class ServerWideStudioConfiguration : StudioConfiguration
@@ -2603,7 +2610,7 @@ public sealed class ServerWideStudioConfiguration : StudioConfiguration
 }
 ```
 
-## `Raven.Client.ServerWide.Sharding`
+### `Raven.Client.ServerWide.Sharding`
 
 ```csharp
 public enum MigrationStatus
@@ -2615,7 +2622,7 @@ public enum MigrationStatus
 }
 ```
 
-## `Raven.Client.ServerWide.Tcp`
+### `Raven.Client.ServerWide.Tcp`
 
 ```csharp
 public sealed class LicensedFeatures
@@ -2846,7 +2853,7 @@ public enum TcpConnectionStatus
 }
 ```
 
-## `Raven.Client.Util`
+### `Raven.Client.Util`
 
 ```csharp
 public static class AsyncHelpers
@@ -2862,6 +2869,3443 @@ public interface IDisposalNotification : IDisposable
 {
     bool WasDisposed { get; }
     event EventHandler AfterDispose;
+}
+```
+
+
+## Members that no article mentions
+
+The names below are public members of types that are described elsewhere. A signature is shown without a description; the member may be an overload of a described member, a constant, or a helper that the client uses internally.
+
+### `Raven.Client`
+
+```csharp
+public sealed class Constants.Certificates
+{
+    const int MaxNumberOfCertsWithSameHash;
+}
+```
+
+```csharp
+public sealed class Constants.Configuration
+{
+    const string StudioId;
+}
+```
+
+```csharp
+public sealed class Constants.Documents
+{
+    const int MaxDatabaseNameLength;
+}
+```
+
+```csharp
+public sealed class Constants.Documents.Collections
+{
+    const string AiAgentConversationCollection;
+    const string AiAgentConversationDebugCollection;
+    const string AiAgentConversationHistoryCollection;
+    const string AllDocumentsCollection;
+    const string EmbeddingsCacheCollection;
+    const string EmptyCollection;
+}
+```
+
+```csharp
+public sealed class Constants.Documents.Indexing
+{
+    const string SideBySideIndexNamePrefix;
+}
+```
+
+```csharp
+public sealed class Constants.Documents.Indexing.Fields
+{
+    const string AllStoredFields;
+    const string CountFieldName;
+    const string DocumentIdFieldName;
+    const string DocumentIdMethodName;
+    const string EmptyString;
+    const string NullValue;
+    const string RangeFieldSuffixDouble;
+    const string RangeFieldSuffixLong;
+    const string ReduceKeyHashFieldName;
+    const string ReduceKeyValueFieldName;
+    const string SourceDocumentIdFieldName;
+    const string SpatialShapeFieldName;
+    const string ValueFieldName;
+}
+```
+
+```csharp
+public sealed class Constants.Documents.Indexing.Fields.JavaScript
+{
+    const string BoostPropertyName;
+    const string LoadVectorPropertyName;
+    const string NamePropertyName;
+    const string OptionsPropertyName;
+    const string SpatialPropertyName;
+    const string ValuePropertyName;
+    const string VectorPropertyName;
+}
+```
+
+```csharp
+public sealed class Constants.Documents.Indexing.Spatial
+{
+    const double EarthMeanRadiusKm;
+    const double MilesToKm;
+}
+```
+
+```csharp
+public sealed class Constants.Documents.Metadata
+{
+    const string HasValue;
+    const string IdProperty;
+    const string LegacyAttachmentsMetadata;
+    const string RevisionTimeSeries;
+}
+```
+
+```csharp
+public sealed class Constants.Documents.PeriodicBackup
+{
+    const string EncryptedFullBackupExtension;
+    const string EncryptedIncrementalBackupExtension;
+    const string EncryptedSnapshotExtension;
+    const string FullBackupExtension;
+    const string IncrementalBackupExtension;
+    const string SnapshotExtension;
+}
+```
+
+```csharp
+public sealed class Constants.Headers
+{
+    const string AcceptEncoding;
+    const string AttachmentRemoteParametersAt;
+    const string AttachmentRemoteParametersFlags;
+    const string AttachmentRemoteParametersIdentifier;
+    const string ClientVersion;
+    const string ClusterTopologyEtag;
+    const string ContentDisposition;
+    const string ContentEncoding;
+    const string ContentLength;
+    const string DatabaseClusterTransactionId;
+    const string IfMatch;
+    const string IfNoneMatch;
+    const string IncrementalTimeSeriesPrefix;
+    const string LastKnownClusterTransactionIndex;
+    const string RefreshClientConfiguration;
+    const string RefreshTopology;
+    const string RequestTime;
+    const string ServerStartupTime;
+    const string StudioVersion;
+    const string TransferEncoding;
+    const string XForwardedFor;
+}
+```
+
+```csharp
+public sealed class Constants.Json.Fields
+{
+}
+```
+
+```csharp
+public sealed class Constants.Platform.Linux
+{
+    const int MaxFileNameLength;
+    const int MaxPath;
+}
+```
+
+```csharp
+public sealed class Constants.Platform.Windows
+{
+    static int MaxPath;
+}
+```
+
+```csharp
+public sealed class Parameters : Dictionary<string, object>
+{
+}
+```
+
+### `Raven.Client.Documents`
+
+```csharp
+public sealed class DocumentStore : DocumentStoreBase
+{
+    IDisposable SetRequestTimeout(TimeSpan timeout, string database);
+}
+```
+
+```csharp
+public interface IDocumentStore : IDisposalNotification
+{
+    IDisposable SetRequestTimeout(TimeSpan timeout, string database);
+}
+```
+
+```csharp
+public class StartingPointChangeVector : IEquatable<StartingPointChangeVector>
+{
+    StartingPointChangeVector <Clone>$();
+}
+```
+
+### `Raven.Client.Documents.AI`
+
+```csharp
+public class AiOutputOptions
+{
+    bool NoSchema { get; set; }
+}
+```
+
+```csharp
+public interface IAiConversationOperations
+{
+    IEnumerable<AiAgentActionRequest> RequiredActions();
+    AiAnswer<TAnswer> RunWithSchema<TAnswer>(AiOutputOptions outputOptions);
+    AiAnswer<TAnswer> RunWithSchema<TAnswer>(TAnswer sampleObject);
+    AiAnswer<TAnswer> RunWithSchema<TAnswer>(string schema);
+    Task<AiAnswer<TAnswer>> RunWithSchemaAsync<TAnswer>(AiOutputOptions outputOptions, CancellationToken token);
+    Task<AiAnswer<TAnswer>> RunWithSchemaAsync<TAnswer>(TAnswer sampleObject, CancellationToken token);
+    Task<AiAnswer<TAnswer>> RunWithSchemaAsync<TAnswer>(string schema, CancellationToken token);
+    AiAnswer<TAnswer> StreamWithSchema<TAnswer>(string streamPropertyPath, Action<string> streamedChunksCallback, AiOutputOptions outputOptions);
+    AiAnswer<TAnswer> StreamWithSchema<TAnswer>(Expression<Func<TAnswer, string>> streamPropertyPath, Action<string> streamedChunksCallback, AiOutputOptions outputOptions);
+    Task<AiAnswer<TAnswer>> StreamWithSchemaAsync<TAnswer>(string streamPropertyPath, Func<string, Task> streamedChunksCallback, AiOutputOptions outputOptions, CancellationToken token);
+    Task<AiAnswer<TAnswer>> StreamWithSchemaAsync<TAnswer>(Expression<Func<TAnswer, string>> streamPropertyPath, Func<string, Task> streamedChunksCallback, AiOutputOptions outputOptions, CancellationToken token);
+    Task<AiAnswer<TAnswer>> StreamWithSchemaAsync<TAnswer>(string streamPropertyPath, Func<string, Task> streamedChunksCallback, TAnswer sampleObject, CancellationToken token);
+    Task<AiAnswer<TAnswer>> StreamWithSchemaAsync<TAnswer>(Expression<Func<TAnswer, string>> streamPropertyPath, Func<string, Task> streamedChunksCallback, TAnswer sampleObject, CancellationToken token);
+}
+```
+
+### `Raven.Client.Documents.Changes`
+
+```csharp
+public interface IChangesObservable<T> : IObservable<T>
+{
+    Task EnsureSubscribedNow();
+}
+```
+
+### `Raven.Client.Documents.Commands`
+
+```csharp
+public sealed class GetDocumentsCommand : RavenCommand<GetDocumentsResult>
+{
+    static void PrepareRequestWithMultipleIds(DocumentConventions conventions, StringBuilder pathBuilder, HttpRequestMessage request, string[] ids, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class GetRevisionsCommand : RavenCommand<BlittableArrayResult>
+{
+    string[] ChangeVectors;
+}
+```
+
+### `Raven.Client.Documents.Commands.Batches`
+
+```csharp
+public sealed class BatchPatchCommandData : ICommandData
+{
+    void OnBeforeSaveChanges(InMemoryDocumentSessionOperations session);
+}
+```
+
+```csharp
+public enum CommandType
+{
+    AttachmentMOVE,
+    AttachmentCOPY,
+    CompareExchangePUT,
+    CompareExchangeDELETE,
+    ForceRevisionCreation,
+    TimeSeriesWithIncrements,
+    TimeSeriesCopy,
+    BatchPATCH,
+    ClientAnyCommand,
+    ClientModifyDocumentCommand,
+    HeartBeat,
+    BatchTrackChanges,
+}
+```
+
+```csharp
+public sealed class CopyAttachmentCommandData : ICommandData
+{
+    string DestinationId { get; }
+    string DestinationName { get; }
+    void OnBeforeSaveChanges(InMemoryDocumentSessionOperations session);
+}
+```
+
+```csharp
+public sealed class CountersBatchCommandData : ICommandData
+{
+    bool HasDelete(string counterName);
+    bool HasIncrement(string counterName);
+    void OnBeforeSaveChanges(InMemoryDocumentSessionOperations session);
+}
+```
+
+```csharp
+public sealed class DeleteAttachmentCommandData : ICommandData
+{
+    void OnBeforeSaveChanges(InMemoryDocumentSessionOperations session);
+}
+```
+
+```csharp
+public class DeleteCommandData : ICommandData
+{
+    string OriginalChangeVector { get; }
+    void OnBeforeSaveChanges(InMemoryDocumentSessionOperations session);
+}
+```
+
+```csharp
+public sealed class DeleteCompareExchangeCommandData : ICommandData
+{
+    void OnBeforeSaveChanges(InMemoryDocumentSessionOperations session);
+}
+```
+
+```csharp
+public sealed class ForceRevisionCommandData : ICommandData
+{
+    void OnBeforeSaveChanges(InMemoryDocumentSessionOperations session);
+}
+```
+
+```csharp
+public interface ICommandData
+{
+    void OnBeforeSaveChanges(InMemoryDocumentSessionOperations session);
+}
+```
+
+```csharp
+public sealed class JsonPatchCommandData : ICommandData
+{
+    void OnBeforeSaveChanges(InMemoryDocumentSessionOperations session);
+}
+```
+
+```csharp
+public sealed class MoveAttachmentCommandData : ICommandData
+{
+    string DestinationId { get; }
+    string DestinationName { get; }
+    void OnBeforeSaveChanges(InMemoryDocumentSessionOperations session);
+}
+```
+
+```csharp
+public sealed class PatchCommandData : ICommandData
+{
+    bool ReturnDocument { get; }
+    void OnBeforeSaveChanges(InMemoryDocumentSessionOperations session);
+}
+```
+
+```csharp
+public sealed class PutAttachmentCommandData : ICommandData
+{
+    void OnBeforeSaveChanges(InMemoryDocumentSessionOperations session);
+}
+```
+
+```csharp
+public sealed class PutCommandData : PutCommandDataBase<DynamicJsonValue>
+{
+    void OnBeforeSaveChanges(InMemoryDocumentSessionOperations session);
+}
+```
+
+```csharp
+public abstract class PutCommandDataBase<T> : ICommandData
+{
+    string OriginalChangeVector { get; }
+    void OnBeforeSaveChanges(InMemoryDocumentSessionOperations session);
+}
+```
+
+```csharp
+public sealed class PutCompareExchangeCommandData : ICommandData
+{
+    void OnBeforeSaveChanges(InMemoryDocumentSessionOperations session);
+}
+```
+
+### `Raven.Client.Documents.Conventions`
+
+```csharp
+public sealed class DocumentConventions : Conventions
+{
+    Func<MemberInfo, string> FindPropertyNameForIndexDefinition { get; set; }
+}
+```
+
+```csharp
+public sealed class DocumentConventions.CustomQueryTranslator : MulticastDelegate
+{
+    IAsyncResult BeginInvoke(LinqPathProvider provider, Expression expression, AsyncCallback callback, object object);
+    LinqPathProvider.Result EndInvoke(IAsyncResult result);
+}
+```
+
+```csharp
+public sealed class DocumentConventions.TryConvertValueForQueryDelegate<T> : MulticastDelegate
+{
+    IAsyncResult BeginInvoke(string fieldName, T value, bool forRange, out string strValue, AsyncCallback callback, object object);
+    bool EndInvoke(out string strValue, IAsyncResult result);
+}
+```
+
+```csharp
+public sealed class DocumentConventions.TryConvertValueToObjectForQueryDelegate<T> : MulticastDelegate
+{
+    IAsyncResult BeginInvoke(string fieldName, T value, bool forRange, out object objValue, AsyncCallback callback, object object);
+    bool EndInvoke(out object objValue, IAsyncResult result);
+}
+```
+
+### `Raven.Client.Documents.Identity`
+
+```csharp
+public class AsyncHiLoIdGenerator
+{
+    Task<AsyncHiLoIdGenerator.NextId> GetNextIdAsync();
+    Task ReturnUnusedRangeAsync();
+}
+```
+
+```csharp
+public class GenerateEntityIdOnTheClient
+{
+    string GenerateDocumentIdForStorage(object entity);
+    ValueTask<string> GenerateDocumentIdForStorageAsync(object entity);
+    string GetOrGenerateDocumentId(object entity);
+    bool TryGetIdFromDynamic(object entity, out string id);
+    bool TryGetIdFromInstance(object entity, out string id);
+    void TrySetIdOnDynamic(object entity, string id);
+}
+```
+
+### `Raven.Client.Documents.Indexes`
+
+```csharp
+public abstract class AbstractCommonApiForIndexes : ILoadCommonApiForIndexes, ILoadCompareExchangeApiForIndexes
+{
+    bool IsMapReduce { get; }
+}
+```
+
+```csharp
+public abstract class AbstractGenericIndexCreationTask<TReduceResult> : AbstractIndexCreationTask
+{
+    bool IsMapReduce { get; }
+}
+```
+
+```csharp
+public abstract class AbstractIndexDefinitionBuilder<TDocument, TReduceResult, TIndexDefinition>
+{
+    IDictionary<Expression<Func<TReduceResult, object>>, SpatialOptions> SpatialIndexes { get; set; }
+    ISet<Expression<Func<TReduceResult, object>>> SuggestionsOptions { get; set; }
+}
+```
+
+```csharp
+public abstract class AbstractJavaScriptIndexCreationTask : AbstractIndexCreationTask
+{
+    bool IsMapReduce { get; }
+}
+```
+
+```csharp
+public sealed class IndexConfiguration : Dictionary<string, string>, IFillFromBlittableJson
+{
+    void FillFromBlittableJson(BlittableJsonReaderObject json);
+}
+```
+
+```csharp
+public sealed class IndexSchemaDefinitions : Dictionary<string, string>, IFillFromBlittableJson
+{
+    void FillFromBlittableJson(BlittableJsonReaderObject json);
+}
+```
+
+### `Raven.Client.Documents.Indexes.Counters`
+
+```csharp
+public abstract class AbstractJavaScriptCountersIndexCreationTask : AbstractCountersIndexCreationTask
+{
+    bool IsMapReduce { get; }
+}
+```
+
+### `Raven.Client.Documents.Indexes.TimeSeries`
+
+```csharp
+public abstract class AbstractGenericTimeSeriesIndexCreationTask<TReduceResult> : AbstractTimeSeriesIndexCreationTask
+{
+    bool IsMapReduce { get; }
+}
+```
+
+```csharp
+public abstract class AbstractJavaScriptTimeSeriesIndexCreationTask : AbstractTimeSeriesIndexCreationTask
+{
+    bool IsMapReduce { get; }
+}
+```
+
+### `Raven.Client.Documents.Linq`
+
+```csharp
+public sealed class LinqPathProvider
+{
+    static MemberExpression GetMemberExpression(Expression expression);
+    LinqPathProvider.Result GetPath(Expression expression, bool isFilterActive);
+    object GetValueFromExpression(Expression expression, Type type);
+    static bool GetValueFromExpressionWithoutConversion(Expression expression, out object value);
+    static string HandlePropertyRenames(MemberInfo member, string name);
+    static bool IsCompareExchangeCall(MethodCallExpression mce);
+    static bool IsCounterCall(MethodCallExpression mce);
+    static bool IsIdCall(MethodCallExpression mce);
+    static bool IsIncludeCall(MethodCallExpression mce);
+    static bool IsMetadataCall(MethodCallExpression mce);
+    static bool IsNowCall(MethodCallExpression mce);
+    static bool IsTimeSeriesCall(MethodCallExpression mce);
+    static bool IsTodayCall(MethodCallExpression mce);
+}
+```
+
+```csharp
+public sealed class LinqPathProvider.Result
+{
+    bool IsNestedPath;
+    PropertyInfo MaybeProperty;
+    Type MemberType;
+}
+```
+
+```csharp
+public struct QueryMethodConverter.Parameters<T>
+{
+}
+```
+
+```csharp
+public sealed class RavenQueryInspector<T> : IRavenQueryable<T>, IRavenQueryInspector, IAsyncEnumerable<T>
+{
+    void FieldsToFetch(IEnumerable<string> fields);
+    IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken);
+    void Init(IRavenQueryProvider provider, QueryStatistics queryStats, LinqQueryHighlightings highlightings, string indexName, string collectionName, Expression expression, InMemoryDocumentSessionOperations session, bool isMapReduce);
+}
+```
+
+### `Raven.Client.Documents.Operations`
+
+```csharp
+public class DeleteByQueryOperation : IOperation<OperationIdResult>
+{
+    RavenCommand<OperationIdResult> GetCommand(IDocumentStore store, DocumentConventions conventions, JsonOperationContext context, HttpCache cache);
+}
+```
+
+```csharp
+public sealed class DeleteByQueryOperation<TEntity, TIndexCreator> : DeleteByQueryOperation<TEntity>
+{
+}
+```
+
+```csharp
+public class DeleteByQueryOperation<TEntity> : DeleteByQueryOperation
+{
+    RavenCommand<OperationIdResult> GetCommand(IDocumentStore store, DocumentConventions conventions, JsonOperationContext context, HttpCache cache);
+}
+```
+
+```csharp
+public sealed class GetCollectionRevisionsStatisticsOperation : IMaintenanceOperation<CollectionRevisionsStatistics>
+{
+    RavenCommand<CollectionRevisionsStatistics> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class GetCollectionStatisticsOperation : IMaintenanceOperation<CollectionStatistics>
+{
+    RavenCommand<CollectionStatistics> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class GetDetailedCollectionStatisticsOperation : IMaintenanceOperation<DetailedCollectionStatistics>
+{
+    RavenCommand<DetailedCollectionStatistics> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class GetDetailedStatisticsOperation : IMaintenanceOperation<DetailedDatabaseStatistics>
+{
+    RavenCommand<DetailedDatabaseStatistics> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class GetEssentialStatisticsOperation : IMaintenanceOperation<EssentialDatabaseStatistics>
+{
+    RavenCommand<EssentialDatabaseStatistics> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class GetOperationStateOperation : IMaintenanceOperation<OperationState>
+{
+    RavenCommand<OperationState> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class GetStatisticsOperation : IMaintenanceOperation<DatabaseStatistics>
+{
+    RavenCommand<DatabaseStatistics> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public interface IMaintenanceOperation
+{
+    RavenCommand GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public interface IMaintenanceOperation<T>
+{
+    RavenCommand<T> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public interface IOperation
+{
+    RavenCommand GetCommand(IDocumentStore store, DocumentConventions conventions, JsonOperationContext context, HttpCache cache);
+}
+```
+
+```csharp
+public interface IOperation<T>
+{
+    RavenCommand<T> GetCommand(IDocumentStore store, DocumentConventions conventions, JsonOperationContext context, HttpCache cache);
+}
+```
+
+```csharp
+public interface IOperationProgress
+{
+    void MergeWith(IOperationProgress progress);
+}
+```
+
+```csharp
+public interface IOperationResult
+{
+    void MergeWith(IOperationResult result);
+}
+```
+
+```csharp
+public sealed class JsonPatchOperation : IOperation<JsonPatchResult>
+{
+    RavenCommand<JsonPatchResult> GetCommand(IDocumentStore store, DocumentConventions conventions, JsonOperationContext context, HttpCache cache);
+}
+```
+
+```csharp
+public class Operation : IObserver<OperationStatusChange>
+{
+    OperationStatusFetchMode StatusFetchMode { get; }
+    void OnCompleted();
+    void OnNext(OperationStatusChange change);
+}
+```
+
+```csharp
+public sealed class Operation<TResult> : Operation
+{
+}
+```
+
+```csharp
+public sealed class PatchByQueryOperation : IOperation<OperationIdResult>
+{
+    RavenCommand<OperationIdResult> GetCommand(IDocumentStore store, DocumentConventions conventions, JsonOperationContext context, HttpCache cache);
+}
+```
+
+```csharp
+public class PatchOperation : IOperation<PatchResult>
+{
+    RavenCommand<PatchResult> GetCommand(IDocumentStore store, DocumentConventions conventions, JsonOperationContext context, HttpCache cache);
+    RavenCommand<PatchResult> GetCommand(IDocumentStore store, DocumentConventions conventions, JsonOperationContext context, HttpCache cache, bool returnDebugInformation, bool test);
+}
+```
+
+```csharp
+public sealed class PatchOperation.Result<TEntity>
+{
+}
+```
+
+```csharp
+public sealed class PatchOperation<TEntity> : PatchOperation
+{
+}
+```
+
+```csharp
+public class PatchResult : PatchResultBase
+{
+    BlittableJsonReaderObject OriginalDocument { get; set; }
+}
+```
+
+### `Raven.Client.Documents.Operations.AI`
+
+```csharp
+public abstract class AbstractAiIntegrationConfiguration : EtlConfiguration<AiConnectionString>
+{
+    AiConnectorType AiConnectorType { get; }
+}
+```
+
+```csharp
+public abstract class AbstractAiSettings : IDynamicJson
+{
+    void ValidateFields(List<string> errors);
+}
+```
+
+```csharp
+public class AddEmbeddingsGenerationOperation : IMaintenanceOperation<AddEmbeddingsGenerationOperationResult>
+{
+    RavenCommand<AddEmbeddingsGenerationOperationResult> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public class AddGenAiOperation : IMaintenanceOperation<AddGenAiOperationResult>
+{
+    RavenCommand<AddGenAiOperationResult> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class AiConnectionString : ConnectionString
+{
+    AiConnectorType GetActiveProvider();
+    bool IsEqual(ConnectionString connectionString);
+}
+```
+
+```csharp
+public sealed class AnthropicSettings : AbstractAiSettings
+{
+    Uri GetBaseEndpointUri();
+    void ValidateFields(List<string> errors);
+}
+```
+
+```csharp
+public sealed class AzureOpenAiSettings : OpenAiBaseSettings
+{
+    void ValidateFields(List<string> errors);
+}
+```
+
+```csharp
+public sealed class EmbeddingsGenerationConfiguration : AbstractAiIntegrationConfiguration
+{
+    EtlType EtlType { get; }
+    bool StoreChunkText { get; set; }
+    string GetDefaultTaskName();
+    string GetDestination();
+    bool UsingEncryptedCommunicationChannel();
+}
+```
+
+```csharp
+public class GenAiConfiguration : AbstractAiIntegrationConfiguration
+{
+    bool EnableTracing { get; set; }
+    EtlType EtlType { get; }
+    string GenerateIdentifier();
+    string GetDefaultTaskName();
+    string GetDestination();
+    bool UsingEncryptedCommunicationChannel();
+}
+```
+
+```csharp
+public class GenAiTransformation
+{
+    bool ValidateScript(out string error);
+}
+```
+
+```csharp
+public sealed class GoogleSettings : OpenAiBaseSettings
+{
+    Uri GetBaseEndpointUri();
+}
+```
+
+```csharp
+public sealed class HuggingFaceSettings : AbstractAiSettings
+{
+    void ValidateFields(List<string> errors);
+}
+```
+
+```csharp
+public sealed class MistralAiSettings : AbstractAiSettings
+{
+    void ValidateFields(List<string> errors);
+}
+```
+
+```csharp
+public sealed class OllamaSettings : AbstractAiSettings
+{
+    Uri GetBaseEndpointUri();
+    void ValidateFields(List<string> errors);
+}
+```
+
+```csharp
+public abstract class OpenAiBaseSettings : AbstractAiSettings
+{
+    Uri GetBaseEndpointUri();
+    void ValidateFields(List<string> errors);
+}
+```
+
+```csharp
+public sealed class OpenAiSettings : OpenAiBaseSettings
+{
+    Uri GetBaseEndpointUri();
+}
+```
+
+```csharp
+public class UpdateEmbeddingsGenerationOperation : IMaintenanceOperation<UpdateEtlOperationResult>
+{
+    RavenCommand<UpdateEtlOperationResult> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public class UpdateGenAiOperation : IMaintenanceOperation<UpdateEtlOperationResult>
+{
+    RavenCommand<UpdateEtlOperationResult> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class VertexSettings : AbstractAiSettings
+{
+    void ValidateFields(List<string> errors);
+}
+```
+
+### `Raven.Client.Documents.Operations.AI.Agents`
+
+```csharp
+public class AddOrUpdateAiAgentOperation : IMaintenanceOperation<AiAgentConfigurationResult>
+{
+    RavenCommand<AiAgentConfigurationResult> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public class AiAgentConfiguration : IDynamicJson
+{
+    DynamicJsonValue ToAuditJson();
+}
+```
+
+```csharp
+public class DeleteAiAgentOperation : IMaintenanceOperation<AiAgentConfigurationResult>
+{
+    RavenCommand<AiAgentConfigurationResult> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class GetAiAgentsOperation : IMaintenanceOperation<GetAiAgentsResponse>
+{
+    RavenCommand<GetAiAgentsResponse> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class GetConversationMessagesOperation : IMaintenanceOperation<AiConversationMessagesResult>
+{
+    RavenCommand<AiConversationMessagesResult> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public class RunConversationOperation<TSchema> : IMaintenanceOperation<ConversationResult<TSchema>>
+{
+    RavenCommand<ConversationResult<TSchema>> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+### `Raven.Client.Documents.Operations.Analyzers`
+
+```csharp
+public sealed class DeleteAnalyzerOperation : IMaintenanceOperation
+{
+    RavenCommand GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class PutAnalyzersOperation : IMaintenanceOperation
+{
+    RavenCommand GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+### `Raven.Client.Documents.Operations.Attachments`
+
+```csharp
+public sealed class AttachmentStream : Stream
+{
+    bool CanRead { get; }
+    bool CanSeek { get; }
+    bool CanWrite { get; }
+    Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken);
+    long Seek(long offset, SeekOrigin origin);
+    void SetLength(long value);
+    Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken);
+}
+```
+
+```csharp
+public sealed class DeleteAttachmentOperation : IOperation
+{
+    RavenCommand GetCommand(IDocumentStore store, DocumentConventions conventions, JsonOperationContext context, HttpCache cache);
+}
+```
+
+```csharp
+public sealed class DeleteAttachmentsOperation : IOperation
+{
+    RavenCommand GetCommand(IDocumentStore store, DocumentConventions conventions, JsonOperationContext context, HttpCache cache);
+}
+```
+
+```csharp
+public sealed class GetAttachmentOperation : IOperation<AttachmentResult>
+{
+    RavenCommand<AttachmentResult> GetCommand(IDocumentStore store, DocumentConventions conventions, JsonOperationContext context, HttpCache cache);
+}
+```
+
+```csharp
+public sealed class GetAttachmentsOperation : IOperation<IEnumerator<AttachmentEnumeratorResult>>
+{
+    RavenCommand<IEnumerator<AttachmentEnumeratorResult>> GetCommand(IDocumentStore store, DocumentConventions conventions, JsonOperationContext context, HttpCache cache);
+}
+```
+
+```csharp
+public sealed class PutAttachmentOperation : IOperation<AttachmentDetails>
+{
+    RavenCommand<AttachmentDetails> GetCommand(IDocumentStore store, DocumentConventions conventions, JsonOperationContext context, HttpCache cache);
+}
+```
+
+### `Raven.Client.Documents.Operations.Attachments.Remote`
+
+```csharp
+public sealed class ConfigureRemoteAttachmentsOperation : IMaintenanceOperation<ConfigureRemoteAttachmentsOperationResult>
+{
+    RavenCommand<ConfigureRemoteAttachmentsOperationResult> GetCommand(DocumentConventions conventions, JsonOperationContext ctx);
+}
+```
+
+```csharp
+public sealed class GetRemoteAttachmentsConfigurationOperation : IMaintenanceOperation<RemoteAttachmentsConfiguration>
+{
+    RavenCommand<RemoteAttachmentsConfiguration> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+### `Raven.Client.Documents.Operations.Backups`
+
+```csharp
+public abstract class AmazonSettings : BackupSettings, ICloudBackupSettings
+{
+    DynamicJsonValue ToAuditJson();
+}
+```
+
+```csharp
+public sealed class AzureSettings : BackupSettings, ICloudBackupSettings, IAzureSettings
+{
+    bool HasSettings();
+    DynamicJsonValue ToAuditJson();
+}
+```
+
+```csharp
+public class BackupConfiguration : IDynamicJson
+{
+    DynamicJsonValue ToAuditJson();
+    bool ValidateDestinations(out string message);
+}
+```
+
+```csharp
+public sealed class BackupEncryptionSettings
+{
+    DynamicJsonValue ToAuditJson();
+}
+```
+
+```csharp
+public sealed class BackupOperation : IMaintenanceOperation<OperationIdResult<StartBackupOperationResult>>
+{
+    RavenCommand<OperationIdResult<StartBackupOperationResult>> GetCommand(DocumentConventions conventions, JsonOperationContext ctx);
+}
+```
+
+```csharp
+public abstract class BackupSettings
+{
+    bool HasSettings();
+    DynamicJsonValue ToAuditJson();
+    bool WasEnabled(BackupSettings other);
+}
+```
+
+```csharp
+public abstract class BackupStatus
+{
+    IDisposable UpdateStats(bool isFullBackup);
+}
+```
+
+```csharp
+public sealed class DelayBackupOperation : IMaintenanceOperation<OperationState>
+{
+    RavenCommand<OperationState> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class FtpSettings : BackupSettings
+{
+    bool HasSettings();
+    DynamicJsonValue ToAuditJson();
+}
+```
+
+```csharp
+public sealed class GetBackupConfigurationScript
+{
+    DynamicJsonValue ToAuditJson();
+}
+```
+
+```csharp
+public sealed class GetPeriodicBackupStatusOperation : IMaintenanceOperation<GetPeriodicBackupStatusOperationResult>
+{
+    RavenCommand<GetPeriodicBackupStatusOperationResult> GetCommand(DocumentConventions conventions, JsonOperationContext ctx);
+}
+```
+
+```csharp
+public sealed class GlacierSettings : AmazonSettings
+{
+    bool HasSettings();
+    DynamicJsonValue ToAuditJson();
+}
+```
+
+```csharp
+public sealed class GoogleCloudSettings : BackupSettings, ICloudBackupSettings
+{
+    bool HasSettings();
+    DynamicJsonValue ToAuditJson();
+}
+```
+
+```csharp
+public sealed class LocalSettings : BackupSettings
+{
+    bool HasSettings();
+    DynamicJsonValue ToAuditJson();
+}
+```
+
+```csharp
+public class PeriodicBackupConfiguration : BackupConfiguration, IDatabaseTask
+{
+    string GetDefaultTaskName();
+    string GetMentorNode();
+    UInt64 GetTaskKey();
+    bool HasBackupFrequencyChanged(PeriodicBackupConfiguration other);
+    bool IsResourceIntensive();
+    DynamicJsonValue ToAuditJson();
+    bool ValidateDestinations(out string message);
+}
+```
+
+```csharp
+public sealed class PeriodicBackupStatus : IDatabaseTaskStatus
+{
+    void UpdateJson(DynamicJsonValue json);
+}
+```
+
+```csharp
+public sealed class RetentionPolicy : IDynamicJson
+{
+    DynamicJsonValue ToAuditJson();
+}
+```
+
+```csharp
+public sealed class S3Settings : AmazonSettings, IS3Settings
+{
+    bool HasSettings();
+    DynamicJsonValue ToAuditJson();
+}
+```
+
+```csharp
+public sealed class ShardedBackupResult : IShardedOperationResult<ShardNodeBackupResult>
+{
+    void CombineWith(IOperationResult result, int shardNumber, string nodeTag);
+    void MergeWith(IOperationResult result);
+}
+```
+
+```csharp
+public sealed class SnapshotSettings : IDynamicJson
+{
+    DynamicJsonValue ToAuditJson();
+}
+```
+
+```csharp
+public sealed class StartBackupOperation : IMaintenanceOperation<OperationIdResult<StartBackupOperationResult>>
+{
+    RavenCommand<OperationIdResult<StartBackupOperationResult>> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class UpdatePeriodicBackupOperation : IMaintenanceOperation<UpdatePeriodicBackupOperationResult>
+{
+    RavenCommand<UpdatePeriodicBackupOperationResult> GetCommand(DocumentConventions conventions, JsonOperationContext ctx);
+}
+```
+
+```csharp
+public sealed class UploadProgress
+{
+    void ChangeState(UploadState newState);
+    void SetTotal(long totalLength);
+    void SetUploaded(long length);
+    void UpdateUploaded(long length);
+}
+```
+
+### `Raven.Client.Documents.Operations.Backups.Sharding`
+
+```csharp
+public sealed class GetShardedPeriodicBackupStatusOperation : IMaintenanceOperation<GetShardedPeriodicBackupStatusOperationResult>
+{
+    RavenCommand<GetShardedPeriodicBackupStatusOperationResult> GetCommand(DocumentConventions conventions, JsonOperationContext ctx);
+}
+```
+
+### `Raven.Client.Documents.Operations.CdcSink`
+
+```csharp
+public class AddCdcSinkOperation : IMaintenanceOperation<AddCdcSinkOperationResult>
+{
+    RavenCommand<AddCdcSinkOperationResult> GetCommand(DocumentConventions conventions, JsonOperationContext ctx);
+}
+```
+
+```csharp
+public class CdcSinkConfiguration : IDynamicJson, IDatabaseTask
+{
+    List<CdcSinkConfiguration.TableInfo> CollectAllTablesFlat(string defaultSchema);
+    static void ForEachEmbeddedTable(List<CdcSinkEmbeddedTableConfig> embedded, Action<CdcSinkEmbeddedTableConfig> action);
+    string GetDefaultTaskName();
+    string GetDestination();
+    string GetMentorNode();
+    UInt64 GetTaskKey();
+    bool IsResourceIntensive();
+}
+```
+
+```csharp
+public class CdcSinkEmbeddedTableConfig : IFillFromBlittableJson, IDynamicJson
+{
+    void FillFromBlittableJson(BlittableJsonReaderObject json);
+}
+```
+
+```csharp
+public class UpdateCdcSinkOperation : IMaintenanceOperation<UpdateCdcSinkOperationResult>
+{
+    RavenCommand<UpdateCdcSinkOperationResult> GetCommand(DocumentConventions conventions, JsonOperationContext ctx);
+}
+```
+
+### `Raven.Client.Documents.Operations.CompareExchange`
+
+```csharp
+public sealed class CompareExchangeResult<T>
+{
+    static CompareExchangeResult<T> ParseFromBlittable(BlittableJsonReaderObject response, DocumentConventions conventions);
+}
+```
+
+```csharp
+public sealed class DeleteCompareExchangeValueOperation<T> : IOperation<CompareExchangeResult<T>>
+{
+    RavenCommand<CompareExchangeResult<T>> GetCommand(IDocumentStore store, DocumentConventions conventions, JsonOperationContext context, HttpCache cache);
+}
+```
+
+```csharp
+public sealed class GetCompareExchangeValueOperation<T> : IOperation<CompareExchangeValue<T>>
+{
+    RavenCommand<CompareExchangeValue<T>> GetCommand(IDocumentStore store, DocumentConventions conventions, JsonOperationContext context, HttpCache cache);
+}
+```
+
+```csharp
+public sealed class GetCompareExchangeValuesOperation<T> : IOperation<Dictionary<string, CompareExchangeValue<T>>>
+{
+    RavenCommand<Dictionary<string, CompareExchangeValue<T>>> GetCommand(IDocumentStore store, DocumentConventions conventions, JsonOperationContext context, HttpCache cache);
+}
+```
+
+```csharp
+public sealed class PutCompareExchangeValueOperation<T> : IOperation<CompareExchangeResult<T>>
+{
+    RavenCommand<CompareExchangeResult<T>> GetCommand(IDocumentStore store, DocumentConventions conventions, JsonOperationContext context, HttpCache cache);
+}
+```
+
+### `Raven.Client.Documents.Operations.Configuration`
+
+```csharp
+public sealed class GetClientConfigurationOperation : IMaintenanceOperation<GetClientConfigurationOperation.Result>
+{
+    RavenCommand<GetClientConfigurationOperation.Result> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class GetClientConfigurationOperation.Result
+{
+}
+```
+
+```csharp
+public sealed class PutClientConfigurationOperation : IMaintenanceOperation
+{
+    RavenCommand GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public class StudioConfiguration : IDynamicJson
+{
+    bool DisableAutoIndexCreation { get; set; }
+}
+```
+
+### `Raven.Client.Documents.Operations.ConnectionStrings`
+
+```csharp
+public abstract class ConnectionString : IDynamicJson
+{
+    bool IsEqual(ConnectionString connectionString);
+    DynamicJsonValue ToAuditJson();
+}
+```
+
+```csharp
+public sealed class GetConnectionStringsOperation : IMaintenanceOperation<GetConnectionStringsResult>
+{
+    RavenCommand<GetConnectionStringsResult> GetCommand(DocumentConventions conventions, JsonOperationContext ctx);
+}
+```
+
+```csharp
+public sealed class PutConnectionStringOperation<T> : IMaintenanceOperation<PutConnectionStringResult>
+{
+    RavenCommand<PutConnectionStringResult> GetCommand(DocumentConventions conventions, JsonOperationContext ctx);
+}
+```
+
+```csharp
+public sealed class RemoveConnectionStringOperation<T> : IMaintenanceOperation<RemoveConnectionStringResult>
+{
+    RavenCommand<RemoveConnectionStringResult> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+### `Raven.Client.Documents.Operations.Counters`
+
+```csharp
+public sealed class CounterBatchOperation : IOperation<CountersDetail>
+{
+    RavenCommand<CountersDetail> GetCommand(IDocumentStore store, DocumentConventions conventions, JsonOperationContext context, HttpCache cache);
+}
+```
+
+```csharp
+public sealed class GetCountersOperation : IOperation<CountersDetail>
+{
+    RavenCommand<CountersDetail> GetCommand(IDocumentStore store, DocumentConventions conventions, JsonOperationContext context, HttpCache cache);
+}
+```
+
+### `Raven.Client.Documents.Operations.DataArchival`
+
+```csharp
+public class ConfigureDataArchivalOperation : IMaintenanceOperation<ConfigureDataArchivalOperationResult>
+{
+    RavenCommand<ConfigureDataArchivalOperationResult> GetCommand(DocumentConventions conventions, JsonOperationContext ctx);
+}
+```
+
+### `Raven.Client.Documents.Operations.ETL`
+
+```csharp
+public sealed class AddEtlOperation<T> : IMaintenanceOperation<AddEtlOperationResult>
+{
+    RavenCommand<AddEtlOperationResult> GetCommand(DocumentConventions conventions, JsonOperationContext ctx);
+}
+```
+
+```csharp
+public abstract class EtlConfiguration<T> : IDynamicJson, IDatabaseTask
+{
+    EtlType EtlType { get; }
+    string GetDefaultTaskName();
+    string GetDestination();
+    static EtlType GetEtlType(BlittableJsonReaderObject etlConfiguration);
+    string GetMentorNode();
+    UInt64 GetTaskKey();
+    bool IsResourceIntensive();
+    DynamicJsonValue ToAuditJson();
+    bool UsingEncryptedCommunicationChannel();
+}
+```
+
+```csharp
+public sealed class RavenConnectionString : ConnectionString
+{
+    bool IsEqual(ConnectionString connectionString);
+    DynamicJsonValue ToAuditJson();
+}
+```
+
+```csharp
+public sealed class RavenEtlConfiguration : EtlConfiguration<RavenConnectionString>
+{
+    EtlType EtlType { get; }
+    string GetDefaultTaskName();
+    string GetDestination();
+    DynamicJsonValue ToAuditJson();
+    bool UsingEncryptedCommunicationChannel();
+}
+```
+
+```csharp
+public sealed class ResetEtlOperation : IMaintenanceOperation
+{
+    RavenCommand GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class Transformation
+{
+    string[] GetCollectionsFromScript();
+}
+```
+
+```csharp
+public sealed class UpdateEtlOperation<T> : IMaintenanceOperation<UpdateEtlOperationResult>
+{
+    RavenCommand<UpdateEtlOperationResult> GetCommand(DocumentConventions conventions, JsonOperationContext ctx);
+}
+```
+
+### `Raven.Client.Documents.Operations.ETL.ElasticSearch`
+
+```csharp
+public sealed class ElasticSearchConnectionString : ConnectionString
+{
+    bool EnableCompatibilityMode { get; set; }
+    bool IsEqual(ConnectionString connectionString);
+    DynamicJsonValue ToAuditJson();
+}
+```
+
+```csharp
+public sealed class ElasticSearchEtlConfiguration : EtlConfiguration<ElasticSearchConnectionString>
+{
+    EtlType EtlType { get; }
+    string GetDefaultTaskName();
+    string GetDestination();
+    DynamicJsonValue ToAuditJson();
+    bool UsingEncryptedCommunicationChannel();
+}
+```
+
+### `Raven.Client.Documents.Operations.ETL.OLAP`
+
+```csharp
+public sealed class OlapConnectionString : ConnectionString
+{
+    bool IsEqual(ConnectionString connectionString);
+    DynamicJsonValue ToAuditJson();
+}
+```
+
+```csharp
+public sealed class OlapEtlConfiguration : EtlConfiguration<OlapConnectionString>
+{
+    EtlType EtlType { get; }
+    string GetDefaultTaskName();
+    string GetDestination();
+    DynamicJsonValue ToAuditJson();
+    bool UsingEncryptedCommunicationChannel();
+}
+```
+
+### `Raven.Client.Documents.Operations.ETL.Queue`
+
+```csharp
+public sealed class AmazonSqsConnectionSettings
+{
+    string GetQueueUrl();
+    bool IsValidConnection();
+    DynamicJsonValue ToAuditJson();
+}
+```
+
+```csharp
+public class AmazonSqsCredentials
+{
+    bool IsValid();
+}
+```
+
+```csharp
+public sealed class AzureQueueStorageConnectionSettings
+{
+    string GetStorageUrl();
+    bool IsValidConnection();
+    DynamicJsonValue ToAuditJson();
+}
+```
+
+```csharp
+public sealed class AzureServiceBusConnectionSettings
+{
+    string GetServiceBusUrl();
+    bool IsValidConnection();
+    DynamicJsonValue ToAuditJson();
+}
+```
+
+```csharp
+public sealed class AzureServiceBusEntraId
+{
+    bool IsValid();
+    DynamicJsonValue ToAuditJson();
+}
+```
+
+```csharp
+public sealed class AzureServiceBusPasswordless
+{
+    bool IsValid();
+}
+```
+
+```csharp
+public sealed class EntraId
+{
+    bool IsValid();
+}
+```
+
+```csharp
+public sealed class KafkaConnectionSettings
+{
+    DynamicJsonValue ToAuditJson();
+}
+```
+
+```csharp
+public sealed class Passwordless
+{
+    bool IsValid();
+}
+```
+
+```csharp
+public sealed class QueueConnectionString : ConnectionString
+{
+    bool IsEqual(ConnectionString connectionString);
+    DynamicJsonValue ToAuditJson();
+}
+```
+
+```csharp
+public sealed class QueueEtlConfiguration : EtlConfiguration<QueueConnectionString>
+{
+    EtlType EtlType { get; }
+    string GetDefaultTaskName();
+    string GetDestination();
+    DynamicJsonValue ToAuditJson();
+    bool UsingEncryptedCommunicationChannel();
+}
+```
+
+```csharp
+public sealed class RabbitMqConnectionSettings
+{
+    DynamicJsonValue ToAuditJson();
+}
+```
+
+### `Raven.Client.Documents.Operations.ETL.Snowflake`
+
+```csharp
+public sealed class SnowflakeConnectionString : ConnectionString
+{
+    bool IsEqual(ConnectionString connectionString);
+    DynamicJsonValue ToAuditJson();
+}
+```
+
+```csharp
+public sealed class SnowflakeEtlConfiguration : EtlConfiguration<SnowflakeConnectionString>
+{
+    EtlType EtlType { get; }
+    string GetDefaultTaskName();
+    string GetDestination();
+    DynamicJsonValue ToAuditJson();
+    bool UsingEncryptedCommunicationChannel();
+}
+```
+
+### `Raven.Client.Documents.Operations.ETL.SQL`
+
+```csharp
+public sealed class SqlConnectionString : ConnectionString
+{
+    bool IsEqual(ConnectionString connectionString);
+    DynamicJsonValue ToAuditJson();
+}
+```
+
+```csharp
+public sealed class SqlEtlConfiguration : EtlConfiguration<SqlConnectionString>
+{
+    EtlType EtlType { get; }
+    string GetDefaultTaskName();
+    string GetDestination();
+    DynamicJsonValue ToAuditJson();
+    bool UsingEncryptedCommunicationChannel();
+}
+```
+
+### `Raven.Client.Documents.Operations.Expiration`
+
+```csharp
+public sealed class ConfigureExpirationOperation : IMaintenanceOperation<ConfigureExpirationOperationResult>
+{
+    RavenCommand<ConfigureExpirationOperationResult> GetCommand(DocumentConventions conventions, JsonOperationContext ctx);
+}
+```
+
+### `Raven.Client.Documents.Operations.Identities`
+
+```csharp
+public sealed class GetIdentitiesOperation : IMaintenanceOperation<Dictionary<string, long>>
+{
+    RavenCommand<Dictionary<string, long>> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class NextIdentityForOperation : IMaintenanceOperation<long>
+{
+    RavenCommand<long> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class SeedIdentityForOperation : IMaintenanceOperation<long>
+{
+    RavenCommand<long> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+### `Raven.Client.Documents.Operations.Indexes`
+
+```csharp
+public sealed class DeleteIndexErrorsOperation : IMaintenanceOperation
+{
+    RavenCommand GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class DeleteIndexOperation : IMaintenanceOperation
+{
+    RavenCommand GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class DisableIndexOperation : IMaintenanceOperation
+{
+    RavenCommand GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class EnableIndexOperation : IMaintenanceOperation
+{
+    RavenCommand GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class GetIndexErrorsOperation : IMaintenanceOperation<IndexErrors[]>
+{
+    RavenCommand<IndexErrors[]> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class GetIndexesOperation : IMaintenanceOperation<IndexDefinition[]>
+{
+    RavenCommand<IndexDefinition[]> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class GetIndexesStatisticsOperation : IMaintenanceOperation<IndexStats[]>
+{
+    RavenCommand<IndexStats[]> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class GetIndexingStatusOperation : IMaintenanceOperation<IndexingStatus>
+{
+    RavenCommand<IndexingStatus> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class GetIndexNamesOperation : IMaintenanceOperation<string[]>
+{
+    RavenCommand<string[]> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class GetIndexOperation : IMaintenanceOperation<IndexDefinition>
+{
+    RavenCommand<IndexDefinition> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class GetIndexPerformanceStatisticsOperation : IMaintenanceOperation<IndexPerformanceStats[]>
+{
+    RavenCommand<IndexPerformanceStats[]> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class GetIndexStatisticsOperation : IMaintenanceOperation<IndexStats>
+{
+    RavenCommand<IndexStats> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class GetTermsOperation : IMaintenanceOperation<string[]>
+{
+    RavenCommand<string[]> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class IndexHasChangedOperation : IMaintenanceOperation<bool>
+{
+    RavenCommand<bool> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class PutIndexesOperation : IMaintenanceOperation<PutIndexResult[]>
+{
+    RavenCommand<PutIndexResult[]> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class ResetIndexOperation : IMaintenanceOperation
+{
+    RavenCommand GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class SetIndexesLockOperation : IMaintenanceOperation
+{
+    RavenCommand GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class SetIndexesLockOperation.Parameters
+{
+}
+```
+
+```csharp
+public sealed class SetIndexesPriorityOperation : IMaintenanceOperation
+{
+    RavenCommand GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class SetIndexesPriorityOperation.Parameters
+{
+}
+```
+
+```csharp
+public sealed class StartIndexingOperation : IMaintenanceOperation
+{
+    RavenCommand GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class StartIndexOperation : IMaintenanceOperation
+{
+    RavenCommand GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class StopIndexingOperation : IMaintenanceOperation
+{
+    RavenCommand GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class StopIndexOperation : IMaintenanceOperation
+{
+    RavenCommand GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+### `Raven.Client.Documents.Operations.Integrations.PostgreSQL`
+
+```csharp
+public sealed class ConfigurePostgreSqlOperation : IMaintenanceOperation<ConfigurePostgreSqlOperationResult>
+{
+    RavenCommand<ConfigurePostgreSqlOperationResult> GetCommand(DocumentConventions conventions, JsonOperationContext ctx);
+}
+```
+
+### `Raven.Client.Documents.Operations.OngoingTasks`
+
+```csharp
+public sealed class DeleteOngoingTaskOperation : IMaintenanceOperation<ModifyOngoingTaskResult>
+{
+    RavenCommand<ModifyOngoingTaskResult> GetCommand(DocumentConventions conventions, JsonOperationContext ctx);
+}
+```
+
+```csharp
+public sealed class GetOngoingTaskInfoOperation : IMaintenanceOperation<OngoingTask>
+{
+    RavenCommand<OngoingTask> GetCommand(DocumentConventions conventions, JsonOperationContext ctx);
+}
+```
+
+```csharp
+public sealed class GetPullReplicationTasksInfoOperation : IMaintenanceOperation<PullReplicationDefinitionAndCurrentConnections>
+{
+    RavenCommand<PullReplicationDefinitionAndCurrentConnections> GetCommand(DocumentConventions conventions, JsonOperationContext ctx);
+}
+```
+
+```csharp
+public sealed class ToggleOngoingTaskStateOperation : IMaintenanceOperation<ModifyOngoingTaskResult>
+{
+    RavenCommand<ModifyOngoingTaskResult> GetCommand(DocumentConventions conventions, JsonOperationContext ctx);
+}
+```
+
+### `Raven.Client.Documents.Operations.QueueSink`
+
+```csharp
+public class AddQueueSinkOperation<T> : IMaintenanceOperation<AddQueueSinkOperationResult>
+{
+    RavenCommand<AddQueueSinkOperationResult> GetCommand(DocumentConventions conventions, JsonOperationContext ctx);
+}
+```
+
+```csharp
+public class QueueSinkConfiguration : IDynamicJson, IDatabaseTask
+{
+    string GetDefaultTaskName();
+    string GetDestination();
+    string GetMentorNode();
+    UInt64 GetTaskKey();
+    bool IsResourceIntensive();
+}
+```
+
+```csharp
+public class UpdateQueueSinkOperation<T> : IMaintenanceOperation<UpdateQueueSinkOperationResult>
+{
+    RavenCommand<UpdateQueueSinkOperationResult> GetCommand(DocumentConventions conventions, JsonOperationContext ctx);
+}
+```
+
+### `Raven.Client.Documents.Operations.Refresh`
+
+```csharp
+public sealed class ConfigureRefreshOperation : IMaintenanceOperation<ConfigureRefreshOperationResult>
+{
+    RavenCommand<ConfigureRefreshOperationResult> GetCommand(DocumentConventions conventions, JsonOperationContext ctx);
+}
+```
+
+### `Raven.Client.Documents.Operations.Replication`
+
+```csharp
+public class ExternalReplication : ExternalReplicationBase
+{
+    ReplicationNode.ReplicationType GetReplicationType();
+    bool IsEqualTo(ReplicationNode other);
+    DynamicJsonValue ToAuditJson();
+}
+```
+
+```csharp
+public sealed class GetReplicationHubAccessOperation : IMaintenanceOperation<DetailedReplicationHubAccess[]>
+{
+    RavenCommand<DetailedReplicationHubAccess[]> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class GetReplicationPerformanceStatisticsOperation : IMaintenanceOperation<ReplicationPerformance>
+{
+    RavenCommand<ReplicationPerformance> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class PullReplicationAsSink : ExternalReplicationBase
+{
+    string GetDefaultTaskName();
+    ReplicationNode.ReplicationType GetReplicationType();
+    UInt64 GetTaskKey();
+    bool IsEqualTo(ReplicationNode other);
+    DynamicJsonValue ToAuditJson();
+}
+```
+
+```csharp
+public sealed class PullReplicationDefinition : IDynamicJson
+{
+    PreventDeletionsMode PreventDeletionsMode { get; set; }
+    DynamicJsonValue ToAuditJson();
+}
+```
+
+```csharp
+public sealed class PutPullReplicationAsHubOperation : IMaintenanceOperation<ModifyOngoingTaskResult>
+{
+    RavenCommand<ModifyOngoingTaskResult> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class RegisterReplicationHubAccessOperation : IMaintenanceOperation
+{
+    RavenCommand GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class UnregisterReplicationHubAccessOperation : IMaintenanceOperation
+{
+    RavenCommand GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class UpdateExternalReplicationOperation : IMaintenanceOperation<ModifyOngoingTaskResult>
+{
+    RavenCommand<ModifyOngoingTaskResult> GetCommand(DocumentConventions conventions, JsonOperationContext ctx);
+}
+```
+
+```csharp
+public sealed class UpdatePullReplicationAsSinkOperation : IMaintenanceOperation<ModifyOngoingTaskResult>
+{
+    RavenCommand<ModifyOngoingTaskResult> GetCommand(DocumentConventions conventions, JsonOperationContext ctx);
+}
+```
+
+### `Raven.Client.Documents.Operations.Revisions`
+
+```csharp
+public sealed class AdoptOrphanedRevisionsOperation : IOperation<OperationIdResult>
+{
+    RavenCommand<OperationIdResult> GetCommand(IDocumentStore store, DocumentConventions conventions, JsonOperationContext context, HttpCache cache);
+}
+```
+
+```csharp
+public sealed class AdoptOrphanedRevisionsOperation.Parameters : RevisionsOperationParameters
+{
+}
+```
+
+```csharp
+public sealed class AdoptOrphanedRevisionsResult : OperationResult
+{
+    void MergeWith(IOperationResult result);
+    void MergeWith(IOperationProgress progress);
+}
+```
+
+```csharp
+public sealed class ConfigureRevisionsBinCleanerOperation : IMaintenanceOperation<ConfigureRevisionsBinCleanerOperationResult>
+{
+    RavenCommand<ConfigureRevisionsBinCleanerOperationResult> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class ConfigureRevisionsOperation : IMaintenanceOperation<ConfigureRevisionsOperationResult>
+{
+    RavenCommand<ConfigureRevisionsOperationResult> GetCommand(DocumentConventions conventions, JsonOperationContext ctx);
+}
+```
+
+```csharp
+public sealed class DeleteRevisionsOperation : IMaintenanceOperation<DeleteRevisionsOperation.Result>
+{
+    RavenCommand<DeleteRevisionsOperation.Result> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public class DeleteRevisionsOperation.Result
+{
+}
+```
+
+```csharp
+public sealed class EnforceConfigurationResult : OperationResult
+{
+    void MergeWith(IOperationResult result);
+    void MergeWith(IOperationProgress progress);
+}
+```
+
+```csharp
+public sealed class EnforceRevisionsConfigurationOperation : IOperation<OperationIdResult>
+{
+    RavenCommand<OperationIdResult> GetCommand(IDocumentStore store, DocumentConventions conventions, JsonOperationContext context, HttpCache cache);
+}
+```
+
+```csharp
+public sealed class EnforceRevisionsConfigurationOperation.Parameters : RevisionsOperationParameters
+{
+}
+```
+
+```csharp
+public sealed class GetRevisionsOperation<T> : IOperation<RevisionsResult<T>>
+{
+    RavenCommand<RevisionsResult<T>> GetCommand(IDocumentStore store, DocumentConventions conventions, JsonOperationContext context, HttpCache cache);
+}
+```
+
+```csharp
+public sealed class GetRevisionsOperation<T>.Parameters<T>
+{
+}
+```
+
+```csharp
+public abstract class OperationResult : IOperationResult, IOperationProgress
+{
+    void MergeWith(IOperationProgress progress);
+    void MergeWith(IOperationResult result);
+}
+```
+
+```csharp
+public class RevertRevisionsByIdOperation : IOperation
+{
+    RavenCommand GetCommand(IDocumentStore store, DocumentConventions conventions, JsonOperationContext context, HttpCache cache);
+}
+```
+
+```csharp
+public sealed class RevisionsBinConfiguration : IDynamicJson
+{
+    DynamicJsonValue ToAuditJson();
+}
+```
+
+```csharp
+public sealed class RevisionsCollectionConfiguration : IDynamicJson
+{
+    DynamicJsonValue ToAuditJson();
+}
+```
+
+```csharp
+public sealed class RevisionsConfiguration : IFillFromBlittableJson, IDynamicJson
+{
+    void FillFromBlittableJson(BlittableJsonReaderObject json);
+    DynamicJsonValue ToAuditJson();
+}
+```
+
+### `Raven.Client.Documents.Operations.SchemaValidation`
+
+```csharp
+public class ConfigureSchemaValidationOperation : IMaintenanceOperation<ConfigureSchemaValidationOperationResult>
+{
+    RavenCommand<ConfigureSchemaValidationOperationResult> GetCommand(DocumentConventions conventions, JsonOperationContext ctx);
+}
+```
+
+```csharp
+public sealed class GetSchemaValidationConfiguration : IMaintenanceOperation<SchemaValidationConfiguration>
+{
+    RavenCommand<SchemaValidationConfiguration> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public class SchemaDefinition
+{
+    DateTime LastModifiedTime { get; }
+}
+```
+
+```csharp
+public sealed class StartSchemaValidationOperation : IMaintenanceOperation<OperationIdResult<StartValidateSchemaOperationResult>>
+{
+    RavenCommand<OperationIdResult<StartValidateSchemaOperationResult>> GetCommand(DocumentConventions conventions, JsonOperationContext ctx);
+}
+```
+
+```csharp
+public sealed class StartSchemaValidationOperation.Parameters
+{
+}
+```
+
+```csharp
+public class ValidateSchemaProgress : IOperationProgress
+{
+    void MergeWith(IOperationProgress progress);
+}
+```
+
+### `Raven.Client.Documents.Operations.Sorters`
+
+```csharp
+public sealed class DeleteSorterOperation : IMaintenanceOperation
+{
+    RavenCommand GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class PutSortersOperation : IMaintenanceOperation
+{
+    RavenCommand GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+### `Raven.Client.Documents.Operations.TimeSeries`
+
+```csharp
+public sealed class ConfigureTimeSeriesOperation : IMaintenanceOperation<ConfigureTimeSeriesOperationResult>
+{
+    RavenCommand<ConfigureTimeSeriesOperationResult> GetCommand(DocumentConventions conventions, JsonOperationContext ctx);
+}
+```
+
+```csharp
+public class ConfigureTimeSeriesPolicyOperation : IMaintenanceOperation<ConfigureTimeSeriesOperationResult>
+{
+    RavenCommand<ConfigureTimeSeriesOperationResult> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class ConfigureTimeSeriesValueNamesOperation : IMaintenanceOperation<ConfigureTimeSeriesOperationResult>
+{
+    RavenCommand<ConfigureTimeSeriesOperationResult> GetCommand(DocumentConventions conventions, JsonOperationContext ctx);
+}
+```
+
+```csharp
+public sealed class ConfigureTimeSeriesValueNamesOperation.Parameters : IDynamicJson
+{
+}
+```
+
+```csharp
+public sealed class GetMultipleTimeSeriesOperation : IOperation<TimeSeriesDetails>
+{
+    RavenCommand<TimeSeriesDetails> GetCommand(IDocumentStore store, DocumentConventions conventions, JsonOperationContext context, HttpCache cache);
+}
+```
+
+```csharp
+public sealed class GetTimeSeriesOperation : GetTimeSeriesOperation<TimeSeriesEntry>
+{
+}
+```
+
+```csharp
+public class GetTimeSeriesOperation<TValues> : IOperation<TimeSeriesRangeResult<TValues>>
+{
+    RavenCommand<TimeSeriesRangeResult<TValues>> GetCommand(IDocumentStore store, DocumentConventions conventions, JsonOperationContext context, HttpCache cache);
+}
+```
+
+```csharp
+public sealed class GetTimeSeriesStatisticsOperation : IOperation<TimeSeriesStatistics>
+{
+    RavenCommand<TimeSeriesStatistics> GetCommand(IDocumentStore store, DocumentConventions conventions, JsonOperationContext context, HttpCache cache);
+}
+```
+
+```csharp
+public class RawTimeSeriesPolicy : TimeSeriesPolicy
+{
+    static bool IsRaw(TimeSeriesPolicy policy);
+}
+```
+
+```csharp
+public sealed class RemoveTimeSeriesPolicyOperation : IMaintenanceOperation<ConfigureTimeSeriesOperationResult>
+{
+    RavenCommand<ConfigureTimeSeriesOperationResult> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class TimeSeriesBatchOperation : IOperation
+{
+    RavenCommand GetCommand(IDocumentStore store, DocumentConventions conventions, JsonOperationContext context, HttpCache cache);
+}
+```
+
+```csharp
+public class TimeSeriesPolicy : IDynamicJson, IComparable<TimeSeriesPolicy>
+{
+    int CompareTo(TimeSeriesPolicy other);
+}
+```
+
+### `Raven.Client.Documents.Operations.TransactionsRecording`
+
+```csharp
+public sealed class ReplayTransactionsRecordingOperation : IMaintenanceOperation<ReplayTxOperationResult>
+{
+    RavenCommand<ReplayTxOperationResult> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class StartTransactionsRecordingOperation : IMaintenanceOperation
+{
+    RavenCommand GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class StartTransactionsRecordingOperation.Parameters
+{
+}
+```
+
+```csharp
+public sealed class StopTransactionsRecordingOperation : IMaintenanceOperation
+{
+    RavenCommand GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+### `Raven.Client.Documents.Queries`
+
+```csharp
+public sealed class QueryData
+{
+    IEnumerable<DeclareToken> DeclareTokens { get; set; }
+    string FromAlias { get; set; }
+    bool HadAnyInclude { get; set; }
+    bool IsCustomFunction { get; set; }
+    bool IsMapReduce { get; set; }
+    List<LoadToken> LoadTokens { get; set; }
+}
+```
+
+### `Raven.Client.Documents.Queries.MoreLikeThis`
+
+```csharp
+public sealed class MoreLikeThisScope : IDisposable
+{
+    void WithDocument(string document);
+}
+```
+
+### `Raven.Client.Documents.Queries.Spatial`
+
+```csharp
+public abstract class DynamicSpatialField
+{
+    string ToField(Func<string, bool, string> ensureValidFieldName);
+}
+```
+
+```csharp
+public sealed class PointField : DynamicSpatialField
+{
+    string ToField(Func<string, bool, string> ensureValidFieldName);
+}
+```
+
+```csharp
+public abstract class SpatialCriteria
+{
+    QueryToken ToQueryToken(string fieldName, Func<object, string> addQueryParameter);
+}
+```
+
+```csharp
+public sealed class WktField : DynamicSpatialField
+{
+    string ToField(Func<string, bool, string> ensureValidFieldName);
+}
+```
+
+### `Raven.Client.Documents.Queries.Timings`
+
+```csharp
+public sealed class QueryTimings : IFillFromBlittableJson, IDynamicJson
+{
+    void FillFromBlittableJson(BlittableJsonReaderObject json);
+}
+```
+
+### `Raven.Client.Documents.Replication`
+
+```csharp
+public abstract class ReplicationNode : IEquatable<ReplicationNode>, IDynamicJson
+{
+    string FromString();
+    ReplicationNode.ReplicationType GetReplicationType();
+    bool IsEqualTo(ReplicationNode other);
+}
+```
+
+```csharp
+public enum ReplicationNode.ReplicationType
+{
+    PullAsSink,
+    PullAsHub,
+}
+```
+
+### `Raven.Client.Documents.Replication.Messages`
+
+```csharp
+public enum ReplicationLatestEtagRequest.ReplicationType
+{
+}
+```
+
+### `Raven.Client.Documents.Session`
+
+```csharp
+public class AsyncDocumentQuery<T> : AbstractDocumentQuery<T, AsyncDocumentQuery<T>>, IAbstractDocumentQueryImpl<T>, IAsyncRawDocumentQuery<T>, IDocumentQueryGenerator, IAsyncDocumentQuery<T>
+{
+    IAsyncDocumentQuery<TResult> AsyncQuery<TResult>(string indexName, string collectionName, bool isMapReduce);
+}
+```
+
+```csharp
+public class AsyncDocumentSession : InMemoryDocumentSessionOperations, IAsyncAdvancedSessionOperations, IDocumentQueryGenerator
+{
+    RavenQueryInspector<S> CreateRavenQueryInspector<S>();
+    Lazy<Task<Dictionary<string, T>>> LazyAsyncLoadInternal<T>(string[] ids, string[] includes, Action<Dictionary<string, T>> onEval, CancellationToken token);
+    Task<Dictionary<string, T>> LoadAsyncInternal<T>(string[] ids, string[] includes, string[] counterIncludes, bool includeAllCounters, IEnumerable<AbstractTimeSeriesRange> timeSeriesIncludes, string[] compareExchangeValueIncludes, string[] revisionIncludesByChangeVector, DateTime? revisionsToIncludeByDateTime, CancellationToken token);
+}
+```
+
+```csharp
+public sealed class DocumentInfo : IDisposable
+{
+    bool IgnoreChanges { get; set; }
+    bool IsNewDocument { get; set; }
+    IMetadataDictionary MetadataInstance { get; set; }
+    DateTime GetLastModified();
+    static DocumentInfo GetNewDocumentInfo(BlittableJsonReaderObject document);
+}
+```
+
+```csharp
+public class DocumentQuery<T> : AbstractDocumentQuery<T, DocumentQuery<T>>, IDocumentQuery<T>, IRawDocumentQuery<T>, IDocumentQueryGenerator, IAbstractDocumentQueryImpl<T>
+{
+    IAsyncDocumentQuery<TResult> AsyncQuery<TResult>(string indexName, string collectionName, bool isMapReduce);
+}
+```
+
+```csharp
+public class DocumentSession : InMemoryDocumentSessionOperations, IDocumentQueryGenerator, IAdvancedSessionOperations
+{
+    IAsyncDocumentQuery<T> AsyncQuery<T>(string indexName, string collectionName, bool isMapReduce);
+    RavenQueryInspector<S> CreateRavenQueryInspector<S>();
+    Lazy<Dictionary<string, T>> LazyLoadInternal<T>(string[] ids, string[] includes, Action<Dictionary<string, T>> onEval);
+    Dictionary<string, T> LoadInternal<T>(string[] ids, string[] includes, string[] counterIncludes, bool includeAllCounters, IEnumerable<AbstractTimeSeriesRange> timeSeriesIncludes, string[] compareExchangeValueIncludes, string[] revisionIncludesByChangeVector, DateTime? revisionIncludeByDateTimeBefore);
+}
+```
+
+```csharp
+public abstract class InMemoryDocumentSessionOperations : IDisposable
+{
+    void AssertNotDisposed();
+    bool CheckIfIdAlreadyIncluded(string[] ids, IEnumerable<string> includes);
+    static object GetDefaultValue(Type type);
+    void IncrementRequestCount();
+    void RegisterMissing(string id);
+    void RegisterMissing(IEnumerable<string> ids);
+    void RegisterMissingIncludes(BlittableJsonReaderArray results, BlittableJsonReaderObject includes, ICollection<string> includePaths);
+    T TrackEntity<T>(DocumentInfo documentFound);
+    T TrackEntity<T>(string id, BlittableJsonReaderObject document, BlittableJsonReaderObject metadata, bool noTracking);
+}
+```
+
+```csharp
+public sealed class WhereParams
+{
+    bool AllowWildcards { get; set; }
+    bool IsNestedPath { get; set; }
+}
+```
+
+### `Raven.Client.Documents.Session.Operations`
+
+```csharp
+public sealed class QueryOperation
+{
+    static void EnsureIsAcceptable(QueryResult result, bool waitForNonStaleResults, Stopwatch duration, InMemoryDocumentSessionOperations session);
+    static void EnsureIsAcceptable(QueryResult result, bool waitForNonStaleResults, TimeSpan? duration, InMemoryDocumentSessionOperations session);
+    void EnsureIsAcceptableAndSaveResult(QueryResult result);
+    IDisposable EnterQueryContext();
+    void LogQuery();
+    void SetResult(QueryResult queryResult);
+}
+```
+
+### `Raven.Client.Documents.Session.Tokens`
+
+```csharp
+public sealed class DeclareToken : QueryToken
+{
+    static DeclareToken CreateFunction(string name, string body, string parameters);
+    static DeclareToken CreateTimeSeries(string name, string body, string parameters);
+    void WriteTo(StringBuilder writer);
+}
+```
+
+```csharp
+public sealed class LoadToken : QueryToken
+{
+    void WriteTo(StringBuilder writer);
+}
+```
+
+### `Raven.Client.Documents.Smuggler`
+
+```csharp
+public sealed class DatabaseSmugglerExportOptions : DatabaseSmugglerOptions
+{
+    DynamicJsonValue ToAuditJson();
+}
+```
+
+```csharp
+public sealed class DatabaseSmugglerImportOptions : DatabaseSmugglerOptions
+{
+    DynamicJsonValue ToAuditJson();
+}
+```
+
+```csharp
+public class DatabaseSmugglerOptions
+{
+    DynamicJsonValue ToAuditJson();
+}
+```
+
+```csharp
+public sealed class ShardedSmugglerResult : IShardedOperationResult<ShardNodeSmugglerResult>
+{
+    void CombineWith(IOperationResult result, int shardNumber, string nodeTag);
+    void MergeWith(IOperationResult result);
+}
+```
+
+```csharp
+public abstract class SmugglerProgressBase : IOperationProgress
+{
+    void MergeWith(IOperationProgress progress);
+}
+```
+
+```csharp
+public sealed class SmugglerProgressBase.DatabaseRecordProgress : SmugglerProgressBase.Counts
+{
+    bool AiAgentsUpdated { get; set; }
+    bool AiConnectionStringsUpdated { get; set; }
+    bool CdcSinksUpdated { get; set; }
+    bool ClientConfigurationUpdated { get; set; }
+    bool ConflictSolverConfigUpdated { get; set; }
+    bool DataArchivalConfigurationUpdated { get; set; }
+    bool DocumentsCompressionConfigurationUpdated { get; set; }
+    bool ElasticSearchConnectionStringsUpdated { get; set; }
+    bool ElasticSearchEtlsUpdated { get; set; }
+    bool EmbeddingsGenerationsUpdated { get; set; }
+    bool ExternalReplicationsUpdated { get; set; }
+    bool GenAiTasksUpdated { get; set; }
+    bool HubPullReplicationsUpdated { get; set; }
+    bool IndexesHistoryUpdated { get; set; }
+    bool LockModeUpdated { get; set; }
+    bool OlapConnectionStringsUpdated { get; set; }
+    bool OlapEtlsUpdated { get; set; }
+    bool PeriodicBackupsUpdated { get; set; }
+    bool PostreSQLConfigurationUpdated { get; set; }
+    bool QueueConnectionStringsUpdated { get; set; }
+    bool QueueEtlsUpdated { get; set; }
+    bool QueueSinksUpdated { get; set; }
+    bool RavenConnectionStringsUpdated { get; set; }
+    bool RavenEtlsUpdated { get; set; }
+    bool RefreshConfigurationUpdated { get; set; }
+    bool RemoteAttachmentsConfigurationUpdated { get; set; }
+    bool SchemaValidationConfigUpdated { get; set; }
+    bool SinkPullReplicationsUpdated { get; set; }
+    bool SnowflakeConnectionStringsUpdated { get; set; }
+    bool SnowflakeEtlsUpdated { get; set; }
+    bool SqlConnectionStringsUpdated { get; set; }
+    bool SqlEtlsUpdated { get; set; }
+    bool TimeSeriesConfigurationUpdated { get; set; }
+    bool UnusedDatabaseIdsUpdated { get; set; }
+}
+```
+
+```csharp
+public class SmugglerResult : SmugglerProgressBase, IOperationResult
+{
+    string LegacyLastAttachmentEtag { get; set; }
+    string LegacyLastDocumentEtag { get; set; }
+    void AddError(string message);
+    void AddInfo(string message);
+    void AddWarning(string message);
+    void OnCorruptedData(object sender, InvalidOperationException e);
+    void StartProcessingForType(DatabaseItemType type);
+    void StopProcessingActualType(SmugglerProgressBase.Counts counts);
+}
+```
+
+### `Raven.Client.Documents.Subscriptions`
+
+```csharp
+public sealed class AbstractSubscriptionWorker<TBatch, TType>.AfterAcknowledgmentAction<TBatch, TType> : MulticastDelegate
+{
+    IAsyncResult BeginInvoke(TBatch batch, AsyncCallback callback, object object);
+    Task EndInvoke(IAsyncResult result);
+}
+```
+
+```csharp
+public class SubscriptionState : IDatabaseTask, IDatabaseTaskStatus
+{
+    static string GenerateSubscriptionItemKeyName(string databaseName, string subscriptionName);
+    string GetDefaultTaskName();
+    string GetMentorNode();
+    UInt64 GetTaskKey();
+    bool IsResourceIntensive();
+    static string SubscriptionPrefix(string databaseName);
+}
+```
+
+### `Raven.Client.Exceptions`
+
+```csharp
+public class RavenException : Exception
+{
+    bool ReachedLeader { get; set; }
+}
+```
+
+### `Raven.Client.Exceptions.Database`
+
+```csharp
+public sealed class DatabaseDoesNotExistException : RavenException
+{
+    static DatabaseDoesNotExistException CreateWithMessage(string databaseName, string message);
+    static void ThrowWithMessage(string databaseName, string message);
+    static void ThrowWithMessageAndException(string databaseName, string message, Exception exception);
+}
+```
+
+### `Raven.Client.Exceptions.Documents`
+
+```csharp
+public sealed class DocumentCollectionMismatchException : RavenException
+{
+    static DocumentCollectionMismatchException ThrowFor(string documentId, string oldCollection, string newCollection);
+}
+```
+
+```csharp
+public sealed class DocumentConflictException : ConflictException
+{
+    long LargestEtag { get; }
+}
+```
+
+### `Raven.Client.Exceptions.Documents.Attachments`
+
+```csharp
+public sealed class AttachmentDoesNotExistException : RavenException
+{
+    static AttachmentDoesNotExistException ThrowFor(string documentId, string attachmentName);
+}
+```
+
+```csharp
+public sealed class InvalidAttachmentRangeException : RavenException
+{
+    static InvalidAttachmentRangeException ThrowFor(string documentId, string attachmentName, long? rangeFrom, long? rangeTo);
+}
+```
+
+### `Raven.Client.Exceptions.Documents.Compilation`
+
+```csharp
+public sealed class IndexCompilationException : CompilationException
+{
+    string IndexDefinitionProperty;
+    string ProblematicText;
+}
+```
+
+### `Raven.Client.Exceptions.Documents.Indexes`
+
+```csharp
+public sealed class IndexDoesNotExistException : RavenException
+{
+    static IndexDoesNotExistException ThrowFor(string indexName);
+    static IndexDoesNotExistException ThrowForAuto(string indexName);
+}
+```
+
+### `Raven.Client.Exceptions.Documents.Sorters`
+
+```csharp
+public sealed class SorterDoesNotExistException : RavenException
+{
+    static SorterDoesNotExistException ThrowFor(string sorterName);
+}
+```
+
+### `Raven.Client.Http`
+
+```csharp
+public sealed class ClusterTopology
+{
+    static ValueTuple<Dictionary<TKey, TValue>, Dictionary<TKey, TValue>> DictionaryDiff<TKey, TValue>(Dictionary<TKey, TValue> oldDic, Dictionary<TKey, TValue> newDic);
+    DynamicJsonValue ToSortedJson();
+}
+```
+
+```csharp
+public sealed class HttpCache : IDisposable, ILowMemoryHandler
+{
+    int NumberOfItems { get; }
+    void LowMemory(LowMemorySeverity lowMemorySeverity);
+    void LowMemoryOver();
+    void SetNotFound(string url, bool aggressivelyCached);
+}
+```
+
+```csharp
+public sealed class NodeStatus : IDynamicJson
+{
+}
+```
+
+```csharp
+public abstract class RavenCommand : RavenCommand<object>
+{
+}
+```
+
+```csharp
+public abstract class RavenCommand<TResult>
+{
+    static void EnsureIsNotNullOrEmpty(string value, string name);
+    bool IsFailedWithNode(ServerNode node);
+}
+```
+
+```csharp
+public class RequestExecutor : IDisposable
+{
+    static string ClientVersion;
+    static bool HasServerCertificateCustomValidationCallback { get; }
+    bool InSpeedTestPhase { get; }
+    static string ConvertSenderObjectToHostname(object sender);
+    static RequestExecutor CreateForSingleNodeWithConfigurationUpdates(string url, string databaseName, X509Certificate2 certificate, DocumentConventions conventions);
+    static RequestExecutor CreateForSingleNodeWithoutConfigurationUpdates(string url, string databaseName, X509Certificate2 certificate, DocumentConventions conventions);
+    Task<ServerNode> HandleServerNotResponsive(string url, ServerNode chosenNode, int nodeIndex, Exception e);
+    static Task<Stream> ReadAsStreamUncompressedAsync(HttpResponseMessage response);
+}
+```
+
+```csharp
+public sealed class RequestExecutor.NodeStatus : IDisposable
+{
+    void StartTimer();
+    void UpdateTimer();
+}
+```
+
+```csharp
+public sealed class ServerNode
+{
+    string LastServerVersion { get; }
+    void DiscardServerVersion();
+    bool ShouldUpdateServerVersion();
+    void UpdateServerVersion(string serverVersion);
+}
+```
+
+### `Raven.Client.Json`
+
+```csharp
+public sealed class MetadataAsDictionary : IMetadataDictionary
+{
+    bool IsReadOnly { get; }
+}
+```
+
+### `Raven.Client.Json.Serialization`
+
+```csharp
+public interface IJsonWriter : IDisposable
+{
+    BlittableJsonReaderObject CreateReader();
+    void FinalizeDocument();
+    void WriteComment(string text);
+    void WriteEnd();
+    void WriteEndArray();
+    void WriteEndConstructor();
+    void WriteEndObject();
+    void WriteMetadata(IMetadataDictionary metadata);
+    void WriteNull();
+    void WritePropertyName(string name);
+    void WritePropertyName(string name, bool escape);
+    void WriteRaw(string json);
+    void WriteRawValue(string json);
+    void WriteStartArray();
+    void WriteStartConstructor(string name);
+    void WriteStartObject();
+    void WriteUndefined();
+    void WriteValue(bool value);
+    void WriteValue(bool? value);
+    void WriteValue(byte value);
+    void WriteValue(byte? value);
+    void WriteValue(byte[] value);
+    void WriteValue(Char value);
+    void WriteValue(Char? value);
+    void WriteValue(DateTime dt);
+    void WriteValue(DateTime? value);
+    void WriteValue(DateTimeOffset dto);
+    void WriteValue(DateTimeOffset? value);
+    void WriteValue(TimeOnly to);
+    void WriteValue(TimeOnly? to);
+    void WriteValue(DateOnly do);
+    void WriteValue(DateOnly? do);
+    void WriteValue(decimal value);
+    void WriteValue(decimal? value);
+    void WriteValue(double value);
+    void WriteValue(double? value);
+    void WriteValue(float value);
+    void WriteValue(float? value);
+    void WriteValue(Guid value);
+    void WriteValue(Guid? value);
+    void WriteValue(int value);
+    void WriteValue(int? value);
+    void WriteValue(long value);
+    void WriteValue(long? value);
+    void WriteValue(object value);
+    void WriteValue(SByte value);
+    void WriteValue(SByte? value);
+    void WriteValue(Int16 value);
+    void WriteValue(Int16? value);
+    void WriteValue(string value);
+    void WriteValue(TimeSpan ts);
+    void WriteValue(TimeSpan? value);
+    void WriteValue(UInt32 value);
+    void WriteValue(UInt32? value);
+    void WriteValue(UInt64 value);
+    void WriteValue(UInt64? value);
+    void WriteValue(Uri value);
+    void WriteValue(UInt16 value);
+    void WriteValue(UInt16? value);
+    void WriteWhitespace(string ws);
+}
+```
+
+```csharp
+public interface ISessionBlittableJsonConverter : IBlittableJsonConverterBase
+{
+    void PopulateEntity(object entity, string id, BlittableJsonReaderObject json);
+    void PopulateEntity(object entity, string id, BlittableJsonReaderObject json, IJsonSerializer jsonSerializer);
+    void RemoveFromMissing<T>(T entity);
+}
+```
+
+### `Raven.Client.Json.Serialization.NewtonsoftJson`
+
+```csharp
+public class DefaultRavenContractResolver : DefaultContractResolver
+{
+    static BindingFlags? MembersSearchFlag;
+    static DefaultRavenContractResolver.ClearExtensionData RegisterExtensionDataGetter(ExtensionDataGetter getter);
+    static DefaultRavenContractResolver.ClearExtensionData RegisterExtensionDataSetter(ExtensionDataSetter setter);
+}
+```
+
+```csharp
+public class DefaultRavenSerializationBinder : DefaultSerializationBinder
+{
+    void BindToName(Type serializedType, out string assemblyName, out string typeName);
+    Type BindToType(string assemblyName, string typeName);
+}
+```
+
+### `Raven.Client.ServerWide`
+
+```csharp
+public sealed class ConflictSolver : IDynamicJson
+{
+    Dictionary<string, ScriptResolver> ResolveByCollection;
+    bool ConflictResolutionChanged(ConflictSolver other);
+    bool IsEmpty();
+}
+```
+
+```csharp
+public enum DatabasePromotionStatus
+{
+    WaitingForFirstPromotion,
+    NotResponding,
+    IndexNotUpToDate,
+    ChangeVectorNotMerged,
+    WaitingForResponse,
+    Ok,
+    OutOfCpuCredits,
+    EarlyOutOfMemory,
+    HighDirtyMemory,
+    RaftIndexNotUpToDate,
+}
+```
+
+```csharp
+public class DatabaseRecord
+{
+    DatabaseStateStatus DatabaseState;
+    long EtagForBackup;
+    List<GenAiConfiguration> GenAis;
+    long TruncatedClusterTransactionCommandsCount;
+    bool IsSharded { get; }
+    void AddAnalyzer(AnalyzerDefinition definition);
+    void AddIndex(IndexDefinition definition, string source, DateTime createdAt, long raftIndex, int revisionsToKeep, IndexDeploymentMode globalDeploymentMode);
+    void AddIndex(AutoIndexDefinition definition);
+    void AddSorter(SorterDefinition definition);
+    void DeleteAnalyzer(string sorterName);
+    void DeleteIndex(string name);
+    PeriodicBackupConfiguration DeletePeriodicBackupConfiguration(long backupTaskId);
+    void DeleteSorter(string sorterName);
+    void EnsureTaskNameIsNotUsed(string taskName);
+    int GetIndexesCount();
+    bool ValidateTopologyNodes();
+}
+```
+
+```csharp
+public class DatabaseTopology : IDynamicJson
+{
+    List<ReplicationNode> GetDestinations(string myTag, string databaseName, Dictionary<string, DeletionInProgressStatus> deletionInProgress, ClusterTopology clusterTopology, RachisState state);
+    bool RelevantFor(string nodeTag);
+    void RemoveFromTopology(string delDbFromNode);
+    string WhoseTaskIsIt(RachisState state, IDatabaseTask task, Func<string> getLastResponsibleNode, List<string> explanations);
+}
+```
+
+```csharp
+public sealed class ScriptResolver
+{
+    DateTime LastModifiedTime { get; }
+}
+```
+
+### `Raven.Client.ServerWide.Commands`
+
+```csharp
+public class GetTcpInfoCommand : RavenCommand<TcpConnectionInfo>
+{
+    ServerNode RequestedNode { get; }
+}
+```
+
+### `Raven.Client.ServerWide.Operations`
+
+```csharp
+public sealed class AddDatabaseNodeOperation : IServerOperation<DatabasePutResult>
+{
+    RavenCommand<DatabasePutResult> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class BuildNumber : IDynamicJson
+{
+    string AssemblyVersion { get; set; }
+}
+```
+
+```csharp
+public sealed class CompactDatabaseOperation : IServerOperation<OperationIdResult>
+{
+    RavenCommand<OperationIdResult> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class CompactionResult : CompactionProgressBase<CompactionResult>, IOperationResult
+{
+    void AddError(string message);
+    void AddInfo(string message);
+    void AddWarning(string message);
+}
+```
+
+```csharp
+public sealed class ConfigureRevisionsForConflictsOperation : IServerOperation<ConfigureRevisionsForConflictsResult>
+{
+    RavenCommand<ConfigureRevisionsForConflictsResult> GetCommand(DocumentConventions conventions, JsonOperationContext ctx);
+}
+```
+
+```csharp
+public sealed class CreateDatabaseOperation : IServerOperation<DatabasePutResult>
+{
+    RavenCommand<DatabasePutResult> GetCommand(DocumentConventions conventions, JsonOperationContext ctx);
+}
+```
+
+```csharp
+public sealed class DeleteDatabasesOperation : IServerOperation<DeleteDatabaseResult>
+{
+    RavenCommand<DeleteDatabaseResult> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class DeleteDatabasesOperation.Parameters
+{
+}
+```
+
+```csharp
+public sealed class GetBuildNumberOperation : IServerOperation<BuildNumber>
+{
+    RavenCommand<BuildNumber> GetCommand(DocumentConventions conventions, JsonOperationContext ctx);
+}
+```
+
+```csharp
+public sealed class GetDatabaseNamesOperation : IServerOperation<string[]>
+{
+    RavenCommand<string[]> GetCommand(DocumentConventions conventions, JsonOperationContext ctx);
+}
+```
+
+```csharp
+public sealed class GetDatabaseRecordOperation : IServerOperation<DatabaseRecordWithEtag>
+{
+    RavenCommand<DatabaseRecordWithEtag> GetCommand(DocumentConventions conventions, JsonOperationContext ctx);
+}
+```
+
+```csharp
+public sealed class GetServerWideOperationStateOperation : IServerOperation<OperationState>
+{
+    RavenCommand<OperationState> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public interface IServerOperation
+{
+    RavenCommand GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public interface IServerOperation<T>
+{
+    RavenCommand<T> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class ModifyConflictSolverOperation : IServerOperation<ModifySolverResult>
+{
+    Dictionary<string, ScriptResolver> CollectionByScript;
+    RavenCommand<ModifySolverResult> GetCommand(DocumentConventions conventions, JsonOperationContext ctx);
+}
+```
+
+```csharp
+public sealed class ModifyDatabaseTopologyOperation : IServerOperation<ModifyDatabaseTopologyResult>
+{
+    RavenCommand<ModifyDatabaseTopologyResult> GetCommand(DocumentConventions conventions, JsonOperationContext ctx);
+}
+```
+
+```csharp
+public sealed class PromoteDatabaseNodeOperation : IServerOperation<DatabasePutResult>
+{
+    RavenCommand<DatabasePutResult> GetCommand(DocumentConventions conventions, JsonOperationContext ctx);
+}
+```
+
+```csharp
+public sealed class ReorderDatabaseMembersOperation : IServerOperation
+{
+    RavenCommand GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class ReorderDatabaseMembersOperation.Parameters
+{
+    List<string> MembersOrder;
+}
+```
+
+```csharp
+public sealed class RestoreBackupOperation : IServerOperation<OperationIdResult>
+{
+    RavenCommand<OperationIdResult> GetCommand(DocumentConventions conventions, JsonOperationContext ctx);
+}
+```
+
+```csharp
+public sealed class SetDatabasesLockOperation : IServerOperation
+{
+    RavenCommand GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class SetDatabasesLockOperation.Parameters
+{
+}
+```
+
+```csharp
+public sealed class ToggleDatabasesStateOperation : IServerOperation<DisableDatabaseToggleResult>
+{
+    RavenCommand<DisableDatabaseToggleResult> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class ToggleDatabasesStateOperation.Parameters
+{
+}
+```
+
+```csharp
+public sealed class UpdateDatabaseOperation : IServerOperation<DatabasePutResult>
+{
+    RavenCommand<DatabasePutResult> GetCommand(DocumentConventions conventions, JsonOperationContext ctx);
+}
+```
+
+```csharp
+public sealed class UpdateUnusedDatabasesOperation : IServerOperation
+{
+    RavenCommand GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+### `Raven.Client.ServerWide.Operations.Analyzers`
+
+```csharp
+public sealed class DeleteServerWideAnalyzerOperation : IServerOperation
+{
+    RavenCommand GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class PutServerWideAnalyzersOperation : IServerOperation
+{
+    RavenCommand GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+### `Raven.Client.ServerWide.Operations.Certificates`
+
+```csharp
+public class CertificateMetadata
+{
+    string CollectionPrimaryKey;
+    List<string> CollectionSecondaryKeys;
+    string PublicKeyPinningHash;
+}
+```
+
+```csharp
+public sealed class CreateClientCertificateOperation : IServerOperation<CertificateRawData>
+{
+    RavenCommand<CertificateRawData> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class DeleteCertificateOperation : IServerOperation
+{
+    RavenCommand GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class EditClientCertificateOperation : IServerOperation
+{
+    RavenCommand GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class EditClientCertificateOperation.Parameters
+{
+}
+```
+
+```csharp
+public sealed class GetCertificateMetadataOperation : IServerOperation<CertificateMetadata>
+{
+    RavenCommand<CertificateMetadata> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class GetCertificateOperation : IServerOperation<CertificateDefinition>
+{
+    RavenCommand<CertificateDefinition> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class GetCertificatesMetadataOperation : IServerOperation<CertificateMetadata[]>
+{
+    RavenCommand<CertificateMetadata[]> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class GetCertificatesOperation : IServerOperation<CertificateDefinition[]>
+{
+    RavenCommand<CertificateDefinition[]> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class PutClientCertificateOperation : IServerOperation
+{
+    string TwoFactorAuthenticationKey { get; set; }
+    RavenCommand GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class ReplaceClusterCertificateOperation : IServerOperation
+{
+    RavenCommand GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+### `Raven.Client.ServerWide.Operations.Configuration`
+
+```csharp
+public sealed class GetDatabaseSettingsOperation : IMaintenanceOperation<DatabaseSettings>
+{
+    RavenCommand<DatabaseSettings> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class GetServerWideBackupConfigurationOperation : IServerOperation<ServerWideBackupConfiguration>
+{
+    RavenCommand<ServerWideBackupConfiguration> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class GetServerWideBackupConfigurationsOperation : IServerOperation<ServerWideBackupConfiguration[]>
+{
+    RavenCommand<ServerWideBackupConfiguration[]> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class GetServerWideClientConfigurationOperation : IServerOperation<ClientConfiguration>
+{
+    RavenCommand<ClientConfiguration> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class PutDatabaseSettingsOperation : IMaintenanceOperation
+{
+    RavenCommand GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class PutServerWideBackupConfigurationOperation : IServerOperation<PutServerWideBackupConfigurationResponse>
+{
+    RavenCommand<PutServerWideBackupConfigurationResponse> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class PutServerWideClientConfigurationOperation : IServerOperation
+{
+    RavenCommand GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+### `Raven.Client.ServerWide.Operations.ConnectionStrings`
+
+```csharp
+public sealed class GetServerWideConnectionStringsOperation : IServerOperation<GetServerWideConnectionStringsResult>
+{
+    RavenCommand<GetServerWideConnectionStringsResult> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class PutServerWideConnectionStringOperation : IServerOperation<PutServerWideConnectionStringResult>
+{
+    RavenCommand<PutServerWideConnectionStringResult> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class RemoveServerWideConnectionStringOperation<T> : IServerOperation<RemoveServerWideConnectionStringResult>
+{
+    RavenCommand<RemoveServerWideConnectionStringResult> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+### `Raven.Client.ServerWide.Operations.DocumentsCompression`
+
+```csharp
+public sealed class UpdateDocumentsCompressionConfigurationOperation : IMaintenanceOperation<DocumentCompressionConfigurationResult>
+{
+    RavenCommand<DocumentCompressionConfigurationResult> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+### `Raven.Client.ServerWide.Operations.Logs`
+
+```csharp
+public sealed class GetLogsConfigurationOperation : IServerOperation<GetLogsConfigurationResult>
+{
+    RavenCommand<GetLogsConfigurationResult> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class SetLogsConfigurationOperation : IServerOperation
+{
+    RavenCommand GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+### `Raven.Client.ServerWide.Operations.Migration`
+
+```csharp
+public sealed class OfflineMigrationConfiguration
+{
+    DynamicJsonValue ToAuditJson();
+}
+```
+
+```csharp
+public sealed class OfflineMigrationOperation : IServerOperation<OperationIdResult>
+{
+    RavenCommand<OperationIdResult> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+### `Raven.Client.ServerWide.Operations.OngoingTasks`
+
+```csharp
+public sealed class DeleteServerWideTaskOperation : IServerOperation
+{
+    RavenCommand GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class GetServerWideExternalReplicationOperation : IServerOperation<ServerWideExternalReplication>
+{
+    RavenCommand<ServerWideExternalReplication> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class GetServerWideExternalReplicationsOperation : IServerOperation<ServerWideExternalReplication[]>
+{
+    RavenCommand<ServerWideExternalReplication[]> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class PutServerWideExternalReplicationOperation : IServerOperation<ServerWideExternalReplicationResponse>
+{
+    RavenCommand<ServerWideExternalReplicationResponse> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class ServerWideExternalReplication : IServerWideTask
+{
+    string GetDefaultTaskName();
+}
+```
+
+```csharp
+public sealed class ToggleServerWideTaskStateOperation : IServerOperation
+{
+    RavenCommand GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+### `Raven.Client.ServerWide.Operations.Sorters`
+
+```csharp
+public sealed class DeleteServerWideSorterOperation : IServerOperation
+{
+    RavenCommand GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class PutServerWideSortersOperation : IServerOperation
+{
+    RavenCommand GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+### `Raven.Client.ServerWide.Operations.TrafficWatch`
+
+```csharp
+public sealed class GetTrafficWatchConfigurationOperation : IServerOperation<PutTrafficWatchConfigurationOperation.Parameters>
+{
+    RavenCommand<PutTrafficWatchConfigurationOperation.Parameters> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class PutTrafficWatchConfigurationOperation : IServerOperation
+{
+    RavenCommand GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class PutTrafficWatchConfigurationOperation.Parameters
+{
+}
+```
+
+### `Raven.Client.ServerWide.Sharding`
+
+```csharp
+public sealed class AddDatabaseShardOperation : IServerOperation<AddDatabaseShardResult>
+{
+    RavenCommand<AddDatabaseShardResult> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class AddNodeToOrchestratorTopologyOperation : IServerOperation<ModifyOrchestratorTopologyResult>
+{
+    RavenCommand<ModifyOrchestratorTopologyResult> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class AddPrefixedShardingSettingOperation : IMaintenanceOperation
+{
+    RavenCommand GetCommand(DocumentConventions conventions, JsonOperationContext ctx);
+}
+```
+
+```csharp
+public sealed class DeletePrefixedShardingSettingOperation : IMaintenanceOperation
+{
+    RavenCommand GetCommand(DocumentConventions conventions, JsonOperationContext ctx);
+}
+```
+
+```csharp
+public sealed class RemoveNodeFromOrchestratorTopologyOperation : IServerOperation<ModifyOrchestratorTopologyResult>
+{
+    RavenCommand<ModifyOrchestratorTopologyResult> GetCommand(DocumentConventions conventions, JsonOperationContext context);
+}
+```
+
+```csharp
+public sealed class ShardBucketMigration : IDatabaseTask
+{
+    long? ConfirmationIndex;
+    List<string> ConfirmedDestinations;
+    List<string> ConfirmedSourceCleanup;
+    int DestinationShard;
+    string LastSourceChangeVector;
+    long MigrationIndex;
+    int SourceShard;
+    string GetDefaultTaskName();
+    string GetMentorNode();
+    UInt64 GetTaskKey();
+    bool IsResourceIntensive();
+}
+```
+
+```csharp
+public sealed class ShardBucketRange
+{
+    int BucketRangeStart;
+}
+```
+
+```csharp
+public sealed class ShardingConfiguration
+{
+    long MigrationCutOffIndex;
+}
+```
+
+```csharp
+public sealed class UpdatePrefixedShardingSettingOperation : IMaintenanceOperation
+{
+    RavenCommand GetCommand(DocumentConventions conventions, JsonOperationContext ctx);
+}
+```
+
+### `Raven.Client.Util`
+
+```csharp
+public sealed class Size
+{
+    static string Humane(long? size);
+}
+```
+
+```csharp
+public sealed class SystemTime
+{
+    Func<DateTime> UtcDateTime;
+    Action<int> WaitCalled;
+    DateTime GetUtcNow();
 }
 ```
 
