@@ -540,10 +540,15 @@ abstract class SmugglerProgressBase : IOperationProgress
 | **Counts** | `StartTime` (`DateTime?`), `Processed` (`bool`), `ReadCount` (`long`), `Skipped` (`bool`), `ErroredCount` (`long`), `SizeInBytes` (`long`) |
 | **CountsWithLastEtag** | The `Counts` properties, and `LastEtag` (`long`) |
 | **CountsWithSkippedCountAndLastEtag** | The `CountsWithLastEtag` properties, and `SkippedCount` (`long`) |
-| **CountsWithSkippedCountAndLastEtagAndAttachments** | The `CountsWithLastEtag` properties, and `SkippedCount` (`long`) and `Attachments` (`Counts`) |
+| **CountsWithLastEtagAndAttachments** | The `CountsWithLastEtag` properties, and `Attachments` (`Counts`) |
+| **CountsWithSkippedCountAndLastEtagAndAttachments** | The `CountsWithLastEtagAndAttachments` properties, and `SkippedCount` (`long`) |
 
 `DatabaseRecordProgress` derives from `Counts` and adds a `bool` flag per database record item that was updated,  
 for example `SortersUpdated`, `AnalyzersUpdated`, `RevisionsConfigurationUpdated` and `ExpirationConfigurationUpdated`.
+
+When you export a sharded database, the server's export handler builds a `ShardedSmugglerResult` instead of a `SmugglerResult`.
+Its `Results` property is a `List<ShardNodeSmugglerResult>`, and each item has `ShardNumber` (`int`), `NodeTag` (`string`) and the `SmugglerResult` of that shard in `Result`.
+While that export runs, the progress is a `ShardedSmugglerProgress`, which derives from `SmugglerResult.SmugglerProgress` and adds `ShardNumber` (`int`) and `NodeTag` (`string`).
 
 </TabItem>
 <TabItem value="DatabaseSmugglerOptions" label="DatabaseSmugglerOptions">
