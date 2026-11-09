@@ -108,6 +108,38 @@ ILoaderWithInclude<T> Include<T, TInclude>(Expression<Func<T, IEnumerable<string
 | ------------- | ----- |
 | `ILoaderWithInclude` | The `Include` method by itself does not materialize any requests but returns loader containing methods such as `Load`. |
 
+#### Loader interfaces
+
+The loader that `Include` returns has the `Include` overloads for `string` and expression paths, and the `Load` methods.
+Each flavor of the session has its own interface (namespace `Raven.Client.Documents.Session.Loaders`):
+
+| Interface | Used for | `Load` returns |
+|---|---|---|
+| `ILoaderWithInclude<T>` | Sync session | `T`, or `Dictionary<string, T>` for several IDs (`Load<TResult>` overloads return `Dictionary<string, TResult>`) |
+| `IAsyncLoaderWithInclude<T>` | Async session (its `Include` returns `AsyncMultiLoaderWithInclude<T>`) | A `Task` of the result, through `LoadAsync` |
+| `ILazyLoaderWithInclude<T>` | Lazy loading | `Lazy<T>`, or `Lazy<Dictionary<string, T>>` |
+| `IAsyncLazyLoaderWithInclude<T>` | Async lazy loading | Its `Include` returns `IAsyncLazyLoaderWithInclude<T>` |
+
+#### Include builders
+
+The overloads of `Load` and `LoadAsync` that take `Action<IIncludeBuilder<T>> includes` pass an `IIncludeBuilder<T>`
+(namespace `Raven.Client.Documents.Session.Loaders`) to your callback, so that you can include several kinds of related data in one request.
+`IIncludeBuilder<T>` combines the interfaces below. Every method returns the builder, so the calls can be chained.
+
+| Interface | Methods |
+|---|---|
+| `IDocumentIncludeBuilder<T, TBuilder>` | `IncludeDocuments(string path)`, `IncludeDocuments(Expression<Func<T, string>> path)`, `IncludeDocuments(Expression<Func<T, IEnumerable<string>>> path)`, and the two generic overloads `IncludeDocuments<TInclude>(...)` with the same expression parameters |
+| `ICounterIncludeBuilder<T, TBuilder>` | `IncludeCounter(string name)`, `IncludeCounters(string[] names)`, `IncludeAllCounters()` |
+| `ITimeSeriesIncludeBuilder<T, TBuilder>` (derives from `IAbstractTimeSeriesIncludeBuilder<T, TBuilder>`) | `IncludeTimeSeries(string name, DateTime? from = null, DateTime? to = null)`, plus the methods of the abstract interface: `IncludeTimeSeries` with a name or `string[]` of names and `(TimeSeriesRangeType type, TimeValue time)` or `(TimeSeriesRangeType type, int count)`, and `IncludeAllTimeSeries` with `(type, time)`, `(type, count)` or `(DateTime? from = null, DateTime? to = null)` |
+| `ICompareExchangeValueIncludeBuilder<T, TBuilder>` | `IncludeCompareExchangeValue(string path)`, `IncludeCompareExchangeValue(Expression<Func<T, string>> path)`, `IncludeCompareExchangeValue(Expression<Func<T, IEnumerable<string>>> path)` |
+| `IRevisionIncludeBuilder<T, TBuilder>` | `IncludeRevisions(Expression<Func<T, string>> path)`, `IncludeRevisions(Expression<Func<T, IEnumerable<string>>> path)`, `IncludeRevisions(DateTime before)` |
+
+`ITimeSeriesIncludeBuilder` (without type arguments) is a separate interface with `IncludeTags()` and `IncludeDocument()`, both returning `ITimeSeriesIncludeBuilder`.
+
+A data subscription uses `ISubscriptionIncludeBuilder<T>`. It combines the document and counter builders with `ISubscriptionTimeSeriesIncludeBuilder<T, TBuilder>`,
+which has the methods of the abstract time series interface only (no `IncludeTimeSeries` with `from` and `to`).
+You pass it as `Action<ISubscriptionIncludeBuilder<T>>` in the `Includes` property of `SubscriptionCreationOptions<T>`.
+
 ### Example I
 
 We can use this code to also load an employee which made the order.
