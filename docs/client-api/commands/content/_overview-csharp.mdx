@@ -335,3 +335,68 @@ Besides `Execute` and `ExecuteAsync`, it exposes these public members:
 | **DebugTag** | `string` | `null` | A tag that is sent with the topology request and passed to `OnTopologyUpdated`. |
 | **ApplicationIdentifier** | `Guid?` | `null` | Sent with the topology request only when `Conventions.SendApplicationIdentifier` is `true`. |
 
+
+## MultiGetCommand
+
+`MultiGetCommand` (namespace `Raven.Client.Documents.Commands.MultiGet`) sends several `GET` requests to the database in one HTTP request.
+It posts the requests to the database's `/multi_get` endpoint and returns a `List<GetResponse>` in `Result`.
+Its constructor throws an `ArgumentNullException` when the request executor, the executor's `Cache`, or the list of requests is `null`.
+The command implements `IDisposable`.
+
+<TabItem value="multi_get" label="multi_get">
+<CodeBlock language="csharp">
+{`var requests = new List<GetRequest>
+\{
+    new GetRequest
+    \{
+        Url = "/docs",
+        Query = "?id=users/1-A",
+        Method = HttpMethod.Get
+    \},
+    new GetRequest
+    \{
+        Url = "/stats",
+        Method = HttpMethod.Get
+    \}
+\};
+
+var requestExecutor = store.GetRequestExecutor();
+using (requestExecutor.ContextPool.AllocateOperationContext(out var context))
+using (var cmd = new MultiGetCommand(requestExecutor, requests))
+\{
+    requestExecutor.Execute(cmd, context);
+
+    foreach (GetResponse response in cmd.Result)
+    \{
+        if (response.RequestHasErrors())
+            continue;
+
+        BlittableJsonReaderBase result = response.Result;
+    \}
+\}
+`}
+</CodeBlock>
+</TabItem>
+
+#### `GetRequest`
+
+| Member | Type | Default | Description |
+|---|---|---|---|
+| **Url** | `string` | `null` | The relative URL of the request |
+| **Query** | `string` | `null` | The query string, for example `?pageStart=10&pageSize=20`. A leading `?` is added when it is missing. |
+| **UrlAndQuery** | `string` (read-only) | | `Url` followed by `Query`, or `Url` alone when `Query` is `null` |
+| **Method** | `HttpMethod` | `null` | The HTTP method |
+| **Headers** | `IDictionary<string, string>` | an empty dictionary with case-insensitive keys | The request headers |
+| **CanCacheAggressively** | `bool` | `true` | Whether the response may be cached aggressively |
+| **Content** | `GetRequest.IContent` | `null` | The request body. `IContent` has the method `void WriteContent(AbstractBlittableJsonTextWriter writer, JsonOperationContext context)`. |
+
+#### `GetResponse`
+
+| Member | Type | Description |
+|---|---|---|
+| **Result** | `BlittableJsonReaderBase` | The response body as JSON |
+| **Headers** | `Dictionary<string, string>` | The response headers (the dictionary is created with case-insensitive keys) |
+| **StatusCode** | `HttpStatusCode` | The response status code |
+| **ForceRetry** | `bool` | Whether the request should be retried |
+| **RequestHasErrors**() | `bool` | `false` when the status code is 0 (aggressively cached), 200, 201, 203, 204, 304 or 404, and `true` otherwise |
+
