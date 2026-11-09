@@ -296,3 +296,42 @@ Related types:
 * `IRaftCommand`: a command can implement it. It has the property `string RaftUniqueRequestId { get; }`.
 * `IBroadcast`: a command can implement it. It has the method `IBroadcast PrepareToBroadcast(JsonOperationContext context, DocumentConventions conventions)`.
 
+
+## Request executor members
+
+`store.GetRequestExecutor()` returns a `RequestExecutor` (namespace `Raven.Client.Http`).
+Besides `Execute` and `ExecuteAsync`, it exposes these public members:
+
+| Member | Type | Description |
+|---|---|---|
+| **Url** | `string` | The URL of the preferred node. `null` when the executor has no node selector yet. |
+| **Topology** | `Topology` | The current topology (`null` when there is no node selector). |
+| **TopologyNodes** | `IReadOnlyList<ServerNode>` | The nodes of the current topology. |
+| **TopologyEtag** | `long` | The etag of the topology. |
+| **ClientConfigurationEtag** | `long` | The etag of the client configuration that was last applied. |
+| **NumberOfServerRequests** | `long` (field) | Incremented for each request that is sent to a server. |
+| **Conventions** | `DocumentConventions` (field) | The conventions the executor uses. |
+| **Certificate** | `X509Certificate2` | The client certificate. |
+| **ContextPool** | `JsonContextPool` (field) | The pool used to allocate operation contexts. |
+| **Cache** | `HttpCache` (field) | The HTTP cache of the executor. |
+| **AggressiveCaching** | `AsyncLocal<AggressiveCacheOptions>` (field) | Holds the aggressive caching options of the current async context. |
+| **DefaultTimeout** | `TimeSpan?` | The timeout for commands that do not set their own. It is initialized from `Conventions.RequestTimeout`. The setter throws an `InvalidOperationException` when the value is larger than `Conventions.GlobalHttpClientTimeout`, unless that timeout is infinite. |
+| **ChooseNodeForRequest**(cmd, sessionInfo) | `(int? CurrentIndex, ServerNode CurrentNode)` | Chooses the node for a command. When the command has a `SelectedNodeTag`, it returns the promotable node with that tag, or the requested node. |
+| **GetRequestedNode**(nodeTag) | `Task<(int Index, ServerNode Node)>` | Returns the node with the given tag. Throws `RequestedNodeUnavailableException` when the tag is not in the topology. |
+| **GetPreferredNode**() | `Task<(int Index, ServerNode Node)>` | Returns the preferred node. |
+| **GetNodeBySessionId**(sessionId) | `Task<(int Index, ServerNode Node)>` | Returns the node that is selected for the session ID. Throws `AllTopologyNodesDownException` when the topology has no nodes. |
+| **GetFastestNode**() | `Task<(int Index, ServerNode Node)>` | Returns the fastest node. |
+| **UpdateTopologyAsync**(parameters) | `Task<bool>` | Fetches the topology from `parameters.Node` and updates the executor with it. Returns `false` when topology updates are disabled, the executor is disposed, or the update lock is not acquired within `parameters.TimeoutInMs`. Throws `ArgumentNullException` when `parameters` is `null`. |
+| **ClientConfigurationChanged** | event | Raised with the Raft command index and the `ClientConfiguration` after the executor applied a client configuration it fetched. |
+| **OnTopologyUpdated** | event | Raised with `TopologyUpdatedEventArgs` after the topology was updated. |
+
+`UpdateTopologyParameters` (nested in `RequestExecutor`) has these members:
+
+| Member | Type | Default | Description |
+|---|---|---|---|
+| **Node** | `ServerNode` | (constructor argument) | The node to fetch the topology from. The constructor throws `ArgumentNullException` for `null`. |
+| **TimeoutInMs** | `int` | `15000` | How long to wait for the topology update lock. |
+| **ForceUpdate** | `bool` | `false` | Passed to the node selector update. |
+| **DebugTag** | `string` | `null` | A tag that is sent with the topology request and passed to `OnTopologyUpdated`. |
+| **ApplicationIdentifier** | `Guid?` | `null` | Sent with the topology request only when `Conventions.SendApplicationIdentifier` is `true`. |
+
