@@ -175,10 +175,12 @@ pass that worker to `DropSubscriptionWorker`.
 The server is asked to close the connection that belongs to the worker's `WorkerId`, and the other workers of the subscription stay connected.
 
 ```csharp
-void DropSubscriptionWorker<T>(SubscriptionWorker<T> worker, string database = null);
+void DropSubscriptionWorker<T>(SubscriptionWorker<T> worker, string database = null)
+    where T : class;
 
 Task DropSubscriptionWorkerAsync<T>(SubscriptionWorker<T> worker, string database = null,
-                                    CancellationToken token = default);
+                                    CancellationToken token = default)
+    where T : class;
 ```
 
 | Parameter    | Type                    | Description                                                                                                                                      |
