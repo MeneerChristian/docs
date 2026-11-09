@@ -663,7 +663,7 @@ using (IAsyncDocumentSession asyncSession = store.OpenAsyncSession())
 <Panel heading="ConcurrencyCheckMode">
 
 * The session keeps a `ConcurrencyCheckMode` for each tracked entity (the `DocumentInfo.ConcurrencyCheckMode` property).
-  It overrides the session's `OptimisticConcurrencyMode` for that entity's PUT and DELETE commands.
+  It overrides the session's `OptimisticConcurrencyMode` for that entity's PUT command when the session saves changes.
 
 * The `Store` methods set it for you:
 
@@ -680,7 +680,7 @@ using (IAsyncDocumentSession asyncSession = store.OpenAsyncSession())
   |-------|-------------|
   | `Auto` | The check depends on the session's `OptimisticConcurrencyMode` and on the change vector, if one was provided. |
   | `Forced` | The check is performed even when the session's `OptimisticConcurrencyMode` is `None`. |
-  | `Disabled` | The check is not performed for this entity's PUT and DELETE commands, even when an `OptimisticConcurrencyMode` is set.<br/>When the mode is `WritesAndReads`, the entity is still verified during `SaveChanges()` to ensure it was not modified by another session. |
+  | `Disabled` | The check is not performed for this entity's PUT command, even when an `OptimisticConcurrencyMode` is set.<br/>When the mode is `WritesAndReads`, the entity is still verified during `SaveChanges()` to ensure it was not modified by another session. |
 
 </Panel>
 
