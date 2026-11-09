@@ -206,6 +206,7 @@ store.Operations.Send(timeSeriesBatchOp);
       public string Name;
       public void Append(AppendOperation appendOperation)
       public void Delete(DeleteOperation deleteOperation)
+      public void Increment(IncrementOperation incrementOperation)
 \}
 `}
 </CodeBlock>
@@ -216,6 +217,7 @@ store.Operations.Send(timeSeriesBatchOp);
 | **Name**   | `string` | The time series name                 |
 | **Append** | `method` | Add an `AppendOperation` to the list |
 | **Delete** | `method` | Add a `DeleteOperation` to the list  |
+| **Increment** | `method` | Add an `IncrementOperation` to the list. Used with [incremental time series](../../../../../document-extensions/timeseries/incremental-time-series/overview.mdx). |
 
 #### `AppendOperation`
     
@@ -236,6 +238,53 @@ store.Operations.Send(timeSeriesBatchOp);
 | **Timestamp** | `DateTime` | The time series entry will be appended at this timestamp |
 | **Values**    | `double[]` | Entry values                                             |
 | **Tag**       | `string`   | Entry tag (optional)                                     |
+
+#### `IncrementOperation`
+
+Used to increment the values of an [incremental time series](../../../../../document-extensions/timeseries/incremental-time-series/overview.mdx)  
+(a time series whose name starts with `INC:`) by sending it in a `TimeSeriesBatchOperation`.
+
+<TabItem value="csharp" label="csharp">
+<CodeBlock language="csharp">
+{`public class IncrementOperation
+\{
+      public DateTime Timestamp;
+      public double[] Values;
+\}
+`}
+</CodeBlock>
+</TabItem>
+
+| Property      | Type       | Description                                                       |
+|---------------|------------|-------------------------------------------------------------------|
+| **Timestamp** | `DateTime` | The entry whose values are incremented                            |
+| **Values**    | `double[]` | The amounts to add to the entry's values (one amount per value)   |
+
+* `TimeSeriesOperation.Increment` sums the `Values` of two `IncrementOperation` objects added for the same timestamp.  
+  It throws an `InvalidOperationException` if their `Values` have a different number of items.
+
+<TabItem value="timeseries_region_Increment-Using-TimeSeriesBatchOperation" label="timeseries_region_Increment-Using-TimeSeriesBatchOperation">
+<CodeBlock language="csharp">
+{`var baseTime = DateTime.Today;
+
+var incrementOp = new TimeSeriesOperation.IncrementOperation
+\{
+    Timestamp = baseTime.AddMinutes(1),
+    Values = new double[] \{ 1 \}
+\};
+
+var timeSeriesOp = new TimeSeriesOperation
+\{
+    Name = "INC:Downloads" // The name of an incremental time series starts with "INC:"
+\};
+
+timeSeriesOp.Increment(incrementOp);
+
+var timeSeriesBatchOp = new TimeSeriesBatchOperation("companies/webstore", timeSeriesOp);
+store.Operations.Send(timeSeriesBatchOp);
+`}
+</CodeBlock>
+</TabItem>
 
 #### `DeleteOperation`
  

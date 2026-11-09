@@ -14,6 +14,7 @@ import CodeBlock from '@theme/CodeBlock';
 * In this page:
    * [Include time series when loading a document](../../../../../../document-extensions/timeseries/client-api/session/include/with-session-load.mdx#include-time-series-when-loading-a-document)
    * [Include all time series of a document](../../../../../../document-extensions/timeseries/client-api/session/include/with-session-load.mdx#include-all-time-series-of-a-document)
+   * [Include the last entries of a time series](../../../../../../document-extensions/timeseries/client-api/session/include/with-session-load.mdx#include-the-last-entries-of-a-time-series)
    * [Syntax](../../../../../../document-extensions/timeseries/client-api/session/include/with-session-load.mdx#syntax)
 
 </Admonition>
@@ -73,7 +74,31 @@ The range can be limited by `from` and `to` dates, or by the last entries of eac
 </CodeBlock>
 </TabItem>
 
+## Include the last entries of a time series
 
+Pass `TimeSeriesRangeType.Last` to include the last entries of a time series,  
+either the entries of the last time span (a `TimeValue`) or the last `count` entries.
+
+<TabItem value="timeseries_region_Load-Document-And-Include-Last-TimeSeries" label="timeseries_region_Load-Document-And-Include-Last-TimeSeries">
+<CodeBlock language="csharp">
+{`using (var session = store.OpenSession())
+\{
+    // Include the entries of the last 10 minutes of time series "HeartRates"
+    User user = session.Load<User>("users/john", includeBuilder =>
+        includeBuilder.IncludeTimeSeries("HeartRates", TimeSeriesRangeType.Last, TimeValue.FromMinutes(10)));
+
+    // Or: include the last 50 entries of time series "HeartRates"
+    user = session.Load<User>("users/john", includeBuilder =>
+        includeBuilder.IncludeTimeSeries("HeartRates", TimeSeriesRangeType.Last, 50));
+\}
+`}
+</CodeBlock>
+</TabItem>
+
+* `TimeSeriesRangeType` has two values: `None` and `Last`.  
+  An `InvalidOperationException` is thrown if `None` is passed together with a `TimeValue` or a `count`.
+
+* The overloads that take `string[] names` include the same range from each of the listed time series.
 
 ## Syntax
 
@@ -105,6 +130,37 @@ The range can be limited by `from` and `to` dates, or by the last entries of eac
 | **name**  | `string`    | Time series name.                                                     |
 | **from**  | `DateTime?` | Time series range start (inclusive).<br/>Default: `DateTime.MinValue`. |
 | **to**    | `DateTime?` | Time series range end (inclusive).<br/>Default: `DateTime.MaxValue`.   |
+
+**`IncludeTimeSeries`** builder methods that take a `TimeSeriesRangeType`:
+
+<TabItem value="IncludeTimeSeries-last-definition" label="IncludeTimeSeries-last-definition">
+<CodeBlock language="csharp">
+{`TBuilder IncludeTimeSeries(string name, TimeSeriesRangeType type, TimeValue time);
+TBuilder IncludeTimeSeries(string name, TimeSeriesRangeType type, int count);
+TBuilder IncludeTimeSeries(string[] names, TimeSeriesRangeType type, TimeValue time);
+TBuilder IncludeTimeSeries(string[] names, TimeSeriesRangeType type, int count);
+`}
+</CodeBlock>
+</TabItem>
+
+| Parameter | Type                  | Description                                                                          |
+|-----------|-----------------------|--------------------------------------------------------------------------------------|
+| **name**  | `string`              | Time series name.                                                                    |
+| **names** | `string[]`            | Time series names.                                                                   |
+| **type**  | `TimeSeriesRangeType` | `Last` to include the last entries. Cannot be `None`.                                |
+| **time**  | `TimeValue`           | Include the entries of this last time span of the time series.                       |
+| **count** | `int`                 | Include at most this number of entries, taken from the end of the time series.       |
+
+<TabItem value="TimeSeriesRangeType-definition" label="TimeSeriesRangeType-definition">
+<CodeBlock language="csharp">
+{`public enum TimeSeriesRangeType
+\{
+    None,
+    Last
+\}
+`}
+</CodeBlock>
+</TabItem>
 
 **`IncludeAllTimeSeries`** builder methods:
 

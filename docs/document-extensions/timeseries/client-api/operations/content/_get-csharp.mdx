@@ -10,6 +10,8 @@ import CodeBlock from '@theme/CodeBlock';
 
 * Use `GetMultipleTimeSeriesOperation` to retrieve entries from **multiple** time series.
 
+* Use `GetTimeSeriesStatisticsOperation` to get the entry count and date range of every time series of a document.
+
 * For a general _Operations_ overview, see [What are Operations](../../../../../client-api/operations/what-are-operations.mdx).
 
 * In this page:  
@@ -19,6 +21,7 @@ import CodeBlock from '@theme/CodeBlock';
       * [Get entries - from multiple time series](../../../../../document-extensions/timeseries/client-api/operations/get.mdx#get-entries---from-multiple-time-series)  
          * [Example](../../../../../document-extensions/timeseries/client-api/operations/get.mdx#example-1)  
          * [Syntax](../../../../../document-extensions/timeseries/client-api/operations/get.mdx#syntax-1)  
+      * [Get statistics - of all time series of a document](../../../../../document-extensions/timeseries/client-api/operations/get.mdx#get-statistics---of-all-time-series-of-a-document)  
 
 </Admonition>
 ## Get entries - from single time series
@@ -213,4 +216,56 @@ var timeSeriesEntry = timesSeriesEntries.Values["ExerciseHeartRates"][0].Entries
 
 
 
+## Get statistics - of all time series of a document
 
+Use `GetTimeSeriesStatisticsOperation` to get the name, number of entries, and first and last timestamps  
+of every time series of a document, without retrieving the entries.
+
+<TabItem value="timeseries_region_Get-Statistics" label="timeseries_region_Get-Statistics">
+<CodeBlock language="csharp">
+{`TimeSeriesStatistics stats = store.Operations.Send(
+    new GetTimeSeriesStatisticsOperation("employees/1-A"));
+
+foreach (TimeSeriesItemDetail series in stats.TimeSeries)
+\{
+    // The name of the time series, the number of entries, and the dates of its first and last entries
+    Console.WriteLine($"\{series.Name\}: \{series.NumberOfEntries\} entries, " +
+                      $"\{series.StartDate\} - \{series.EndDate\}");
+\}
+`}
+</CodeBlock>
+</TabItem>
+
+**Syntax**:
+
+<TabItem value="GetTimeSeriesStatisticsOperation-Definition" label="GetTimeSeriesStatisticsOperation-Definition">
+<CodeBlock language="csharp">
+{`public GetTimeSeriesStatisticsOperation(string documentId)
+`}
+</CodeBlock>
+</TabItem>
+
+| Parameter      | Type     | Description                                |
+|----------------|----------|--------------------------------------------|
+| **documentId** | `string` | The ID of the document that owns the time series |
+
+**Return Value**:
+
+<TabItem value="TimeSeriesStatistics-class" label="TimeSeriesStatistics-class">
+<CodeBlock language="csharp">
+{`public class TimeSeriesStatistics
+\{
+    public string DocumentId \{ get; set; \}
+    public List<TimeSeriesItemDetail> TimeSeries \{ get; set; \}
+\}
+
+public class TimeSeriesItemDetail
+\{
+    public string Name \{ get; set; \}
+    public long NumberOfEntries \{ get; set; \}
+    public DateTime StartDate \{ get; set; \}
+    public DateTime EndDate \{ get; set; \}
+\}
+`}
+</CodeBlock>
+</TabItem>
