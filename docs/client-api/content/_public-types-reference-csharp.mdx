@@ -17,10 +17,15 @@ import Admonition from '@theme/Admonition';
   A type is listed here because it is public in the assembly, which does not mean that a public API creates or returns it:
   for example, `AiAgentTruncateChat` is public, but the only constructor and property of the client that accept it are `internal`.
 
-* The page has two parts:
+* The page also covers the public types and members of the `Sparrow`, `Raven.Embedded` and `Raven.TestDriver` assemblies, in the last two sections.
+  The `Raven.Embedded` and `Raven.TestDriver` assemblies have no XML documentation comments, so every description of their members is a `//` description written by reading the code.
+
+* The page has four parts:
   * [Types that have no dedicated article](#types-that-have-no-dedicated-article): each type is listed with all of its declared members.
   * [Members that no article mentions](#members-that-no-article-mentions): types that are described in an article, but that declare public members whose names appear nowhere else in this documentation.
     Only those members are listed, by their signatures, with the description from the source code where it has one.
+  * [Types of the Sparrow and Raven.Embedded assemblies that have no dedicated article](#types-of-the-sparrow-and-ravenembedded-assemblies-that-have-no-dedicated-article): the same listing for those assemblies.
+  * [Members of the Sparrow, Raven.Embedded and Raven.TestDriver assemblies that no article mentions](#members-of-the-sparrow-ravenembedded-and-raventestdriver-assemblies-that-no-article-mentions): the same listing of members for those assemblies.
 
 * Types and members that are described in an article are not repeated here. To find them, search this documentation for the name.
 
@@ -9806,6 +9811,3227 @@ public sealed class SystemTime
     Action<int> WaitCalled;
     // Returns the result of the UtcDateTime function if one is set, otherwise DateTime.UtcNow.
     DateTime GetUtcNow();
+}
+```
+
+## Types of the Sparrow and Raven.Embedded assemblies that have no dedicated article
+
+The client packages use the `Sparrow` assembly (JSON, size and utility types that appear in the signatures of the client) and the `Raven.Embedded` assembly (running a server inside your process). The types below are public in those assemblies and are not described in an article.
+
+### `Sparrow`
+
+```csharp
+// Interface that exposes a read-only IsDisposed flag so callers can query whether an object has been disposed.
+public interface IDisposableQueryable
+{
+    // Gets whether the object has been disposed.
+    bool IsDisposed { get; }
+}
+```
+
+```csharp
+// Interface for enumerating a sequence of read-only byte spans with a count, reset and forward movement.
+public interface IReadOnlySpanEnumerator
+{
+    // Gets the number of spans in the sequence.
+    int Count { get; }
+    // Advances to the next item and returns true with that read-only byte span in result, or false when there are
+    // no more.
+    bool MoveNext(out ReadOnlySpan<byte> result);
+    // Resets the enumeration to its start.
+    void Reset();
+}
+```
+
+```csharp
+// Interface for indexed access to read-only byte spans, with a length and a per-index null check.
+public interface IReadOnlySpanIndexer
+{
+    // Gets the number of items available through the indexer.
+    int Length { get; }
+    // Returns whether the item at index i is null.
+    bool IsNull(int i);
+}
+```
+
+```csharp
+// Interface for pooled reference types that defines a Reset method which clears a given value for reuse.
+public interface IResetSupport<T>
+{
+    // Resets the given value to its reusable state.
+    void Reset(T value);
+}
+```
+
+```csharp
+// Interface for enumerating a sequence of writable byte spans with reset and forward movement.
+public interface ISpanEnumerator
+{
+    // Advances to the next item and returns true with that byte span in result, or false when there are no more.
+    bool MoveNext(out Span<byte> result);
+    // Resets the enumeration to its start.
+    void Reset();
+}
+```
+
+```csharp
+// Interface for indexed access to writable byte spans, with a length and a per-index null check.
+public interface ISpanIndexer
+{
+    // Gets the number of items available through the indexer.
+    int Length { get; }
+    // Returns whether the item at index i is null.
+    bool IsNull(int i);
+}
+```
+
+```csharp
+// Stream wrapper that copies the most recently read bytes, up to a 4096-byte window, into a context memory
+// buffer so the last data read can be retrieved later.
+public sealed class PeepingTomStream : IDisposable
+{
+    // Creates the wrapper over the given stream and takes a memory buffer from the given JSON operation context.
+    PeepingTomStream(Stream stream, JsonOperationContext context);
+    // Constant 4096 giving the size in bytes of the window of recently read data that is retained.
+    const int BufferWindowSize;
+    // Returns the memory buffer to the context. It does not dispose the wrapped stream.
+    void Dispose();
+    // Returns a new byte array with the recently read data, up to the last 4096 bytes, trimmed to start at a byte
+    // whose high bit is not set; returns an empty array if none is found.
+    byte[] PeepInReadStream();
+    // Reads from the wrapped stream into the buffer, records the bytes read into the retained window, and returns
+    // the number of bytes read.
+    int Read(Span<byte> buffer);
+    // Asynchronously reads from the wrapped stream into the buffer, records the bytes read into the retained
+    // window, and returns the number of bytes read.
+    Task<int> ReadAsync(Memory<byte> buffer, CancellationToken token);
+}
+```
+
+```csharp
+/// An optimized representation of a substring.
+public struct StringSegment : IEquatable<StringSegment>, IEquatable<string>
+{
+    // Creates a segment covering the entire given string, with offset 0 and length equal to the string length, or
+    // 0 if the string is null.
+    StringSegment(string buffer);
+    // Creates a segment over the given string starting at offset with the given length; throws if the buffer is
+    // null or the offset or length is out of range.
+    StringSegment(string buffer, int offset, int length);
+    /// A 'StringSegment' for 'Empty'.
+    static StringSegment Empty;
+    /// Gets the 'String' buffer for this 'StringSegment'.
+    string Buffer { get; }
+    /// Gets whether this 'StringSegment' contains a valid value.
+    bool HasValue { get; }
+    /// Gets the length of this 'StringSegment'.
+    int Length { get; }
+    /// Gets the offset within the buffer for this 'StringSegment'.
+    int Offset { get; }
+    /// Gets the value of this segment as a 'String'.
+    string Value { get; }
+    /// Gets a 'ReadOnlyMemory`1' from the current 'StringSegment'.
+    ReadOnlyMemory<Char> AsMemory();
+    /// Gets a 'ReadOnlySpan`1' from the current 'StringSegment'.
+    ReadOnlySpan<Char> AsSpan();
+    /// Compares substrings of two specified 'StringSegment' objects using the specified rules, and returns an
+    ///    integer that indicates their relative position in the sort order.
+    static int Compare(StringSegment a, StringSegment b, StringComparison comparisonType);
+    /// Checks if the end of this 'StringSegment' matches the specified 'String' when compared using the specified
+    ///    'comparisonType'.
+    /// Throws ArgumentNullException: 'text' is null.
+    bool EndsWith(string text, StringComparison comparisonType);
+    // Returns true if obj is a non-null StringSegment equal to this segment, otherwise false.
+    bool Equals(object obj);
+    /// Indicates whether the current object is equal to another object of the same type.
+    bool Equals(StringSegment other);
+    /// Indicates whether the current object is equal to another object of the same type.
+    bool Equals(StringSegment other, StringComparison comparisonType);
+    /// Determines whether two specified 'StringSegment' objects have the same value. A parameter specifies the
+    ///    culture, case, and sort rules used in the comparison.
+    static bool Equals(StringSegment a, StringSegment b, StringComparison comparisonType);
+    /// Checks if the specified 'String' is equal to the current 'StringSegment'.
+    bool Equals(string text);
+    /// Checks if the specified 'String' is equal to the current 'StringSegment'.
+    /// Throws ArgumentNullException: 'text' is null.
+    bool Equals(string text, StringComparison comparisonType);
+    // Returns the hash code of the segment string value, or 0 if the value is null.
+    int GetHashCode();
+    /// Gets the zero-based index of the first occurrence of the character 'c' in this 'StringSegment'. The search
+    ///    starts at 'start' and examines a specified number of 'count' character positions.
+    /// Throws ArgumentOutOfRangeException: 'start' or 'count' is less than zero, or 'start' + 'count' is greater
+    ///    than 'Length'.
+    int IndexOf(Char c, int start, int count);
+    /// Gets the zero-based index of the first occurrence of the character 'c' in this 'StringSegment'. The search
+    ///    starts at 'start'.
+    /// Throws ArgumentOutOfRangeException: 'start' is greater than or equal to 'Length' or less than zero.
+    int IndexOf(Char c, int start);
+    /// Gets the zero-based index of the first occurrence of the character 'c' in this 'StringSegment'.
+    int IndexOf(Char c);
+    /// Reports the zero-based index of the first occurrence in this instance of any character in a specified array
+    ///    of Unicode characters. The search starts at a specified character position and examines a specified number
+    ///    of character positions.
+    /// Throws ArgumentNullException: 'anyOf' is null.
+    /// Throws ArgumentOutOfRangeException: 'startIndex' or 'count' is less than zero, or 'startIndex' + 'count' is
+    ///    greater than 'Length'.
+    int IndexOfAny(Char[] anyOf, int startIndex, int count);
+    /// Reports the zero-based index of the first occurrence in this instance of any character in a specified array
+    ///    of Unicode characters. The search starts at a specified character position.
+    /// Throws ArgumentOutOfRangeException: 'startIndex' is greater than or equal to 'Length' or less than zero.
+    int IndexOfAny(Char[] anyOf, int startIndex);
+    /// Reports the zero-based index of the first occurrence in this instance of any character in a specified array
+    ///    of Unicode characters.
+    int IndexOfAny(Char[] anyOf);
+    /// Indicates whether the specified 'StringSegment' is null or an Empty string.
+    static bool IsNullOrEmpty(StringSegment value);
+    /// Reports the zero-based index position of the last occurrence of a specified Unicode character within this
+    ///    instance.
+    int LastIndexOf(Char value);
+    /// Checks if the beginning of this 'StringSegment' matches the specified 'String' when compared using the
+    ///    specified 'comparisonType'.
+    /// Throws ArgumentNullException: 'text' is null.
+    bool StartsWith(string text, StringComparison comparisonType);
+    /// Retrieves a 'StringSegment' that represents a substring from this 'StringSegment'. The 'StringSegment' starts
+    ///    at the position specified by 'offset'.
+    /// Throws ArgumentOutOfRangeException: 'offset' is greater than or equal to 'Length' or less than zero.
+    StringSegment Subsegment(int offset);
+    /// Retrieves a 'StringSegment' that represents a substring from this 'StringSegment'. The 'StringSegment' starts
+    ///    at the position specified by 'offset' and has the specified 'length'.
+    /// Throws ArgumentOutOfRangeException: 'offset' or 'length' is less than zero, or 'offset' + 'length' is greater
+    ///    than 'Length'.
+    StringSegment Subsegment(int offset, int length);
+    /// Retrieves a substring from this 'StringSegment'. The substring starts at the position specified by 'offset'
+    ///    and has the remaining length.
+    /// Throws ArgumentOutOfRangeException: 'offset' is greater than or equal to 'Length' or less than zero.
+    string Substring(int offset);
+    /// Retrieves a substring from this 'StringSegment'. The substring starts at the position specified by 'offset'
+    ///    and has the specified 'length'.
+    /// Throws ArgumentOutOfRangeException: 'offset' or 'length' is less than zero, or 'offset' + 'length' is greater
+    ///    than 'Length'.
+    string Substring(int offset, int length);
+    /// Returns the 'String' represented by this 'StringSegment' or String.Empty if the 'StringSegment' does not
+    ///    contain a value.
+    string ToString();
+    /// Removes all leading and trailing whitespaces.
+    StringSegment Trim();
+    /// Removes all trailing whitespaces.
+    StringSegment TrimEnd();
+    /// Removes all leading whitespaces.
+    StringSegment TrimStart();
+}
+```
+
+```csharp
+// Holds the address and size of an unmanaged memory block and exposes it as a Memory of bytes.
+public sealed class UnmanagedMemory
+{
+    // Creates an instance storing the given address and size.
+    UnmanagedMemory(Byte* address, int size);
+    // The pointer to the start of the unmanaged memory block.
+    Byte* Address;
+    // The size in bytes of the unmanaged memory block.
+    int Size;
+    // Gets a Memory of bytes over the block, created on first access through an unmanaged memory manager and then
+    // cached.
+    Memory<byte> Memory { get; }
+}
+```
+
+```csharp
+// Read-only struct wrapping a byte pointer, supporting addition of an int offset.
+public struct UnmanagedPointer
+{
+    // Creates a pointer wrapper holding the given address.
+    UnmanagedPointer(Byte* address);
+    // The wrapped byte pointer.
+    Byte* Address;
+}
+```
+
+```csharp
+// Read-only struct holding either a byte pointer with a length or an inline long or double value (length -1),
+// and providing span, memory and stream conversions.
+public struct UnmanagedSpan
+{
+    // Creates an instance storing the long value and sets Length to -1.
+    UnmanagedSpan(long l);
+    // Creates an instance storing the double value and sets Length to -1.
+    UnmanagedSpan(double d);
+    // Creates an instance with the given address and length.
+    UnmanagedSpan(Byte* address, int length);
+    // Creates an instance with the address of the given pointer and the given length.
+    UnmanagedSpan(UnmanagedPointer pointer, int length);
+    // The byte pointer to the start of the span; it shares storage with Long and Double.
+    Byte* Address;
+    // The double value stored in the same eight bytes as Address and Long.
+    double Double;
+    // Static instance with a null address and length 0.
+    static UnmanagedSpan Empty;
+    // The length in bytes of the span, or -1 when the instance holds a long or double value.
+    int Length;
+    // The long value stored in the same eight bytes as Address and Double.
+    long Long;
+    // Returns a Memory of bytes over the address and length through an unmanaged memory manager.
+    Memory<byte> AsMemory();
+    // Returns a span starting at Address plus offset with length reduced by offset.
+    UnmanagedSpan Slice(int offset);
+    // Returns a span starting at Address plus position with the given length.
+    UnmanagedSpan Slice(int position, int length);
+    // Returns a ReadOnlySpan of bytes over the address and length.
+    ReadOnlySpan<byte> ToReadOnlySpan();
+    // Returns a Span of bytes over the address and length.
+    Span<byte> ToSpan();
+    // Returns an UnmanagedMemoryStream over the address and length.
+    UnmanagedMemoryStream ToStream();
+    // Returns the long value as text when Length is -1; otherwise returns the address in hexadecimal and the
+    // length.
+    string ToString();
+    // Returns an empty string when Length is 0; otherwise decodes the bytes as UTF-8 and returns the string.
+    string ToStringValue();
+}
+```
+
+### `Sparrow.Backups`
+
+```csharp
+// Enumeration of compression algorithms available for backups.
+public enum BackupCompressionAlgorithm
+{
+    // Zstd compression algorithm; it is the configured default value for the backup compression algorithm setting.
+    Zstd,
+    // Gzip compression algorithm.
+    Gzip,
+}
+```
+
+### `Sparrow.Collections`
+
+```csharp
+// Thread-safe set of items backed by a concurrent dictionary, with an interlocked counter used for the
+// emptiness check.
+public sealed class ConcurrentSet<T> : IEnumerable<T>
+{
+    // Creates an empty set using the default equality comparer.
+    ConcurrentSet();
+    // Creates an empty set using the given equality comparer.
+    ConcurrentSet(IEqualityComparer<T> comparer);
+    // Gets the number of items in the set.
+    int Count { get; }
+    // Gets whether the set has no items, based on an interlocked counter of additions and removals.
+    bool IsEmpty { get; }
+    // Adds the item if it is not already present; does nothing otherwise.
+    void Add(T item);
+    // Removes all items and resets the emptiness counter.
+    void Clear();
+    // Returns whether the item is in the set.
+    bool Contains(T item);
+    // Returns an enumerator over the items in the set.
+    IEnumerator<T> GetEnumerator();
+    // Returns the item count formatted with thousands separators using the invariant culture.
+    string ToString();
+    // Adds the item and returns true if it was added, or false if it was already present.
+    bool TryAdd(T item);
+    // Removes the item and returns true if it was removed, or false if it was not present.
+    bool TryRemove(T item);
+    // Adds every item from the given sequence to the set; throws ArgumentNullException if the sequence is null.
+    void UnionWith(IEnumerable<T> other);
+}
+```
+
+```csharp
+// Array-backed list implementing IList that provides by-reference element access, version-checked enumeration
+// and several clearing and trimming helpers; Insert is not supported.
+public sealed class FastList<T> : IList<T>
+{
+    // Creates an empty list with no backing storage allocated.
+    FastList();
+    // Creates an empty list with the given initial capacity; throws ArgumentOutOfRangeException if capacity is
+    // negative.
+    FastList(int capacity);
+    // Gets or sets the size of the backing array; the setter throws ArgumentOutOfRangeException if the value is
+    // less than the item count and reallocates the array otherwise.
+    int Capacity { get; set; }
+    // Gets the number of items in the list.
+    int Count { get; }
+    // Always returns false.
+    bool IsReadOnly { get; }
+    // Appends the item to the end, growing the backing array when it is full.
+    void Add(T item);
+    // Appends the item, passed by readonly reference, to the end, growing the backing array when it is full.
+    void AddByRef(ref T item);
+    // Returns a Span over the backing array limited to the current item count, sharing storage with the list.
+    Span<T> AsUnsafeSpan();
+    /// Removes all objects from the Stack but clearing the backing array unless the type is native.
+    void Clear();
+    // Returns whether the item is found in the list using the default equality comparison.
+    bool Contains(T item);
+    // Copies the items into dest, enlarging its capacity if needed, and sets the destination size to match.
+    void CopyTo(FastList<T> dest);
+    // Copies the items into the given array starting at arrayIndex.
+    void CopyTo(T[] array, int arrayIndex);
+    // Returns a reference to the element at the given unsigned index of the backing array, without a check against
+    // the item count.
+    T& GetAsRef(UInt32 index);
+    // Returns a reference to the element at the given index of the backing array, without a check against the item
+    // count.
+    T& GetAsRef(int index);
+    // Returns a struct enumerator over the items; it throws InvalidOperationException if the list is modified
+    // during enumeration.
+    FastList<T>.Enumerator<T> GetEnumerator();
+    // Returns the zero-based index of the first matching item, or -1 if not found.
+    int IndexOf(T item);
+    // Always throws NotSupportedException.
+    void Insert(int index, T item);
+    // Removes the first matching item and returns true, or returns false if it is not found.
+    bool Remove(T item);
+    // Removes the item at index, shifting later items down; throws ArgumentOutOfRangeException if the index is out
+    // of range.
+    void RemoveAt(int index);
+    // Removes and returns the last item, or returns the default value if the list is empty.
+    T RemoveLast();
+    // Removes count items starting at index; throws ArgumentOutOfRangeException if the range is invalid, and does
+    // nothing if count is zero or less.
+    void RemoveRange(int index, int count);
+    // Sorts the items in the list using the given comparer.
+    void Sort(IComparer<T> comparer);
+    // Sorts the items in the list using the given struct sorter.
+    void Sort<TSorter>(ref Sorter<T, TSorter> sorter);
+    // Throws ArgumentOutOfRangeException for the given index.
+    void ThrowWhenIndexIsOutOfRange(int index);
+    // Returns a new array containing a copy of the items.
+    T[] ToArray();
+    // Reduces the item count to size and clears the removed slots; throws ArgumentOutOfRangeException if size is
+    // negative or greater than the count.
+    void Trim(int size);
+    /// This method is like Clear but will not release the references contained in it; therefore the garbage
+    ///    collector will not collect those objects even if they are not being used.
+    void WeakClear();
+}
+```
+
+```csharp
+// Array-backed generic stack with by-reference push and peek, try-style operations and version-checked
+// enumeration.
+public sealed class FastStack<T> : IEnumerable<T>
+{
+    // Creates an empty stack.
+    FastStack();
+    // Creates an empty stack with the given initial capacity; throws ArgumentOutOfRangeException if capacity is
+    // negative.
+    FastStack(int capacity);
+    // Gets the number of items in the stack.
+    int Count { get; }
+    /// Removes all objects from the Stack but clearing the backing array unless the type is native.
+    void Clear();
+    // Returns whether the item is found in the stack using the default equality comparison.
+    bool Contains(T item);
+    // Appends all items of the source stack to this stack, growing the array if needed.
+    void CopyFrom(FastStack<T> srcStack);
+    // Copies the items into the array starting at arrayIndex, with the top item first, in the same order Pop would
+    // return them.
+    void CopyTo(T[] array, int arrayIndex);
+    // Returns a struct enumerator that iterates from the top of the stack to the bottom and throws
+    // InvalidOperationException if the stack is modified.
+    FastStack<T>.Enumerator<T> GetEnumerator();
+    // Returns the top item without removing it; throws InvalidOperationException if the stack is empty.
+    T Peek();
+    // Removes and returns the top item; throws InvalidOperationException if the stack is empty.
+    T Pop();
+    // Pushes the item, passed by readonly reference, onto the stack, doubling the array when full.
+    void Push(ref T item);
+    // Reserves a new top slot, doubling the array when full, and returns a reference to it.
+    T& PushByRef();
+    // Returns a new array with the items ordered from top to bottom, or an empty array if the stack is empty.
+    T[] ToArray();
+    // Returns a reference to the top item; throws InvalidOperationException if the stack is empty.
+    T& TopByRef();
+    // Returns true with the top item in result, or false with the default value if the stack is empty.
+    bool TryPeek(out T result);
+    // Returns true with the item at the given depth from the top in result, or false with the default value if
+    // depth is not positive or exceeds the count.
+    bool TryPeek(int depth, out T result);
+    // Removes the top item and returns true with it in result, or returns false with the default value if the
+    // stack is empty.
+    bool TryPop(out T result);
+    /// This method is like Clear but will not release the references contained in it; therefore the garbage
+    ///    collector will not collect those objects even if they are not being used.
+    void WeakClear();
+}
+```
+
+### `Sparrow.Exceptions`
+
+```csharp
+// Exception type deriving from Exception, with constructors for no message, a message, and a message with an
+// inner exception.
+public sealed class InvalidStartOfObjectException : Exception
+{
+    // Creates the exception with no message.
+    InvalidStartOfObjectException();
+    // Creates the exception with the given message.
+    InvalidStartOfObjectException(string message);
+    // Creates the exception with the given message and inner exception.
+    InvalidStartOfObjectException(string message, Exception innerException);
+}
+```
+
+```csharp
+// Exception type deriving from Exception, with constructors for no message, a message, and a message with an
+// inner exception.
+public sealed class MemoryInfoException : Exception
+{
+    // Creates the exception with no message.
+    MemoryInfoException();
+    // Creates the exception with the given message.
+    MemoryInfoException(string message);
+    // Creates the exception with the given message and inner exception.
+    MemoryInfoException(string message, Exception inner);
+}
+```
+
+### `Sparrow.Extensions`
+
+```csharp
+// Static class with extension methods for formatting DateTime values in the RavenDB default format.
+public static class RavenDateTimeExtensions
+{
+    /// This function Processes the to string format of the form "yyyy'-'MM'-'dd'T'HH':'mm':'ss.fffffff" for date
+    ///    times in invariant culture scenarios. This implementation takes 20% of the time of a regular
+    ///    .ToString(format) call
+    static string GetDefaultRavenFormat(DateTime dt, bool isUtc);
+    // Returns the date in the RavenDB default text format, treating it as UTC when its Kind is Utc; the result is
+    // 27 characters, or 28 for UTC.
+    static string GetDefaultRavenFormat(DateTime dt);
+}
+```
+
+### `Sparrow.Json`
+
+```csharp
+// Abstract base class for blittable JSON document builders; it holds a continuation state stack and disposes
+// it when disposed.
+public abstract class AbstractBlittableJsonDocumentBuilder : IDisposable
+{
+    // Returns the cache item to the global cache, clears the continuation state stack, frees it to the pool, and
+    // marks the builder as disposed.
+    void Dispose();
+}
+```
+
+```csharp
+// Struct describing one property written by the blittable document builder: its position, property name entry
+// and type byte.
+public struct AbstractBlittableJsonDocumentBuilder.PropertyTag
+{
+    // Creates a tag holding the given type byte, property name and position.
+    PropertyTag(byte type, CachedProperties.PropertyName property, int position);
+    // Creates a tag for the given property with type 0 and position 0.
+    PropertyTag(CachedProperties.PropertyName property);
+    // Position of the property value in the written output.
+    int Position;
+    // The cached property name entry this tag refers to.
+    CachedProperties.PropertyName Property;
+    // Type byte of the value, holding a BlittableJsonToken value.
+    byte Type;
+    // Returns a string with the tag's position, the property's comparer and property id, and the type interpreted
+    // as a BlittableJsonToken.
+    string ToString();
+}
+```
+
+```csharp
+// Arena allocator that hands out power-of-two sized blocks from native memory buffers and recycles freed
+// blocks until the arena is reset or disposed.
+public sealed class ArenaMemoryAllocator : IDisposable
+{
+    // Creates an allocator with a native buffer of the given initial size (default 1 MB), storing the low memory
+    // flag.
+    ArenaMemoryAllocator(SharedMultipleUseFlag lowMemoryFlag, int initialSize);
+    // When true, new arena buffers are sized to the next power of two of the request instead of a larger multiple.
+    bool AvoidOverAllocation;
+    // Counter of bytes allocated from the arena; it decreases when the last block is returned and is set to zero
+    // by ResetArena and by RenewArena when it allocates.
+    long TotalUsed;
+    // Total size of the current arena buffer plus all older buffers still held.
+    long Allocated { get; }
+    // Returns a block of the requested size rounded up to a power of two, reusing a freed block when available and
+    // growing the arena when needed. Throws if disposed, reset without renew, or size is negative or above 1 GB.
+    AllocatedMemoryData Allocate(int size);
+    // Releases the allocator's native buffers by calling Dispose with true.
+    void Dispose();
+    // Frees the older buffers and the current buffer once, on the first call, and suppresses finalization.
+    void Dispose(bool disposing);
+    // Tries to enlarge an allocation in place by the given amount, rounded to a power of two; returns false if it
+    // is not the last block, exceeds the maximum size, lacks room, or a freed block of that size exists.
+    bool GrowAllocation(AllocatedMemoryData allocation, int sizeIncrease);
+    // Allocates a new native buffer of the current allocated size if the arena was reset and holds none, and
+    // clears used counters.
+    void RenewArena();
+    // Rewinds the arena and clears the freed-block lists, frees older buffers, and may free the current buffer to
+    // shrink it after low usage or enlarge it after high usage; RenewArena then reallocates it.
+    void ResetArena();
+    // Returns an allocation to the arena by moving the current pointer back if it is the last block, otherwise
+    // adding it to a per-size freed list. Does nothing if disposed.
+    void Return(AllocatedMemoryData allocation);
+    // Returns a string with the human-readable allocated size and used size.
+    string ToString();
+}
+```
+
+```csharp
+// Blittable JSON text writer that buffers output in a recyclable memory stream and copies it asynchronously to
+// an output stream.
+public sealed class AsyncBlittableJsonTextWriter : AbstractBlittableJsonTextWriter, IAsyncDisposable
+{
+    // Creates a writer over the given output stream; throws ArgumentNullException if the stream is null.
+    AsyncBlittableJsonTextWriter(JsonOperationContext context, Stream stream, CancellationToken cancellationToken);
+    // True when the internal buffer length is more than half its capacity.
+    bool ShouldFlushAsync { get; }
+    // Disposes the writer, flushes remaining buffered data to the output stream, and flushes the output stream if
+    // anything was written.
+    ValueTask DisposeAsync();
+    // Copies buffered data to the output stream, clears the buffer, and returns the number of bytes written (0 if
+    // empty).
+    ValueTask<long> FlushAsync(CancellationToken token);
+    // Flushes to the output stream only if the buffer is more than half full; returns the bytes written, or 0 if
+    // no flush was needed.
+    ValueTask<long> MaybeFlushAsync(CancellationToken token);
+    // Flushes the buffer, then reads the given stream in chunks and flushes each chunk to the output until the
+    // stream is exhausted.
+    ValueTask WriteStreamAsync(Stream stream, CancellationToken token);
+}
+```
+
+```csharp
+// Builds a blittable JSON document from a JSON parser, writing parsed objects, arrays and values through a
+// blittable writer.
+public sealed class BlittableJsonDocumentBuilder : AbstractBlittableJsonDocumentBuilder
+{
+    // Creates a builder with the given context, parser state, reader, optional writer and optional modifier;
+    // creates a new writer if none is supplied.
+    BlittableJsonDocumentBuilder(JsonOperationContext context, JsonParserState state, IJsonParser reader, BlittableWriter<UnmanagedWriteBuffer> writer, IBlittableDocumentModifier modifier);
+    // Creates a builder with the given usage mode and debug tag, then calls Renew with them.
+    BlittableJsonDocumentBuilder(JsonOperationContext context, BlittableJsonDocumentBuilder.UsageMode mode, string debugTag, IJsonParser reader, JsonParserState state, BlittableWriter<UnmanagedWriteBuffer> writer, IBlittableDocumentModifier modifier);
+    // Creates a builder with the given state, usage mode, debug tag, reader and optional writer, then calls Renew.
+    BlittableJsonDocumentBuilder(JsonOperationContext context, JsonParserState state, BlittableJsonDocumentBuilder.UsageMode mode, string debugTag, IJsonParser reader, BlittableWriter<UnmanagedWriteBuffer> writer);
+    // Optional modifier invoked while building to observe objects and property names.
+    IBlittableDocumentModifier _modifier;
+    // Property name and handler pair; when set in streaming mode, the handler receives string data of the first
+    // property with that name.
+    ValueTuple<string, Action<UnmanagedWriteBuffer>> PropertyToWatchForStreaming;
+    // Returns the current size in bytes of the underlying writer. Throws if disposed.
+    int SizeInBytes { get; }
+    // Creates a reader for the built root array by reading the document and its array holder property; sets
+    // NoCache from the argument and throws InvalidOperationException if no array is found.
+    BlittableJsonReaderArray CreateArrayReader(bool noCache);
+    // Returns a reader object over the document written by the underlying writer.
+    BlittableJsonReaderObject CreateReader();
+    // Disposes the underlying writer and base builder state, once.
+    void Dispose();
+    // Writes the document metadata for the last written root value and token to the writer.
+    void FinalizeDocument();
+    // Continues parsing and building; returns false if there is nothing to do or more input is needed, true when
+    // the current object or document is complete.
+    bool Read();
+    // Queues reading a root array document, which is stored under a placeholder property named underscore.
+    void ReadArrayDocument();
+    // Queues reading a nested object from the parser.
+    void ReadNestedObject();
+    // Queues reading a root object document.
+    void ReadObjectDocument();
+    // Queues reading a single property name and value, treating the read as partial.
+    void ReadProperty();
+    // Resets state, sets the debug tag and usage mode, rebinds the read function, renews the writer and resets the
+    // modifier.
+    void Renew(string debugTag, BlittableJsonDocumentBuilder.UsageMode mode);
+    // Clears the debug tag, mode, read function and building state, and resets the writer.
+    void Reset();
+    // Returns the string Building json for followed by the debug tag.
+    string ToString();
+}
+```
+
+```csharp
+// Flags enum selecting how the builder writes data, such as validation and string compression.
+public enum BlittableJsonDocumentBuilder.UsageMode
+{
+    // No flags; value 0.
+    None,
+    // Flag value 1; floating point values are validated while building.
+    ValidateDouble,
+    // Flag value 2; strings are compressed when written.
+    CompressStrings,
+    // Combination of ValidateDouble and CompressStrings.
+    ToDisk,
+    // Flag value 4; small strings are compressed when written.
+    CompressSmallStrings,
+    // Flag value 32; reads with the streaming behavior, which requires an unmanaged JSON parser, and writes
+    // nothing.
+    ForStreaming,
+}
+```
+
+```csharp
+// Struct holding the position and token type of the value most recently written by the builder.
+public struct BlittableJsonDocumentBuilder.WriteToken
+{
+    // Creates a token storing the given value position and BlittableJsonToken.
+    WriteToken(int position, BlittableJsonToken token);
+    // Position of the written value.
+    int ValuePos;
+    // The BlittableJsonToken type of the written value.
+    BlittableJsonToken WrittenToken;
+}
+```
+
+```csharp
+// Struct enumerator over the items of a blittable JSON array, returning each element by index.
+public struct BlittableJsonReaderArray.BlittableJsonArrayEnumerator : IEnumerator<object>, IEnumerable<object>
+{
+    // Creates an enumerator over the given array reader, positioned before the first element.
+    BlittableJsonArrayEnumerator(BlittableJsonReaderArray reader);
+    // Returns the array element at the current position.
+    object Current { get; }
+    // Does nothing.
+    void Dispose();
+    // Returns a copy of this enumerator.
+    BlittableJsonReaderArray.BlittableJsonArrayEnumerator Enumerate();
+    // Returns a copy of this enumerator.
+    IEnumerator<object> GetEnumerator();
+    // Advances the position and returns true if it is still less than the array count.
+    bool MoveNext();
+    // Sets the position back to before the first element.
+    void Reset();
+}
+```
+
+```csharp
+// Struct holding native arrays of property indexes and offsets, used to read an object's properties in
+// insertion order.
+public struct BlittableJsonReaderObject.InsertionOrderProperties : IDisposable
+{
+    // Allocates memory for two int arrays of the given size from the context; with size 0 allocates nothing.
+    InsertionOrderProperties(JsonOperationContext context, int size);
+    // Returns the allocated memory to the context, if any.
+    void Dispose();
+}
+```
+
+```csharp
+// Struct holding a property's name, value and BlittableJsonToken.
+public struct BlittableJsonReaderObject.PropertyDetails
+{
+    // The property name.
+    LazyStringValue Name;
+    // The BlittableJsonToken describing the property value type.
+    BlittableJsonToken Token;
+    // The property value.
+    object Value;
+}
+```
+
+```csharp
+// Reader over a vector stored in blittable format, exposing its element type, element size and length, and
+// reading elements as typed arrays or converted values.
+public sealed class BlittableJsonReaderVector : BlittableJsonReaderBase
+{
+    // Creates a vector reader over the given memory; throws ArgumentException if the buffer size is 0.
+    BlittableJsonReaderVector(Byte* mem, int bufferSize, JsonOperationContext context);
+    // Holds a dynamic JSON array of modifications for the vector; not set by the reader itself.
+    DynamicJsonArray Modifications;
+    // Size in bytes of one vector element, taken from the vector header.
+    int ElementSize { get; }
+    // Number of elements in the vector, taken from the header.
+    int Length { get; }
+    // The BlittableVectorType of the vector's elements, taken from the header.
+    BlittableVectorType Type { get; }
+    // Returns true if the vector element type exactly matches the type argument.
+    bool IsOfType<T>();
+    // Returns true if the vector element type can be read directly as the type argument, such as signed and
+    // unsigned types of the same size.
+    bool IsTypeCompatibleForDirectRead<T>();
+    // Returns the vector memory as a read-only span of the type argument; throws InvalidOperationException if the
+    // element type does not match exactly.
+    ReadOnlySpan<T> ReadArray<T>();
+    // Returns an enumerator that converts each stored element to the requested numeric type.
+    BlittableJsonReaderVector.EnumerableAs<TOut> ReadAs<TOut>();
+    /// Useful when we've to copy memory without known type.
+    ReadOnlySpan<byte> ReadUnderlyingMemory();
+    // Returns true and outputs a span over the data if the type argument is compatible for direct read; otherwise
+    // outputs an empty span and returns false.
+    bool TryReadArray<T>(out ReadOnlySpan<T> span);
+}
+```
+
+```csharp
+// Struct enumerator that reads vector elements and converts each to the requested unmanaged numeric type.
+public struct BlittableJsonReaderVector.EnumerableAs<TOut> : IEnumerator<TOut>
+{
+    // Creates the enumerator over the given data, selecting a converter by vector type; throws
+    // NotSupportedException for an unknown type.
+    EnumerableAs(Byte* dataStart, int dataLength, int elementSize, BlittableVectorType type);
+    // Number of elements, computed as data length divided by element size.
+    int Count { get; }
+    // Returns the current element converted to the output type.
+    TOut Current { get; }
+    // Does nothing.
+    void Dispose();
+    // Advances the position and returns true if it still lies within the data length.
+    bool MoveNext();
+    // Sets the position back to before the first element.
+    void Reset();
+}
+```
+
+```csharp
+// Flags enum of byte values describing the type of a blittable value, with additional bits for offset size and
+// property id size.
+public enum BlittableJsonToken
+{
+    // Value 0x01; an object.
+    StartObject,
+    // Value 0x02; an array.
+    StartArray,
+    // Value 0x03; an integer.
+    Integer,
+    // Value 0x04; a lazily parsed number.
+    LazyNumber,
+    // Value 0x05; a string.
+    String,
+    // Value 0x06; a compressed string.
+    CompressedString,
+    // Value 0x07; a boolean.
+    Boolean,
+    // Value 0x08; a null value.
+    Null,
+    // Value 0x09; an embedded blittable document.
+    EmbeddedBlittable,
+    // Value 0x0A; a raw binary blob.
+    RawBlob,
+    // Value 0x0B; a vector, written by the builder for numeric arrays under the property named at-vector.
+    Vector,
+    // Value 0x0C; reserved.
+    Reserved3,
+    // Value 0x0D; reserved.
+    Reserved4,
+    // Value 0x0E; reserved.
+    Reserved5,
+    // Value 0x0F; reserved.
+    Reserved6,
+    // Mask 0x0F selecting the value type bits.
+    TypesMask,
+    // Bit 0x10; positions are stored in one byte.
+    OffsetSizeByte,
+    // Bit 0x20; positions are stored in two bytes.
+    OffsetSizeShort,
+    // Value 0x30; positions are stored in four bytes.
+    OffsetSizeInt,
+    // Mask 0x30 selecting the position size bits.
+    PositionMask,
+    // Bit 0x40; property ids are stored in one byte.
+    PropertyIdSizeByte,
+    // Bit 0x80; property ids are stored in two bytes.
+    PropertyIdSizeShort,
+    // Value 0xC0; property ids are stored in four bytes.
+    PropertyIdSizeInt,
+    // Mask 0xC0 selecting the property id size bits.
+    PropertyIdMask,
+}
+```
+
+```csharp
+// Byte-backed enumeration of the element types a blittable vector can store, with each value encoding size and
+// signed, unsigned or floating-point kind in its bits.
+public enum BlittableVectorType
+{
+    // Vector element type of 1 byte per element (signed integer), written by WriteVector for the matching CLR
+    // type.
+    SByte,
+    // Vector element type of 2 bytes per element (signed integer), written by WriteVector for the matching CLR
+    // type.
+    Int16,
+    // Vector element type of 4 bytes per element (signed integer), written by WriteVector for the matching CLR
+    // type.
+    Int32,
+    // Vector element type of 8 bytes per element (signed integer), written by WriteVector for the matching CLR
+    // type.
+    Int64,
+    // Vector element type of 1 byte per element (unsigned integer), written by WriteVector for the matching CLR
+    // type.
+    Byte,
+    // Vector element type of 2 bytes per element (unsigned integer), written by WriteVector for the matching CLR
+    // type.
+    UInt16,
+    // Vector element type of 4 bytes per element (unsigned integer), written by WriteVector for the matching CLR
+    // type.
+    UInt32,
+    // Vector element type of 8 bytes per element (unsigned integer), written by WriteVector for the matching CLR
+    // type.
+    UInt64,
+    // Vector element type of 2 bytes per element (floating-point), corresponding to System.Half.
+    Half,
+    // Vector element type of 4 bytes per element (floating-point), corresponding to float.
+    Float,
+    // Vector element type of 8 bytes per element (floating-point), corresponding to double.
+    Double,
+}
+```
+
+```csharp
+// Writes blittable JSON data into an unmanaged write buffer, tracking the current position and writing values,
+// strings, metadata and vectors. Returns a reader over the result and releases its pooled memory on disposal.
+public sealed class BlittableWriter<TWriter> : IDisposable
+{
+    // Creates a writer on the given operation context using the supplied buffer, and obtains a 32-byte scratch
+    // memory block from the context.
+    BlittableWriter(JsonOperationContext context, TWriter writer);
+    // Creates a writer on the given operation context with a default write buffer, and obtains a 32-byte scratch
+    // memory block from the context.
+    BlittableWriter(JsonOperationContext context);
+    // Returns the current write position, the number of bytes written so far in the document.
+    int Position { get; }
+    // Returns the size in bytes reported by the underlying unmanaged write buffer.
+    int SizeInBytes { get; }
+    // Static method that sets the thread-local property array offset buffer to null and clears and nulls the
+    // thread-local integer buffer.
+    static void CleanPropertyArrayOffset();
+    // Ensures the written data is a single chunk, wraps it in a new BlittableJsonReaderObject, and resets the
+    // writer buffer to its default so the reader owns the data.
+    BlittableJsonReaderObject CreateReader();
+    // Disposes the write buffer and returns the compression and scratch memory blocks to the context, setting them
+    // to null.
+    void Dispose();
+    // Resets the document number, disposes the write buffer, and returns the compression and scratch memory blocks
+    // to the context.
+    void Reset();
+    // Resets the document number and position, disposes the current buffer and gets a new stream from the context
+    // sized to the last document size, and reacquires scratch memory if released.
+    void ResetAndRenew();
+    // Writes the array element count followed by each element offset (relative to the metadata start) and type
+    // byte, setting the offset size flag on the list token. Returns the metadata start position.
+    int WriteArrayMetadata(FastList<int> positions, FastList<BlittableJsonToken> types, ref BlittableJsonToken listToken);
+    // Writes the cached property names, then the root offset and property names position in reverse variable-size
+    // form, and finally the document token as one byte.
+    void WriteDocumentMetadata(int rootOffset, BlittableJsonToken documentToken);
+    // Writes a single zero byte as a null value and returns the position where it was written.
+    int WriteNull();
+    // Writes the given integer little-endian using 1, 2 or 4 bytes according to sizeOfValue.
+    void WriteNumber(int value, int sizeOfValue);
+    // Sorts the properties, then writes the property count and, for each property, its offset, property id and
+    // type byte, sizing offsets and ids by the largest value. Returns a WriteToken with the metadata start and
+    // object token.
+    BlittableJsonDocumentBuilder.WriteToken WriteObjectMetadata(FastList<AbstractBlittableJsonDocumentBuilder.PropertyTag> properties, long firstWrite, int maxPropId);
+    // Writes the value as a zigzag variable-size long and returns the starting position.
+    int WriteValue(long value);
+    // Writes the unsigned value as its invariant-culture string form and returns the starting position.
+    int WriteValue(UInt64 value);
+    // Writes the boolean as a variable-size integer, 1 for true and 0 for false, and returns the starting
+    // position.
+    int WriteValue(bool value);
+    // Writes the double as its round-trip invariant-culture string, appending .0 when it has no decimal point or
+    // exponent and is not NaN or infinity. Returns the starting position.
+    int WriteValue(double value);
+    // Writes the decimal as its invariant-culture string, appending .0 when it has no decimal point. Returns the
+    // starting position.
+    int WriteValue(decimal value);
+    // Converts the float to double and writes it using the double overload.
+    int WriteValue(float value);
+    // Writes the inner string value of the LazyNumberValue.
+    int WriteValue(LazyNumberValue value);
+    // Writes the single byte to the buffer and returns the starting position.
+    int WriteValue(byte value);
+    // Encodes the string as UTF-8, finds escape positions, and writes it with the given usage mode, returning the
+    // starting position and the resulting token.
+    int WriteValue(string str, out BlittableJsonToken token, BlittableJsonDocumentBuilder.UsageMode mode);
+    // Writes the LazyStringValue with no usage mode and no initial compressed size, discarding the token. Returns
+    // the starting position.
+    int WriteValue(LazyStringValue str);
+    // Writes the LazyStringValue; uses the escape-position overload when escape positions exist, otherwise writes
+    // the size and raw buffer including its escape data. Returns the starting position and sets the token.
+    int WriteValue(LazyStringValue str, out BlittableJsonToken token, BlittableJsonDocumentBuilder.UsageMode mode, int? initialCompressedSize);
+    // Writes a compressed string as its uncompressed size, compressed size, and compressed buffer including escape
+    // data, setting the token to CompressedString. Returns the starting position.
+    int WriteValue(LazyCompressedStringValue str, out BlittableJsonToken token, BlittableJsonDocumentBuilder.UsageMode mode);
+    // Writes the size and buffer, optionally compressing it according to the usage mode or initial compressed
+    // size, followed by a zero escape count. Sets the token to String or CompressedString and returns the starting
+    // position.
+    int WriteValue(Byte* buffer, int size, out BlittableJsonToken token, BlittableJsonDocumentBuilder.UsageMode mode, int? initialCompressedSize);
+    // Writes the size and buffer, optionally compressed, followed by the escape position count and positions from
+    // the list. Sets the token and returns the starting position.
+    int WriteValue(Byte* buffer, int size, FastList<int> escapePositions, out BlittableJsonToken token, BlittableJsonDocumentBuilder.UsageMode mode, int? initialCompressedSize);
+    // Writes the size as a variable-size int, the buffer bytes, and a zero escape count. Returns the starting
+    // position.
+    int WriteValue(Byte* buffer, int size);
+    // Writes the size, the buffer bytes, and the escape positions from the array, or a zero count when the array
+    // is null or empty. Returns the starting position.
+    int WriteValue(Byte* buffer, int size, int[] escapePositions);
+    // Writes the size, the buffer bytes, and the escape positions from the list, or a zero count when it is null
+    // or empty. Returns the starting position.
+    int WriteValue(Byte* buffer, int size, FastList<int> escapePositions);
+    // Writes the size and buffer, optionally compressed, followed by the escape position count and positions from
+    // the array, or a zero count when null. Sets the token and returns the starting position.
+    int WriteValue(Byte* buffer, int size, int[] escapePositions, out BlittableJsonToken token, BlittableJsonDocumentBuilder.UsageMode mode, int? initialCompressedSize);
+    // Writes the int as a variable-size value of seven bits per byte, returning the number of bytes written.
+    int WriteVariableSizeInt(int value);
+    // Writes the int as a variable-size value with the encoded bytes in reverse order, returning the number of
+    // bytes written.
+    int WriteVariableSizeIntInReverse(int value);
+    // Writes the long as a zigzag-encoded variable-size value, returning the number of bytes written.
+    int WriteVariableSizeLong(long value);
+    // Writes a vector header with the element type matching T and the length, then the elements. Throws
+    // NotSupportedException for unsupported element types. Returns the starting position.
+    int WriteVector<T>(ReadOnlySpan<T> vector);
+}
+```
+
+```csharp
+/// This class allows us to cache the properties from multiple documents That way, we don't need to recompute the
+///    sort order. However, because different documents may have different fields, we're tracking which
+///    properties we have seen and which are new. If the order in which we read the properties doesn't match the
+///    cached version, we'll clear the cache up to the point the properties match. This is done so we'll not
+///    write properties that don't belong to that document, but to previous documents handled in the same batch
+public sealed class CachedProperties
+{
+    // Creates the cache for the given context and obtains its per-core sort cache.
+    CachedProperties(JsonOperationContext context);
+    // Static field holding the threshold used by NeedClearPropertiesCache; initial value 512.
+    static int CachedPropertiesSize;
+    // Count of property names discovered so far in the current document.
+    int PropertiesDiscovered;
+    // Resets the sort caches and clears the known property names, sort order, name-to-id map, counters and
+    // document number.
+    void Clear();
+    // Clears all cached properties and then renews the sort cache.
+    void ClearRenew();
+    // Returns the cached PropertyName for the given name, registering it if unseen and counting it as discovered,
+    // reordering ids if it is out of order.
+    CachedProperties.PropertyName GetProperty(LazyStringValue propName);
+    // Returns the property name string stored at the given index of the discovered names list.
+    LazyStringValue GetProperty(int index);
+    // Returns true when the number of discovered properties exceeds CachedPropertiesSize.
+    bool NeedClearPropertiesCache();
+    // Increments the document number and resets the discovered property count to zero.
+    void NewDocument();
+    // Obtains the sort cache array from the per-core container, or allocates a new fixed-size array when none is
+    // available.
+    void Renew();
+    // Clears each cached sort and returns the sort cache array to the per-core container, then sets it to null.
+    void Reset();
+    // Sorts the property tags by name, reusing a cached sort when the same properties appear in the same order,
+    // and drops duplicate properties keeping the latest.
+    void Sort(FastList<AbstractBlittableJsonDocumentBuilder.PropertyTag> properties);
+}
+```
+
+```csharp
+// Interface for hooks that observe or alter blittable document building, with callbacks for object start and
+// end, property name reading, and reset.
+public interface IBlittableDocumentModifier
+{
+    // Called before a property name is read from the parser, taking the reader and parser state, and returns a
+    // bool.
+    bool AboutToReadPropertyName(IJsonParser reader, JsonParserState state);
+    // Called when an object ends during document building.
+    void EndObject();
+    // Resets the modifier for use with the given operation context.
+    void Reset(JsonOperationContext context);
+    // Called when an object starts during document building.
+    void StartObject();
+}
+```
+
+```csharp
+// Interface for objects that expose a BlittableJsonReaderObject.
+public interface IBlittableJsonContainer
+{
+    // Gets the BlittableJsonReaderObject held by the container.
+    BlittableJsonReaderObject BlittableJson { get; }
+}
+```
+
+```csharp
+// Interface for writers that emit blittable JSON as text, with methods for objects, arrays, property names,
+// strings, numbers, booleans, null, dates, commas and newlines.
+public interface IBlittableJsonTextWriter
+{
+    // Writes a boolean value.
+    void WriteBool(bool val);
+    // Writes a comma separator.
+    void WriteComma();
+    // Writes a nullable DateTime, taking a flag indicating whether it is UTC, and returns an int.
+    int WriteDateTime(DateTime? value, bool isUtc);
+    // Writes a DateTime, taking a flag indicating whether it is UTC, and returns an int.
+    int WriteDateTime(DateTime value, bool isUtc);
+    // Writes a LazyNumberValue as a number.
+    void WriteDouble(LazyNumberValue val);
+    // Writes a double value.
+    void WriteDouble(double val);
+    // Writes the end of a JSON array.
+    void WriteEndArray();
+    // Writes the end of a JSON object.
+    void WriteEndObject();
+    // Writes a long integer value.
+    void WriteInteger(long val);
+    // Writes a newline.
+    void WriteNewLine();
+    // Writes a null value.
+    void WriteNull();
+    // Writes a BlittableJsonReaderObject.
+    void WriteObject(BlittableJsonReaderObject obj);
+    // Writes a property name given as a UTF-8 byte span.
+    void WritePropertyName(ReadOnlySpan<byte> prop);
+    // Writes a property name given as a LazyStringValue.
+    void WritePropertyName(LazyStringValue prop);
+    // Writes a property name given as a string.
+    void WritePropertyName(string prop);
+    // Writes a property name given as a StringSegment.
+    void WritePropertyName(StringSegment prop);
+    // Writes the start of a JSON array.
+    void WriteStartArray();
+    // Writes the start of a JSON object.
+    void WriteStartObject();
+    // Writes a string value; the skipEscaping parameter defaults to false.
+    void WriteString(string str, bool skipEscaping);
+    // Writes a LazyStringValue as a string; the skipEscaping parameter defaults to false.
+    void WriteString(LazyStringValue str, bool skipEscaping);
+    // Writes a LazyCompressedStringValue as a string.
+    void WriteString(LazyCompressedStringValue str);
+    // Writes a value of the given BlittableJsonToken type from the supplied object.
+    void WriteValue(BlittableJsonToken token, object val);
+}
+```
+
+```csharp
+// Interface for a pool that hands out JsonOperationContext instances; it is disposable.
+public interface IMemoryContextPool : IDisposable
+{
+    // Allocates an operation context, returns it through the out parameter, and returns an IDisposable that
+    // releases it.
+    IDisposable AllocateOperationContext(out JsonOperationContext context);
+}
+```
+
+```csharp
+// Interface for unmanaged write buffers that accept bytes, values and spans, report their size in bytes, and
+// can expose their content as a single chunk.
+public interface IUnmanagedWriteBuffer : IDisposableQueryable, IDisposable
+{
+    // Gets the number of bytes written to the buffer.
+    int SizeInBytes { get; }
+    // Ensures the content is a single chunk and stores its pointer and size in the state StringBuffer and
+    // StringSize in the UnmanagedWriteBuffer implementation; the stream implementation throws
+    // NotSupportedException.
+    void EnsureSingleChunk(JsonParserState state);
+    // Ensures the content is a single chunk and returns its pointer and size through out parameters; the stream
+    // implementation throws NotSupportedException.
+    void EnsureSingleChunk(out Byte* ptr, out int size);
+    // Writes count bytes from the byte array starting at the given index.
+    void Write(byte[] buffer, int start, int count);
+    // Writes the given number of bytes from the unmanaged pointer.
+    void Write(Byte* buffer, int length);
+    // Writes an unmanaged value passed by reference.
+    void Write<T>(ref T value);
+    // Writes the elements of an unmanaged read-only span passed by reference.
+    void Write<T>(ref ReadOnlySpan<T> buffer);
+    // Writes a single byte.
+    void WriteByte(byte data);
+}
+```
+
+```csharp
+// Abstract pool of JsonOperationContext instances using per-core and global caches. It disposes contexts when
+// memory is low, when they exceed size limits, or after idle periods, and reacts to low memory notifications.
+public abstract class JsonContextPoolBase<T> : ILowMemoryHandler, IMemoryContextPool
+{
+    // Allocates a context of type T and returns it as a JsonOperationContext together with the IDisposable that
+    // returns it to the pool.
+    IDisposable AllocateOperationContext(out JsonOperationContext context);
+    // Throws if the pool was disposed, then takes a context from the per-core cache or global stack, or creates a
+    // new one. Returns an IDisposable that returns the context to the pool.
+    IDisposable AllocateOperationContext(out T context);
+    // Has an empty body with a comment stating there is nothing to do currently.
+    void Clean();
+    // Cancels the pool, stops the cleanup timer and disposes all pooled contexts; does nothing if already
+    // disposed.
+    void Dispose();
+    // Raises the low memory flag and increments the generation; on ExtremelyLow severity it also disposes the
+    // pooled contexts that are not in use.
+    void LowMemory(LowMemorySeverity lowMemorySeverity);
+    // Lowers the low memory flag and the extremely-low-memory flag.
+    void LowMemoryOver();
+}
+```
+
+```csharp
+/// Instructs the 'JsonDeserializationBase' not to serialize the public field or public read/write property
+///    value.
+public sealed class JsonDeserializationIgnoreAttribute : Attribute
+{
+    // Creates the attribute, which marks a field or property to be skipped by JsonDeserializationBase.
+    JsonDeserializationIgnoreAttribute();
+}
+```
+
+```csharp
+// Disposable scope returned by AvoidOverAllocation; its disposal sets the parent context arena allocator
+// AvoidOverAllocation flag to false.
+public struct JsonOperationContext.AvoidOverAllocationScope : IDisposable
+{
+    // Stores the given parent operation context.
+    AvoidOverAllocationScope(JsonOperationContext parent);
+    // Sets the parent context arena allocator AvoidOverAllocation flag to false.
+    void Dispose();
+}
+```
+
+```csharp
+// Buffer of unmanaged memory with address, size and Valid and Used counters, used when reading data into the
+// context.
+public sealed class JsonOperationContext.MemoryBuffer
+{
+    // Creates the buffer over the given address and size, sets Valid and Used to zero.
+    MemoryBuffer(Byte* address, int size, int generation, JsonOperationContext context);
+    // Pointer to the start of the buffer memory.
+    Byte* Address;
+    // Constant equal to 32 kilobytes, the default buffer size.
+    const int DefaultSize;
+    // The UnmanagedMemory wrapping the buffer address and size.
+    UnmanagedMemory Memory;
+    // Size of the buffer in bytes.
+    int Size;
+    // Number of bytes of the buffer already consumed; advanced by the parser buffer offset and reset to 0 when
+    // refilled.
+    int Used;
+    // Number of bytes in the buffer that hold valid data; set to the count read when refilled.
+    int Valid;
+}
+```
+
+```csharp
+// Disposable that returns the allocated memory to the parent operation context on disposal.
+public struct JsonOperationContext.MemoryBuffer.ReturnBuffer : IDisposable
+{
+    // Stores the allocated memory and parent context; throws ArgumentNullException if allocatedMemory or parent is
+    // null, and in debug builds also if buffer is null.
+    ReturnBuffer(AllocatedMemoryData allocatedMemory, JsonOperationContext.MemoryBuffer buffer, JsonOperationContext parent);
+    // Stores the allocated memory and parent context; throws ArgumentNullException if either is null.
+    ReturnBuffer(AllocatedMemoryData allocatedMemory, JsonOperationContext parent);
+    // Returns the allocated memory to the parent context and clears it; throws ObjectDisposedException if the
+    // parent was disposed. Does nothing if already released.
+    void Dispose();
+}
+```
+
+```csharp
+// Sealed class that holds a compressed UTF-8 string buffer with its compressed and uncompressed sizes, and
+// decompresses it on demand using LZ4 or small-string compression.
+public sealed class LazyCompressedStringValue
+{
+    // Creates an instance storing the optional cached string, the compressed buffer pointer, both sizes, and the
+    // owning JSON operation context.
+    LazyCompressedStringValue(string str, Byte* buffer, int uncompressedSize, int compressedSize, JsonOperationContext context);
+    // Pointer to the compressed bytes; the escape positions data follows the compressed bytes in the same buffer.
+    Byte* Buffer;
+    // Size in bytes of the compressed data.
+    int CompressedSize;
+    // Cached string form; set from the constructor argument or by the first conversion to string, and null before
+    // that if none was supplied.
+    string String;
+    // Size in bytes of the data after decompression.
+    int UncompressedSize;
+    // Returns a new instance with the same cached string, buffer and sizes, bound to the specified context.
+    LazyCompressedStringValue CloneForConcurrentRead(JsonOperationContext context);
+    // Decompresses the value into memory obtained from the external context, or from the instance context if null,
+    // and returns the allocation. Throws FormatException if the decompressed size differs from UncompressedSize.
+    AllocatedMemoryData DecompressToAllocatedMemoryData(JsonOperationContext externalContext);
+    // Decompresses the value into an allocated buffer, returns the buffer address and outputs the allocation. Uses
+    // the external context if provided, otherwise the instance context.
+    Byte* DecompressToTempBuffer(out AllocatedMemoryData allocatedData, JsonOperationContext externalContext);
+    // Decompresses the value into an allocated buffer and returns an UnmanagedPointer to its address, outputting
+    // the allocation. Uses the external context if provided, otherwise the instance context.
+    UnmanagedPointer DecompressToUnmanagedPointer(out AllocatedMemoryData allocatedData, JsonOperationContext externalContext);
+    // Returns true if obj is an equal LazyCompressedStringValue, LazyStringValue or string; returns false for null
+    // and other types.
+    bool Equals(object obj);
+    // Returns true if the uncompressed sizes match and the contents are equal, comparing compressed bytes directly
+    // when compressed sizes match, otherwise comparing the decompressed data.
+    bool Equals(LazyCompressedStringValue other);
+    // Returns a hash computed (XXHash32 or XXHash64 by pointer size) over the compressed bytes.
+    int GetHashCode();
+    // Converts the value to a string and returns the substring starting at the specified index.
+    string Substring(int startIndex);
+    // Converts the value to a string and returns the substring with the specified start index and length.
+    string Substring(int startIndex, int length);
+    /// Returns uncompressed data in form of LazyStringValue
+    LazyStringValue ToLazyStringValue();
+    // Returns the decompressed UTF-8 content as a string, caching it in String.
+    string ToString();
+}
+```
+
+```csharp
+// Sealed builder that lets callers incrementally write a blittable JSON document by calling explicit start,
+// property, value and end methods on a BlittableWriter.
+public sealed class ManualBlittableJsonDocumentBuilder<TWriter> : AbstractBlittableJsonDocumentBuilder
+{
+    // Creates a builder for the context with the specified usage mode (None if null) and writer (a new
+    // BlittableWriter for the context if null).
+    ManualBlittableJsonDocumentBuilder(JsonOperationContext context, BlittableJsonDocumentBuilder.UsageMode? mode, BlittableWriter<TWriter> writer);
+    // Creates a reader over the written document and returns the array held under the root array property. Throws
+    // InvalidOperationException if no array is found.
+    BlittableJsonReaderArray CreateArrayReader();
+    // Returns a BlittableJsonReaderObject over the document written by the underlying writer.
+    BlittableJsonReaderObject CreateReader();
+    // Disposes the underlying writer and then the base builder.
+    void Dispose();
+    // Writes the document metadata using the last written token and its position as the root, then clears the
+    // builder state.
+    void FinalizeDocument();
+    // Sets the usage mode and resets and renews the underlying writer.
+    void Reset(BlittableJsonDocumentBuilder.UsageMode mode);
+    // Pushes a ReadArrayDocument state for a root array document, registering the root array holder property.
+    void StartArrayDocument();
+    // Pushes a ReadArray state to begin writing an array.
+    void StartWriteArray();
+    // Begins writing an object. Throws InvalidOperationException unless the current state is ReadObjectDocument,
+    // ReadPropertyValue or ReadArray.
+    void StartWriteObject();
+    // Pushes a ReadObjectDocument state to begin writing a root object document.
+    void StartWriteObjectDocument();
+    // Ends the current array, writing its metadata and registering it in the enclosing state. Throws
+    // InvalidOperationException if the state is not valid for ending an array.
+    void WriteArrayEnd();
+    // Writes the blittable document bytes of the specified reader object as an embedded blittable value, using its
+    // base pointer and size.
+    void WriteEmbeddedBlittableDocument(BlittableJsonReaderObject document);
+    // Writes the bytes at the pointer with the given size as an embedded blittable value and registers it in the
+    // current state.
+    void WriteEmbeddedBlittableDocument(Byte* ptr, int size);
+    // Ends the current object, writing its metadata and registering it in the enclosing object or array. Throws
+    // InvalidOperationException on an invalid state.
+    void WriteObjectEnd();
+    // Registers a property name from the string for the next value. Throws InvalidOperationException unless the
+    // current state expects a property name.
+    void WritePropertyName(string propertyName);
+    // Registers the specified property name for the next value. Throws InvalidOperationException unless the
+    // current state expects a property name.
+    void WritePropertyName(LazyStringValue property);
+    // Writes the bytes at the pointer with the given size as a RawBlob value in the current object or array.
+    void WriteRawBlob(Byte* ptr, int size);
+    // Writes the value according to the given BlittableJsonToken, dispatching to the matching write method;
+    // vectors are written by element type. Throws ArgumentOutOfRangeException for unsupported tokens or vector
+    // types.
+    void WriteValue(BlittableJsonToken token, object value);
+    // Writes a boolean value in the current object property or array.
+    void WriteValue(bool value);
+    // Writes a long value as an Integer token in the current object property or array.
+    void WriteValue(long value);
+    // Writes a float value as a LazyNumber token in the current object property or array.
+    void WriteValue(float value);
+    // Writes the value as an Integer token if it is at most long.MaxValue, otherwise as a LazyNumber token.
+    void WriteValue(UInt64 value);
+    // Writes a double value as a LazyNumber token in the current object property or array.
+    void WriteValue(double value);
+    // Writes a decimal value as a LazyNumber token in the current object property or array.
+    void WriteValue(decimal value);
+    // Writes a LazyNumberValue as a LazyNumber token in the current object property or array.
+    void WriteValue(LazyNumberValue value);
+    // Writes a string value using the builder usage mode, which may produce a string or compressed string token.
+    void WriteValue(string value);
+    // Writes a LazyStringValue in the current object property or array with usage mode None.
+    void WriteValue(LazyStringValue value);
+    // Writes a LazyCompressedStringValue in the current object property or array with usage mode None.
+    void WriteValue(LazyCompressedStringValue value);
+    // Writes a null value in the current object property or array.
+    void WriteValueNull();
+    // Writes the span of unmanaged values as a Vector token in the current object property or array.
+    void WriteVector<T>(ReadOnlySpan<T> array);
+}
+```
+
+```csharp
+// Pool of unmanaged memory buffers kept in 32 stacks by power-of-two size class; sizes over 1 MB are allocated
+// and freed directly.
+public class UnmanagedBuffersPool : IDisposable
+{
+    // Creates a pool with the logger, debug tag and database name (empty string if null) and initializes 32 free-
+    // segment stacks.
+    UnmanagedBuffersPool(IRavenLogger logger, string debugTag, string databaseName);
+    // Returns a pooled allocation rounded up to a power of two, or a newly allocated one if none is free; sizes
+    // over 1 MB are allocated exactly.
+    AllocatedMemoryData Allocate(int size);
+    // Marks the pool as disposed, frees all pooled memory and suppresses finalization; does nothing if already
+    // disposed.
+    void Dispose();
+    // Returns the total size in bytes of the free segments currently held in the pool.
+    long GetAllocatedMemorySize();
+    // Returns the number of bits needed to represent the size, or -1 if the size exceeds 1 MB.
+    static int GetIndexFromSize(int size);
+    // If severity is ExtremelyLow, frees all pooled memory and logs the amount freed at debug level; otherwise
+    // does nothing.
+    void LowMemory(LowMemorySeverity lowMemorySeverity);
+    // Does nothing.
+    void LowMemoryOver();
+    // Returns the allocation to the pool, or frees it if its size is over 1 MB or the pool is disposed. Throws
+    // ArgumentNullException if null.
+    void Return(AllocatedMemoryData returned);
+}
+```
+
+```csharp
+// Struct write buffer that accumulates bytes in a linked chain of memory segments allocated from a
+// JsonOperationContext.
+public struct UnmanagedWriteBuffer : IUnmanagedWriteBuffer
+{
+    // Creates a buffer whose first segment uses the specified allocated memory, bound to the context.
+    UnmanagedWriteBuffer(JsonOperationContext context, AllocatedMemoryData allocatedMemoryData);
+    // Returns true if the buffer has no head segment or its head segment address has been cleared by disposal.
+    bool IsDisposed { get; }
+    // Returns the total number of bytes written; in debug builds throws ObjectDisposedException if disposed.
+    int SizeInBytes { get; }
+    // Resets the head segment used and accumulated sizes to zero and drops the link to previous segments.
+    void Clear();
+    // Copies the written bytes from the given start offset to the pointer, walking segments backwards, and returns
+    // the number of bytes copied.
+    int CopyTo(int start, Byte* pointer);
+    // Copies all written bytes in order to the pointer and returns the number of bytes copied.
+    int CopyTo(Byte* pointer);
+    // Returns every segment allocation to the context and clears the head; does nothing if already disposed.
+    void Dispose();
+    // Ensures the data is in a single chunk and sets the state StringBuffer and StringSize to its pointer and
+    // size.
+    void EnsureSingleChunk(JsonParserState state);
+    // Ensures the data is in a single chunk and outputs its pointer and size.
+    void EnsureSingleChunk(out Byte* ptr, out int size);
+    // Writes count bytes from the array starting at the start index, allocating further segments as needed.
+    void Write(byte[] buffer, int start, int count);
+    // Writes count bytes from the pointer, allocating further segments as needed; does nothing for count zero.
+    void Write(Byte* buffer, int count);
+    // Writes the raw bytes of the unmanaged value, allocating a new segment if the current one lacks space.
+    void Write<T>(ref T value);
+    // Writes the raw bytes of the span elements to the buffer.
+    void Write<T>(ref ReadOnlySpan<T> vector);
+    // Writes one byte, allocating a new segment if the current one is full.
+    void WriteByte(byte data);
+}
+```
+
+### `Sparrow.Json.Parsing`
+
+```csharp
+// Sealed list-backed collection of objects used to build or modify a JSON array, with tracking of removed
+// indexes; disposes any disposable items.
+public sealed class DynamicJsonArray : IEnumerable<object>, IDisposable
+{
+    // Creates an empty array with an empty Items list.
+    DynamicJsonArray();
+    // Creates an array whose Items contain the elements of the specified collection.
+    DynamicJsonArray(IEnumerable collection);
+    // List of objects held by the array.
+    List<object> Items;
+    // Public integer field initialized to 0, used as an index while iterating the items when the array is
+    // converted by the object JSON parser.
+    int ModificationsIndex;
+    // List of indexes recorded by RemoveAt; null until the first removal.
+    List<int> Removals;
+    // Boolean flag; when set, the parser sets SourceIndex to the original array length instead of -1.
+    bool SkipOriginalArray;
+    // Index into the source array, initialized to -1.
+    int SourceIndex;
+    // Returns the number of items in Items.
+    int Count { get; }
+    // Adds the object to Items; in debug builds throws InvalidOperationException if it is a Raven.Server Document.
+    void Add(object obj);
+    // Removes all items from Items.
+    void Clear();
+    // Disposes each item that implements IDisposable.
+    void Dispose();
+    // Returns the enumerator of Items.
+    IEnumerator<object> GetEnumerator();
+    // Records the index in the Removals list, creating it if needed, without removing from Items.
+    void RemoveAt(int index);
+}
+```
+
+```csharp
+// Interface for a JSON parser that reads tokens, validates floats, produces error state text and accepts a
+// string-read callback.
+public interface IJsonParser : IDisposable
+{
+    // Write-only property that sets the delegate called when a string is read, receiving an UnmanagedWriteBuffer
+    // and a partial flag.
+    OnStringReadDelegate OnStringRead { set; }
+    // Returns a string describing the current parser state for error reporting.
+    string GenerateErrorState();
+    // Reads the next token and returns a boolean indicating whether a token was read.
+    bool Read();
+    // Validates a floating-point value that was read.
+    void ValidateFloat();
+}
+```
+
+```csharp
+// Sealed class holding the current state of a JSON parser: string buffer and size, numeric value, current
+// token type, continuation and escape positions.
+public sealed class JsonParserState
+{
+    // Creates a parser state with default field values and an empty escape positions list.
+    JsonParserState();
+    // Nullable size of the compressed string data; set to null by Reset.
+    int? CompressedSize;
+    // Continuation marker for a token that was partially read.
+    JsonParserTokenContinuation Continuation;
+    // Constant 5, the size used per control character item.
+    const int ControlCharacterItemSize;
+    // Token type currently held by the state.
+    JsonParserToken CurrentTokenType;
+    // Constant 5, the size used per escape position item.
+    const int EscapePositionItemSize;
+    // List of integer positions of escaped characters found in the current string.
+    FastList<int> EscapePositions;
+    // Long value of the current integer token.
+    long Long;
+    // Pointer to the current string bytes.
+    Byte* StringBuffer;
+    // Size in bytes of the current string.
+    int StringSize;
+    // Finds escape positions in the string bytes and stores them in EscapePositions, delegating to
+    // StringUtils.FindEscapedPositions.
+    void FindEscapedPositions(Byte* str, int len, int previousComputedMaxSize);
+    // Clears the buffer pointer, sizes, long value, token type, continuation, escape positions and buffered vector
+    // state.
+    void Reset();
+    // Returns the number of bytes needed to encode the value as a variable-size integer in 7-bit groups.
+    static int VariableSizeIntSize(int value);
+    // Writes the escape position count and each position as variable-size ints to the buffer and returns the
+    // number of bytes written.
+    int WriteEscapePositionsTo(Byte* buffer);
+    // Writes the value as a variable-size integer to the destination pointer and advances the pointer.
+    static void WriteVariableSizeInt(ref Byte* dest, int value);
+}
+```
+
+```csharp
+// Enum of token types that a JSON parser can produce, each a distinct bit value except None, which is 0.
+public enum JsonParserToken
+{
+    // No token; value 0.
+    None,
+    // Null literal token; value 1 shifted left by 1.
+    Null,
+    // False literal token; value 1 shifted left by 2.
+    False,
+    // True literal token; value 1 shifted left by 3.
+    True,
+    // String token; value 1 shifted left by 4.
+    String,
+    // Floating-point number token; value 1 shifted left by 5.
+    Float,
+    // Integer number token; value 1 shifted left by 6.
+    Integer,
+    // Separator token; value 1 shifted left by 7.
+    Separator,
+    // Start of an object token; value 1 shifted left by 8.
+    StartObject,
+    // Start of an array token; value 1 shifted left by 9.
+    StartArray,
+    // End of an array token; value 1 shifted left by 10.
+    EndArray,
+    // End of an object token; value 1 shifted left by 11.
+    EndObject,
+    // Binary blob token; value 1 shifted left by 12.
+    Blob,
+}
+```
+
+```csharp
+// Enum of continuation states that record which kind of token the JSON parser was partway through when its
+// input buffer ran out.
+public enum JsonParserTokenContinuation
+{
+    // No continuation is pending; the parser reads normally.
+    None,
+    // Enum value declared in the enum but not referenced anywhere in the source.
+    PleaseRefillBuffer,
+    // Continuation state for a partially read NaN token.
+    PartialNaN,
+    // Continuation state for a partially read positive Infinity token.
+    PartialPositiveInfinity,
+    // Continuation state for a partially read negative Infinity token.
+    PartialNegativeInfinity,
+    // Continuation state for a partially read null token.
+    PartialNull,
+    // Continuation state for a partially read true token.
+    PartialTrue,
+    // Continuation state for a partially read string token.
+    PartialString,
+    // Continuation state for a partially read number token.
+    PartialNumber,
+    // Continuation state for a partially read UTF-8 preamble (byte order mark).
+    PartialPreamble,
+    // Continuation state for a partially read false token.
+    PartialFalse,
+}
+```
+
+```csharp
+// JSON parser that walks an in-memory object graph and reports it as a sequence of JSON tokens through the
+// parser state.
+public sealed class ObjectJsonParser : IJsonParser
+{
+    // Creates the parser with the given parser state and operation context.
+    ObjectJsonParser(JsonParserState state, JsonOperationContext ctx);
+    // Write-only property whose setter always throws NotSupportedException.
+    OnStringReadDelegate OnStringRead { set; }
+    // Releases the state buffer back to the context once; later calls do nothing.
+    void Dispose();
+    // Returns the string form of the last element enumerated from the element stack, which is the bottom-most
+    // (first pushed) element, or an empty string if the stack is empty.
+    string GenerateErrorState();
+    // Advances to the next token of the object graph; throws EndOfStreamException if no elements remain and throws
+    // if the parser is disposed.
+    bool Read();
+    // Returns any state buffer to the context, clears the element stack and seen-values set, and pushes the given
+    // root if it is not null.
+    void Reset(object root);
+    // Does nothing, since all float values are treated as valid.
+    void ValidateFloat();
+}
+```
+
+```csharp
+// Delegate type invoked with an unmanaged write buffer and a flag indicating whether the string data is
+// partial.
+public sealed class OnStringReadDelegate : MulticastDelegate
+{
+    // Compiler-generated delegate constructor taking a target object and a method pointer.
+    OnStringReadDelegate(object object, IntPtr method);
+    // Begins asynchronous invocation of the delegate with the buffer, partial flag, callback and state object.
+    IAsyncResult BeginInvoke(UnmanagedWriteBuffer buffer, bool partial, AsyncCallback callback, object object);
+    // Ends an asynchronous invocation started with BeginInvoke.
+    void EndInvoke(IAsyncResult result);
+    // Invokes the delegate with the given buffer and partial flag.
+    void Invoke(UnmanagedWriteBuffer buffer, bool partial);
+}
+```
+
+```csharp
+// JSON parser that reads UTF-8 bytes from an unmanaged buffer and produces tokens into a JsonParserState,
+// resuming across buffer boundaries.
+public sealed class UnmanagedJsonParser : IJsonParser
+{
+    // Creates the parser with the operation context, parser state and debug tag, and allocates an initial write
+    // stream from the context.
+    UnmanagedJsonParser(JsonOperationContext ctx, JsonParserState state, string debugTag);
+    // Static byte array holding the UTF-8 encoding preamble (byte order mark).
+    static byte[] Utf8Preamble;
+    // Gets the current read position within the input buffer.
+    int BufferOffset { get; }
+    // Gets the size of the current input buffer in bytes.
+    int BufferSize { get; }
+    // Write-only property that sets the delegate stored for string-read notifications.
+    OnStringReadDelegate OnStringRead { set; }
+    // Copies up to count bytes from the unread input buffer to the output pointer and advances the position;
+    // returns whether the full count was copied and the number of bytes copied.
+    ValueTuple<bool, int> Copy(Byte* output, int count);
+    // Writes up to count bytes from the unread input buffer to the stream and advances the position; returns
+    // whether the full count was copied and the number of bytes written.
+    ValueTuple<bool, int> Copy(Stream dest, int count);
+    // Writes the bytes from the given offset up to the current position of the input buffer to the destination
+    // stream.
+    void CopyParsedChunk(Stream dest, int from);
+    // Disposes the internal unmanaged write buffer.
+    void Dispose();
+    // Returns a string with the current line and character position and the text of the input buffer.
+    string GenerateErrorState();
+    // Marks that a preamble may precede the next document and replaces the internal write buffer with a new stream
+    // of the previous size.
+    void NewDocument();
+    // Parses the next token from the input buffer into the parser state; returns false when the buffer is
+    // exhausted before a token completes.
+    bool Read();
+    // Sets the input buffer to the unused portion of the memory buffer, from its Used offset for Valid minus Used
+    // bytes, and resets the position to zero.
+    void SetBuffer(JsonOperationContext.MemoryBuffer inputBuffer);
+    // Sets the input buffer to the memory buffer address plus the given offset with the given size, and resets the
+    // position to zero.
+    void SetBuffer(JsonOperationContext.MemoryBuffer inputBuffer, int offset, int size);
+    // Sets the input buffer to the given pointer and size, and resets the position to zero.
+    void SetBuffer(Byte* inputBuffer, int size);
+    // Advances the position by up to count bytes without copying; returns whether the full count was skipped and
+    // the number of bytes skipped.
+    ValueTuple<bool, int> Skip(int count);
+    // Parses the buffered number text as a double and throws InvalidDataException if it cannot be parsed; infinity
+    // is accepted only for the Infinity or -Infinity text.
+    void ValidateFloat();
+}
+```
+
+```csharp
+// Static helpers for reading tokens, strings, longs, properties, objects and arrays from a stream through an
+// UnmanagedJsonParser.
+public static class UnmanagedJsonParserHelper
+{
+    // Reads the next token, refilling the parser buffer from the stream as needed; returns false at end of stream
+    // after an EndObject token and throws EndOfStreamException otherwise.
+    static bool Read(PeepingTomStream stream, UnmanagedJsonParser parser, JsonParserState state, JsonOperationContext.MemoryBuffer buffer);
+    // Reads a JSON array from the stream and yields each element as a BlittableJsonReaderObject; throws if the
+    // first token is not StartArray or the JSON is invalid.
+    static IEnumerable<BlittableJsonReaderObject> ReadArrayToMemory(JsonOperationContext context, PeepingTomStream peepingTomStream, UnmanagedJsonParser parser, JsonParserState state, JsonOperationContext.MemoryBuffer buffer);
+    // Asynchronously reads a JSON array from the stream and yields each element as a BlittableJsonReaderObject;
+    // throws if the first token is not StartArray or the JSON is invalid.
+    static IAsyncEnumerable<BlittableJsonReaderObject> ReadArrayToMemoryAsync(JsonOperationContext context, PeepingTomStream peepingTomStream, UnmanagedJsonParser parser, JsonParserState state, JsonOperationContext.MemoryBuffer buffer);
+    // Asynchronously reads the next token, refilling the parser buffer from the stream as needed; returns false at
+    // end of stream after an EndObject token and throws EndOfStreamException otherwise.
+    static Task<bool> ReadAsync(PeepingTomStream peepingTomStream, UnmanagedJsonParser parser, JsonParserState state, JsonOperationContext.MemoryBuffer buffer, CancellationToken token);
+    // Asynchronously reads a JSON array into the builder and returns it as a BlittableJsonReaderArray; throws
+    // EndOfStreamException if the stream ends early.
+    static ValueTask<BlittableJsonReaderArray> ReadJsonArrayAsync(BlittableJsonDocumentBuilder builder, PeepingTomStream peepingTomStream, UnmanagedJsonParser parser, JsonOperationContext.MemoryBuffer buffer, CancellationToken token);
+    // Reads the next token and returns its long value; throws if the stream ends or the token is not an integer.
+    static long ReadLong(JsonOperationContext context, PeepingTomStream peepingTomStream, UnmanagedJsonParser parser, JsonParserState state, JsonOperationContext.MemoryBuffer buffer);
+    // Reads a nested object into the builder from the stream and finalizes the document; throws
+    // EndOfStreamException if the stream ends early.
+    static void ReadObject(BlittableJsonDocumentBuilder builder, PeepingTomStream peepingTomStream, UnmanagedJsonParser parser, JsonOperationContext.MemoryBuffer buffer);
+    // Asynchronously reads a nested object into the builder from the stream and finalizes the document; throws
+    // EndOfStreamException if the stream ends early.
+    static Task ReadObjectAsync(BlittableJsonDocumentBuilder builder, PeepingTomStream peepingTomStream, UnmanagedJsonParser parser, JsonOperationContext.MemoryBuffer buffer, CancellationToken token);
+    // Reads a property into the builder from the stream and finalizes the document; throws EndOfStreamException if
+    // the stream ends early.
+    static void ReadProperty(BlittableJsonDocumentBuilder builder, PeepingTomStream peepingTomStream, UnmanagedJsonParser parser, JsonOperationContext.MemoryBuffer buffer);
+    // Asynchronously reads a property into the builder from the stream and finalizes the document; throws
+    // EndOfStreamException if the stream ends early.
+    static Task ReadPropertyAsync(BlittableJsonDocumentBuilder builder, PeepingTomStream peepingTomStream, UnmanagedJsonParser parser, JsonOperationContext.MemoryBuffer buffer, CancellationToken token);
+    // Reads the next token and returns its string value, or null for a null token; throws if the stream ends or
+    // the token is neither string nor null.
+    static string ReadString(JsonOperationContext context, PeepingTomStream peepingTomStream, UnmanagedJsonParser parser, JsonParserState state, JsonOperationContext.MemoryBuffer buffer);
+    // Throws InvalidOperationException with the given message, the parser error state and the last data read from
+    // the stream.
+    static void ThrowInvalidJson(string msg, PeepingTomStream peepingTomStream, UnmanagedJsonParser parser);
+    // Throws InvalidOperationException containing the last data read from the stream.
+    static void ThrowInvalidJson(PeepingTomStream peepingTomStream);
+    // Throws InvalidDataException stating the response is invalid JSON, with the last data read from the stream.
+    static void ThrowInvalidJsonResponse(PeepingTomStream peepingTomStream);
+}
+```
+
+### `Sparrow.Logging`
+
+```csharp
+// Logger abstraction exposing level checks and logging methods for Trace, Debug, Info, Warn, Error and Fatal.
+public interface IRavenLogger
+{
+    // Gets whether the Debug level is enabled.
+    bool IsDebugEnabled { get; }
+    // Gets whether the Error level is enabled.
+    bool IsErrorEnabled { get; }
+    // Gets whether the Fatal level is enabled.
+    bool IsFatalEnabled { get; }
+    // Gets whether the Info level is enabled.
+    bool IsInfoEnabled { get; }
+    // Gets whether the Trace level is enabled.
+    bool IsTraceEnabled { get; }
+    // Gets whether the Warn level is enabled.
+    bool IsWarnEnabled { get; }
+    // Logs a Debug level message.
+    void Debug(string message);
+    // Logs a Debug level message with format arguments.
+    void Debug(string message, object[] args);
+    // Logs a Debug level message with an exception.
+    void Debug(string message, Exception exception);
+    // Logs a Debug level message with an exception, message and format arguments.
+    void Debug(Exception exception, string message, object[] args);
+    // Logs a Debug level message with two typed arguments.
+    void Debug<TArgument1, TArgument2>(string message, TArgument1 argument1, TArgument2 argument2);
+    // Logs a Debug level message with three typed arguments.
+    void Debug<TArgument1, TArgument2, TArgument3>(string message, TArgument1 argument1, TArgument2 argument2, TArgument3 argument3);
+    // Logs a Error level message.
+    void Error(string message);
+    // Logs a Error level message with format arguments.
+    void Error(string message, object[] args);
+    // Logs a Error level message with an exception.
+    void Error(string message, Exception exception);
+    // Logs a Error level message with an exception, message and format arguments.
+    void Error(Exception exception, string message, object[] args);
+    // Logs a Error level message with two typed arguments.
+    void Error<TArgument1, TArgument2>(string message, TArgument1 argument1, TArgument2 argument2);
+    // Logs a Error level message with three typed arguments.
+    void Error<TArgument1, TArgument2, TArgument3>(string message, TArgument1 argument1, TArgument2 argument2, TArgument3 argument3);
+    // Logs a Fatal level message.
+    void Fatal(string message);
+    // Logs a Fatal level message with format arguments.
+    void Fatal(string message, object[] args);
+    // Logs a Fatal level message with an exception.
+    void Fatal(string message, Exception exception);
+    // Logs a Fatal level message with an exception, message and format arguments.
+    void Fatal(Exception exception, string message, object[] args);
+    // Logs a Fatal level message with two typed arguments.
+    void Fatal<TArgument1, TArgument2>(string message, TArgument1 argument1, TArgument2 argument2);
+    // Logs a Fatal level message with three typed arguments.
+    void Fatal<TArgument1, TArgument2, TArgument3>(string message, TArgument1 argument1, TArgument2 argument2, TArgument3 argument3);
+    // Logs a Info level message.
+    void Info(string message);
+    // Logs a Info level message with format arguments.
+    void Info(string message, object[] args);
+    // Logs a Info level message with an exception.
+    void Info(string message, Exception exception);
+    // Logs a Info level message with an exception, message and format arguments.
+    void Info(Exception exception, string message, object[] args);
+    // Logs a Info level message with two typed arguments.
+    void Info<TArgument1, TArgument2>(string message, TArgument1 argument1, TArgument2 argument2);
+    // Logs a Info level message with three typed arguments.
+    void Info<TArgument1, TArgument2, TArgument3>(string message, TArgument1 argument1, TArgument2 argument2, TArgument3 argument3);
+    // Returns whether the given log level is enabled.
+    bool IsEnabled(LogLevel logLevel);
+    // Logs a message at the given log level.
+    void Log(LogLevel logLevel, string message);
+    // Logs a message with an exception at the given log level.
+    void Log(LogLevel logLevel, string message, Exception exception);
+    // Logs a Trace level message.
+    void Trace(string message);
+    // Logs a Trace level message with format arguments.
+    void Trace(string message, object[] args);
+    // Logs a Trace level message with an exception.
+    void Trace(string message, Exception exception);
+    // Logs a Trace level message with an exception, message and format arguments.
+    void Trace(Exception exception, string message, object[] args);
+    // Logs a Trace level message with two typed arguments.
+    void Trace<TArgument1, TArgument2>(string message, TArgument1 argument1, TArgument2 argument2);
+    // Logs a Trace level message with three typed arguments.
+    void Trace<TArgument1, TArgument2, TArgument3>(string message, TArgument1 argument1, TArgument2 argument2, TArgument3 argument3);
+    // Logs a Warn level message.
+    void Warn(string message);
+    // Logs a Warn level message with format arguments.
+    void Warn(string message, object[] args);
+    // Logs a Warn level message with an exception.
+    void Warn(string message, Exception exception);
+    // Logs a Warn level message with an exception, message and format arguments.
+    void Warn(Exception exception, string message, object[] args);
+    // Logs a Warn level message with two typed arguments.
+    void Warn<TArgument1, TArgument2>(string message, TArgument1 argument1, TArgument2 argument2);
+    // Logs a Warn level message with three typed arguments.
+    void Warn<TArgument1, TArgument2, TArgument3>(string message, TArgument1 argument1, TArgument2 argument2, TArgument3 argument3);
+    // Returns a logger that carries the given property key and value.
+    IRavenLogger WithProperty(string propertyKey, object propertyValue);
+}
+```
+
+```csharp
+// Log manager abstraction that provides named loggers, a configuration-changed event and shutdown.
+public interface IRavenLogManager
+{
+    // Returns the logger with the given name.
+    IRavenLogger GetLogger(string name);
+    // Shuts down the log manager.
+    void Shutdown();
+    // Event raised when the logging configuration changes.
+    event EventHandler<RavenLoggingConfigurationChangedEventArgs> ConfigurationChanged;
+}
+```
+
+```csharp
+// Empty EventArgs subclass passed with the logging configuration-changed event.
+public class RavenLoggingConfigurationChangedEventArgs : EventArgs
+{
+    // Creates an instance of the event arguments.
+    RavenLoggingConfigurationChangedEventArgs();
+}
+```
+
+```csharp
+// Singleton holder of the active IRavenLogManager, which defaults to a null log manager, and of the audit-
+// enabled flag.
+public sealed class RavenLogManager
+{
+    // Public field indicating whether audit logging is enabled; set from whether the Audit logger has Info enabled
+    // and updated when the configuration changes.
+    bool IsAuditEnabled;
+    // Sets the active log manager, throws ArgumentNullException if it is null, and refreshes the audit state.
+    static void Set(IRavenLogManager logManager);
+}
+```
+
+### `Sparrow.LowMemory`
+
+```csharp
+// Exception type signalling high dirty memory.
+public sealed class HighDirtyMemoryException : Exception
+{
+    // Creates the exception with no message.
+    HighDirtyMemoryException();
+    // Creates the exception with the given message.
+    HighDirtyMemoryException(string message);
+    // Creates the exception with the given message and inner exception.
+    HighDirtyMemoryException(string message, Exception inner);
+}
+```
+
+```csharp
+// Exception type signalling low memory.
+public sealed class LowMemoryException : Exception
+{
+    // Creates the exception with no message.
+    LowMemoryException();
+    // Creates the exception with the given message.
+    LowMemoryException(string message);
+    // Creates the exception with the given message and inner exception.
+    LowMemoryException(string message, Exception inner);
+}
+```
+
+### `Sparrow.Platform`
+
+```csharp
+// Static partial class holding P/Invoke imports of libsodium functions plus helper methods for hashing, random
+// buffers, buffer zeroing and memory locking. Its static constructor initializes libsodium and throws
+// IncorrectDllException if that fails.
+public static class Sodium
+{
+    // Constant equal to 32, the hash size used for generic hashing.
+    const int GenericHashSize;
+    // Returns the running total of bytes locked in memory through Lock, reduced by Unlock.
+    static long LockedBytes { get; }
+    // P/Invoke import of libsodium crypto_aead_xchacha20poly1305_ietf_abytes, which returns a constant value for
+    // the library.
+    static UIntPtr crypto_aead_xchacha20poly1305_ietf_abytes();
+    // P/Invoke import of the libsodium native function crypto_aead_xchacha20poly1305_ietf_decrypt.
+    static int crypto_aead_xchacha20poly1305_ietf_decrypt(Byte* m, UInt64* mlen, Byte* nsec, Byte* c, UInt64 clen, Byte* ad, UInt64 adlen, Byte* npub, Byte* k);
+    // P/Invoke import of the libsodium native function crypto_aead_xchacha20poly1305_ietf_decrypt_detached.
+    static int crypto_aead_xchacha20poly1305_ietf_decrypt_detached(Byte* m, Byte* nsec, Byte* c, UInt64 clen, Byte* mac, Byte* ad, UInt64 adlen, Byte* npub, Byte* k);
+    // P/Invoke import of the libsodium native function crypto_aead_xchacha20poly1305_ietf_encrypt.
+    static int crypto_aead_xchacha20poly1305_ietf_encrypt(Byte* c, UInt64* clen, Byte* m, UInt64 mlen, Byte* ad, UInt64 adlen, Byte* nsec, Byte* npub, Byte* k);
+    // P/Invoke import of the libsodium native function crypto_aead_xchacha20poly1305_ietf_encrypt_detached.
+    static int crypto_aead_xchacha20poly1305_ietf_encrypt_detached(Byte* c, Byte* mac, UInt64* maclen_p, Byte* m, UInt64 mlen, Byte* ad, UInt64 adlen, Byte* nsec, Byte* npub, Byte* k);
+    // P/Invoke import of libsodium crypto_aead_xchacha20poly1305_ietf_keybytes, which returns a constant value for
+    // the library.
+    static UIntPtr crypto_aead_xchacha20poly1305_ietf_keybytes();
+    // P/Invoke import of libsodium crypto_aead_xchacha20poly1305_ietf_npubbytes, which returns a constant value
+    // for the library.
+    static UIntPtr crypto_aead_xchacha20poly1305_ietf_npubbytes();
+    // P/Invoke import of the libsodium native function crypto_box_easy.
+    static int crypto_box_easy(Byte* c, Byte* m, UInt64 mlen, Byte* n, Byte* pk, Byte* sk);
+    // P/Invoke import of the libsodium native function crypto_box_keypair.
+    static int crypto_box_keypair(Byte* pk, Byte* sk);
+    // P/Invoke import of libsodium crypto_box_macbytes, which returns a constant value for the library.
+    static UIntPtr crypto_box_macbytes();
+    // P/Invoke import of libsodium crypto_box_noncebytes, which returns a constant value for the library.
+    static UIntPtr crypto_box_noncebytes();
+    // P/Invoke import of the libsodium native function crypto_box_open_easy.
+    static int crypto_box_open_easy(Byte* m, Byte* c, UInt64 clen, Byte* n, Byte* pk, Byte* sk);
+    // P/Invoke import of libsodium crypto_box_publickeybytes, which returns a constant value for the library.
+    static UIntPtr crypto_box_publickeybytes();
+    // P/Invoke import of the libsodium native function crypto_box_seal.
+    static int crypto_box_seal(Byte* c, Byte* m, UInt64 mlen, Byte* pk);
+    // P/Invoke import of the libsodium native function crypto_box_seal_open.
+    static int crypto_box_seal_open(Byte* m, Byte* c, UInt64 clen, Byte* pk, Byte* sk);
+    // P/Invoke import of libsodium crypto_box_sealbytes, which returns a constant value for the library.
+    static UIntPtr crypto_box_sealbytes();
+    // P/Invoke import of libsodium crypto_box_secretkeybytes, which returns a constant value for the library.
+    static UIntPtr crypto_box_secretkeybytes();
+    // P/Invoke import of the libsodium native function crypto_generichash.
+    static int crypto_generichash(Byte* out, UIntPtr outlen, Byte* in, UInt64 inlen, Byte* key, UIntPtr keylen);
+    // P/Invoke import of libsodium crypto_generichash_bytes, which returns a constant value for the library.
+    static UIntPtr crypto_generichash_bytes();
+    // P/Invoke import of libsodium crypto_generichash_bytes_max, which returns a constant value for the library.
+    static UIntPtr crypto_generichash_bytes_max();
+    // P/Invoke import of the libsodium native function crypto_generichash_final.
+    static int crypto_generichash_final(Void* state, Byte* out, UIntPtr outlen);
+    // P/Invoke import of the libsodium native function crypto_generichash_init.
+    static int crypto_generichash_init(Void* state, Byte* key, UIntPtr keylen, UIntPtr outlen);
+    // P/Invoke import of libsodium crypto_generichash_keybytes, which returns a constant value for the library.
+    static UIntPtr crypto_generichash_keybytes();
+    // P/Invoke import of libsodium crypto_generichash_statebytes, which returns a constant value for the library.
+    static UIntPtr crypto_generichash_statebytes();
+    // P/Invoke import of the libsodium native function crypto_generichash_update.
+    static int crypto_generichash_update(Void* state, Byte* in, UInt64 inlen);
+    // P/Invoke import of the libsodium native function crypto_kdf_derive_from_key.
+    static int crypto_kdf_derive_from_key(Byte* subkey, UIntPtr subkeylen, UInt64 subkeyid, Byte* ctx, Byte* key);
+    // P/Invoke import of libsodium crypto_kdf_keybytes, which returns a constant value for the library.
+    static UIntPtr crypto_kdf_keybytes();
+    // P/Invoke import of the libsodium native function crypto_kdf_keygen.
+    static void crypto_kdf_keygen(Byte* masterkey);
+    // P/Invoke import of the libsodium native function crypto_kx_client_session_keys.
+    static int crypto_kx_client_session_keys(Byte* rx, Byte* tx, Byte* client_pk, Byte* client_sk, Byte* server_pk);
+    // P/Invoke import of the libsodium native function crypto_kx_keypair.
+    static int crypto_kx_keypair(Byte* pk, Byte* sk);
+    // P/Invoke import of libsodium crypto_kx_publickeybytes, which returns a constant value for the library.
+    static UIntPtr crypto_kx_publickeybytes();
+    // P/Invoke import of libsodium crypto_kx_secretkeybytes, which returns a constant value for the library.
+    static UIntPtr crypto_kx_secretkeybytes();
+    // P/Invoke import of the libsodium native function crypto_kx_server_session_keys.
+    static int crypto_kx_server_session_keys(Byte* rx, Byte* tx, Byte* server_pk, Byte* server_sk, Byte* client_pk);
+    // P/Invoke import of libsodium crypto_secretstream_xchacha20poly1305_abytes, which returns a constant value
+    // for the library.
+    static UIntPtr crypto_secretstream_xchacha20poly1305_abytes();
+    // P/Invoke import of libsodium crypto_secretstream_xchacha20poly1305_headerbytes, which returns a constant
+    // value for the library.
+    static UIntPtr crypto_secretstream_xchacha20poly1305_headerbytes();
+    // P/Invoke import of the libsodium native function crypto_secretstream_xchacha20poly1305_init_pull.
+    static int crypto_secretstream_xchacha20poly1305_init_pull(Byte* state, Byte* header, Byte* k);
+    // P/Invoke import of the libsodium native function crypto_secretstream_xchacha20poly1305_init_push.
+    static int crypto_secretstream_xchacha20poly1305_init_push(Byte* state, Byte* header, Byte* k);
+    // P/Invoke import of libsodium crypto_secretstream_xchacha20poly1305_keybytes, which returns a constant value
+    // for the library.
+    static UIntPtr crypto_secretstream_xchacha20poly1305_keybytes();
+    // P/Invoke import of the libsodium native function crypto_secretstream_xchacha20poly1305_keygen.
+    static void crypto_secretstream_xchacha20poly1305_keygen(Byte* k);
+    // P/Invoke import of the libsodium native function crypto_secretstream_xchacha20poly1305_pull.
+    static int crypto_secretstream_xchacha20poly1305_pull(Byte* state, Byte* m, UInt64* mlen_p, Byte* tag_p, Byte* c, UInt64 clen, Byte* ad, UInt64 adlen);
+    // P/Invoke import of the libsodium native function crypto_secretstream_xchacha20poly1305_push.
+    static int crypto_secretstream_xchacha20poly1305_push(Byte* state, Byte* c, UInt64* clen_p, Byte* m, UInt64 mlen, Byte* ad, UInt64 adlen, byte tag);
+    // P/Invoke import of libsodium crypto_secretstream_xchacha20poly1305_statebytes, which returns a constant
+    // value for the library.
+    static UIntPtr crypto_secretstream_xchacha20poly1305_statebytes();
+    // P/Invoke import of libsodium crypto_secretstream_xchacha20poly1305_tag_final, which returns a constant value
+    // for the library.
+    static byte crypto_secretstream_xchacha20poly1305_tag_final();
+    // P/Invoke import of libsodium crypto_sign_bytes, which returns a constant value for the library.
+    static UIntPtr crypto_sign_bytes();
+    // P/Invoke import of the libsodium native function crypto_sign_detached.
+    static int crypto_sign_detached(Byte* sig, UInt64* siglen, Byte* m, UInt64 mlen, Byte* sk);
+    // P/Invoke import of the libsodium native function crypto_sign_final_create.
+    static int crypto_sign_final_create(Void* state, Byte* sig, UInt64* siglen_p, Byte* sk);
+    // P/Invoke import of the libsodium native function crypto_sign_init.
+    static int crypto_sign_init(Void* state);
+    // P/Invoke import of the libsodium native function crypto_sign_keypair.
+    static int crypto_sign_keypair(Byte* pk, Byte* sk);
+    // P/Invoke import of libsodium crypto_sign_publickeybytes, which returns a constant value for the library.
+    static UIntPtr crypto_sign_publickeybytes();
+    // P/Invoke import of libsodium crypto_sign_secretkeybytes, which returns a constant value for the library.
+    static UIntPtr crypto_sign_secretkeybytes();
+    // P/Invoke import of libsodium crypto_sign_statebytes, which returns a constant value for the library.
+    static UIntPtr crypto_sign_statebytes();
+    // P/Invoke import of the libsodium native function crypto_sign_update.
+    static int crypto_sign_update(Void* state, Byte* m, UInt64 mlen);
+    // P/Invoke import of the libsodium native function crypto_sign_verify_detached.
+    static int crypto_sign_verify_detached(Byte* sig, Byte* m, UInt64 mlen, Byte* pk);
+    // P/Invoke import of libsodium crypto_stream_xchacha20_keybytes, which returns a constant value for the
+    // library.
+    static UIntPtr crypto_stream_xchacha20_keybytes();
+    // P/Invoke import of libsodium crypto_stream_xchacha20_noncebytes, which returns a constant value for the
+    // library.
+    static UIntPtr crypto_stream_xchacha20_noncebytes();
+    // P/Invoke import of the libsodium native function crypto_stream_xchacha20_xor_ic.
+    static int crypto_stream_xchacha20_xor_ic(Byte* c, Byte* m, UInt64 mlen, Byte* n, UInt64 ic, Byte* k);
+    // Allocates a byte array of the given size and fills it with random bytes using libsodium randombytes_buf.
+    static byte[] GenerateRandomBuffer(int bytes);
+    // Computes a generic hash of data into the hash span with libsodium. On debug builds throws
+    // ArgumentOutOfRangeException if hash length differs from crypto_generichash_bytes; throws
+    // InvalidOperationException if hashing fails.
+    static void GenericHash(ReadOnlySpan<byte> data, Span<byte> hash);
+    // Computes a generic hash of data into a 16-byte hash span with libsodium. On debug builds throws
+    // ArgumentOutOfRangeException if hash length is not 16; throws InvalidOperationException if hashing fails.
+    static void GenericHash16(ReadOnlySpan<byte> data, Span<byte> hash);
+    // Calls sodium_mlock on the address range and, if it returns zero, adds the length to LockedBytes; returns the
+    // sodium_mlock result.
+    static int Lock(Byte* addr, UIntPtr len);
+    // P/Invoke import of the libsodium native function randombytes_buf.
+    static void randombytes_buf(Byte* buffer, UIntPtr size);
+    // P/Invoke import of the libsodium native function sodium_init.
+    static int sodium_init();
+    // P/Invoke import of the libsodium native function sodium_memcmp.
+    static int sodium_memcmp(Byte* b, Byte* vh, UIntPtr verifiedHashLength);
+    // P/Invoke import of the libsodium native function sodium_memzero.
+    static void sodium_memzero(Byte* pnt, UIntPtr len);
+    // P/Invoke import of the libsodium native function sodium_mlock.
+    static int sodium_mlock(Byte* addr, UIntPtr len);
+    // P/Invoke import of the libsodium native function sodium_munlock.
+    static int sodium_munlock(Byte* addr, UIntPtr len);
+    // Calls sodium_munlock on the address range and, if it returns zero, subtracts the length from LockedBytes;
+    // returns the sodium_munlock result.
+    static int Unlock(Byte* addr, UIntPtr len);
+    // Overwrites the entire byte array with zeros using sodium_memzero.
+    static void ZeroBuffer(byte[] buffer);
+}
+```
+
+### `Sparrow.Threading`
+
+```csharp
+// Runs a dispose action once, with concurrent callers waiting for the running dispose to finish. The type
+// parameter selects error handling: ExceptionRetry retries on later calls after a failure, SingleAttempt
+// stores the failure so later callers fail with it.
+public sealed class DisposeOnce<TOperationMode> : IDisposable
+{
+    // Stores the dispose action and initializes the operation mode data. Throws NotSupportedException if the mode
+    // type is neither ExceptionRetry nor SingleAttempt.
+    DisposeOnce(Action action);
+    // Returns true when the dispose has been started and completed; for SingleAttempt when not currently inside
+    // Dispose, for ExceptionRetry when the dispose task completed without fault or cancellation.
+    bool Disposed { get; }
+    // Returns true if Disposed is true or a Dispose call is currently in progress in the operation mode.
+    bool DisposedRequested { get; }
+    /// Runs the dispose action. Ensures any threads that are running it concurrently wait for the dispose to finish
+    ///    if it is in progress. If the dispose has already happened, the 'TOperationMode' defines how Dispose will
+    ///    react. The two approaches differ only in error handling. When behavior is 'ExceptionRetry', we will retry
+    ///    the Dispose until it succeeds. Retry, however, happens on successive calls to Dispose, rather than in a
+    ///    single attempt. When behavior is 'SingleAttempt' or 'SingleAttemptWithWaitForDisposeToFinish', a failure
+    ///    means all subsequent calls will fail by throwing the same exception that was thrown by the action.
+    void Dispose();
+}
+```
+
+```csharp
+// Interface for the operation mode used by DisposeOnce, tracking whether a dispose call is in progress.
+public interface IDisposeOnceOperationMode
+{
+    // Gets whether a dispose is currently in progress.
+    bool DuringDispose { get; }
+    // Marks the start of a Dispose call.
+    void EnterDispose();
+    // Initializes the operation mode state.
+    void Initialize();
+    // Marks the end of a Dispose call.
+    void LeaveDispose();
+}
+```
+
+```csharp
+/// An atomic, thread-safe, multiple use flag that can be raised and lowered at will; meant to be single-user. DO
+///    NOT PASS THIS AROUND.
+public sealed class MultipleUseFlag
+{
+    // Copy constructor that always throws InvalidOperationException because copying a MultipleUseFlag is
+    // forbidden.
+    MultipleUseFlag(MultipleUseFlag other);
+    // Creates a flag in the raised state if raised is true, otherwise lowered.
+    MultipleUseFlag(bool raised);
+    // Returns true if the flag is raised.
+    bool IsRaised();
+    /// Lowers the flag
+    bool Lower();
+    /// Lowers the flag. If already low, throws InvalidOperationException.
+    void LowerOrDie();
+    /// Raises the flag
+    bool Raise();
+    /// Raises the flag. If already up, throws InvalidOperationException.
+    void RaiseOrDie();
+}
+```
+
+```csharp
+/// A thread-safe, multiple use flag that can be raised and lowered at will; meant to be shared between many
+///    users.
+public sealed class SharedMultipleUseFlag
+{
+    // Copy constructor that always throws NotImplementedException because copying is disallowed.
+    SharedMultipleUseFlag(SharedMultipleUseFlag copy);
+    // Creates a lowered flag.
+    SharedMultipleUseFlag();
+    // Creates a flag that is raised if raised is true, otherwise lowered.
+    SharedMultipleUseFlag(bool raised);
+    /// This flag is always lowered and should not be raised by anyone.
+    static SharedMultipleUseFlag None;
+    // Returns true if the underlying flag is raised.
+    bool IsRaised();
+    /// Lowers the flag
+    bool Lower();
+    /// Lowers the flag. If already low, throws InvalidOperationException.
+    void LowerOrDie();
+    /// Raises the flag
+    bool Raise();
+    /// Raises the flag. If already up, throws InvalidOperationException.
+    void RaiseOrDie();
+}
+```
+
+```csharp
+// Operation mode struct for DisposeOnce that tracks dispose nesting depth with an interlocked counter; after a
+// failed dispose, later callers fail with the stored exception.
+public struct SingleAttempt : IDisposeOnceOperationMode
+{
+    // Returns true when the dispose depth counter is not zero.
+    bool DuringDispose { get; }
+    // Atomically increments the dispose depth counter.
+    void EnterDispose();
+    // Sets the dispose depth counter to zero.
+    void Initialize();
+    // Atomically decrements the dispose depth counter.
+    void LeaveDispose();
+}
+```
+
+```csharp
+/// A thread-safe, single use flag that can be raised once; meant to be single-user. DO NOT PASS THIS AROUND.
+public sealed class SingleUseFlag
+{
+    // Copy constructor that always throws InvalidOperationException because copying a SingleUseFlag is forbidden.
+    SingleUseFlag(SingleUseFlag other);
+    // Creates a flag in the raised state if raised is true, otherwise lowered.
+    SingleUseFlag(bool raised);
+    // Returns true if the flag is raised.
+    bool IsRaised();
+    /// Raises the flag
+    bool Raise();
+    /// Raises the flag. If already up, throws InvalidOperationException.
+    void RaiseOrDie();
+}
+```
+
+### `Sparrow.Utils`
+
+```csharp
+// Wraps a Lazy of T created from a factory and, when the factory throws, rethrows and recreates the lazy so a
+// later access retries the factory.
+public sealed class LazyWithExceptionRetry<T>
+{
+    // Stores the factory and creates the inner Lazy of T from it.
+    LazyWithExceptionRetry(Func<T> factory);
+    // Returns whether the inner lazy has created its value.
+    bool IsValueCreated { get; }
+    // Returns true if the last Value access threw and the factory is still being retried; reset to false after a
+    // successful access.
+    bool IsValueFaulted { get; }
+    // Returns the lazily created value. On exception it marks the instance faulted, recreates the inner lazy for
+    // retry and rethrows; after success the factory reference is cleared.
+    T Value { get; }
+}
+```
+
+```csharp
+// Exception derived from ObjectDisposedException, thrown to indicate a lock has already been disposed.
+public sealed class LockAlreadyDisposedException : ObjectDisposedException
+{
+    // Creates the exception with the given message by passing it to the base constructor.
+    LockAlreadyDisposedException(string message);
+    // Creates the exception with the given message and inner exception by passing them to the base constructor.
+    LockAlreadyDisposedException(string message, Exception innerException);
+}
+```
+
+```csharp
+// Static class that allocates and frees unmanaged memory, tracks total and per-thread allocation counters,
+// Lucene allocation counters, and registered memory-mapped files.
+public static class NativeMemory
+{
+    // Concurrent dictionary of registered memory-mapped files, keyed by full file path, holding lazily created
+    // FileMappingInfo entries.
+    static ConcurrentDictionary<string, Lazy<NativeMemory.FileMappingInfo>> FileMapping;
+    // Delegate used to obtain the current unmanaged thread id when a ThreadStats is created. Default returns the
+    // constant 0xDEAD.
+    static Func<UInt64> GetCurrentUnmanagedThreadId;
+    // Enumerates the non-null ThreadStats instances of all threads that have thread-local allocation stats.
+    static IEnumerable<NativeMemory.ThreadStats> AllThreadStats { get; }
+    // Returns the ThreadStats instance held in the thread-local value for the current thread.
+    static NativeMemory.ThreadStats CurrentThreadStats { get; }
+    // Returns the running total of bytes allocated through AllocateMemory and not yet freed.
+    static long TotalAllocatedMemory { get; }
+    // Returns the running total of managed allocation bytes recorded for the Lucene term cache through the
+    // increment and decrement methods.
+    static long TotalLuceneManagedAllocationsForTermCache { get; }
+    // Returns the running total of unmanaged bytes allocated for Lucene sorting and not yet freed.
+    static long TotalLuceneUnmanagedAllocationsForSorting { get; }
+    // Returns the running total of unmanaged bytes allocated for the Lucene term cache and not yet freed.
+    static long TotalLuceneUnmanagedAllocationsForTermCache { get; }
+    // Allocates the given number of bytes of unmanaged memory and adds the size to the total allocated counter.
+    // Throws OutOfMemoryException with allocation details if allocation fails.
+    static Byte* AllocateMemory(long size);
+    // Allocates unmanaged memory like AllocateMemory(size), returns the current thread's ThreadStats through the
+    // out parameter, and adds the size to that thread's Allocations.
+    static Byte* AllocateMemory(long size, out NativeMemory.ThreadStats thread);
+    // Adds the size to the Lucene sorting allocation counter and allocates unmanaged memory of that size.
+    static Byte* AllocateMemoryForLuceneSorting(long size);
+    // Adds the size to the Lucene term cache allocation counter and allocates unmanaged memory of that size.
+    static Byte* AllocateMemoryForLuceneTermCache(long size);
+    // Subtracts the given size from the counter of managed Lucene term cache allocations.
+    static void DecrementLuceneManagedAllocations(long size);
+    // Touches the thread-local ThreadStats value so the current thread is registered.
+    static void EnsureRegistered();
+    // Subtracts the size from the total allocated counter and releases the unmanaged memory at the pointer.
+    static void Free(Byte* ptr, long size);
+    // Frees the unmanaged memory like Free(ptr, size) and then updates the given ThreadStats: decrements
+    // Allocations if it belongs to the current thread, otherwise records a release from another thread.
+    static void Free(Byte* ptr, long size, NativeMemory.ThreadStats stats);
+    // Subtracts the size from the Lucene sorting allocation counter and frees the unmanaged memory at the pointer.
+    static void FreeMemoryByLuceneSorting(Byte* ptr, long size);
+    // Subtracts the size from the Lucene term cache allocation counter and frees the unmanaged memory at the
+    // pointer.
+    static void FreeMemoryByLuceneTermCache(Byte* ptr, long size);
+    // Adds the given size to the counter of managed Lucene term cache allocations.
+    static void IncrementLuceneManagedAllocations(long size);
+    // Sets the current thread's thread-local ThreadStats value to null.
+    static void NotifyCurrentThreadAboutToClose();
+    // Registers a mapped region start and size under the full path, creating an entry whose file type is derived
+    // from the file name, and stores the allocated-size callback.
+    static void RegisterFileMapping(string fullPath, IntPtr start, long size, Func<long> getAllocatedSize);
+    // Removes the entry with the given name from the file mapping dictionary.
+    static void UnregisterFileMapping(string name);
+    // Removes the region starting at the given address from the named mapping, and removes the whole named entry
+    // once it has no regions left.
+    static void UnregisterFileMapping(string name, IntPtr start, long size);
+}
+```
+
+```csharp
+// Describes a registered file mapping: its file type, a callback for the allocated size, and a dictionary of
+// mapped region start addresses to sizes.
+public sealed class NativeMemory.FileMappingInfo
+{
+    // Creates an instance with an empty concurrent dictionary in Info.
+    FileMappingInfo();
+    // Gets or sets the kind of file mapped: Data, ScratchBuffer, CompressionBuffer or DecompressionBuffer.
+    NativeMemory.FileType FileType { get; set; }
+    // Gets or sets the callback that returns the allocated size of the mapped file.
+    Func<long> GetAllocatedSizeFunc { get; set; }
+    // Gets or sets the concurrent dictionary mapping region start addresses to their sizes.
+    ConcurrentDictionary<IntPtr, long> Info { get; set; }
+}
+```
+
+```csharp
+// Holds allocation statistics for a single thread, including its managed and unmanaged thread ids, allocation
+// counters and a weak reference to the thread.
+public sealed class NativeMemory.ThreadStats
+{
+    // Creates stats for the current thread, capturing its managed thread id, a new unique internal id and the
+    // unmanaged thread id from GetCurrentUnmanagedThreadId.
+    ThreadStats();
+    // Counter of bytes allocated by this thread, decreased when memory is freed.
+    long Allocations;
+    // Public long field of the thread stats holding the memory currently allocated for processing; NativeMemory
+    // itself does not modify it.
+    long CurrentlyAllocatedForProcessing;
+    // Static shared ThreadStats instance created with the private constructor, which does not capture any thread.
+    static NativeMemory.ThreadStats Empty;
+    // Id assigned from an incrementing static counter when the stats instance is created.
+    int InternalId;
+    // Managed thread id of the thread that created this instance.
+    int ManagedThreadId;
+    // Counter of bytes freed by threads other than the owning thread, interlocked-added in the free path.
+    long ReleasesFromOtherThreads;
+    // Unmanaged thread id obtained from GetCurrentUnmanagedThreadId when the instance is created.
+    UInt64 UnmanagedThreadId;
+    // Returns the name of the tracked thread if it is still referenced, otherwise the last captured name,
+    // initially Unknown.
+    string Name { get; }
+    // Returns Allocations minus ReleasesFromOtherThreads.
+    long TotalAllocated { get; }
+    // Returns true if the referenced thread still exists and is alive. When the thread is found dead, it clears
+    // the reference, saves its name and returns false.
+    bool IsThreadAlive();
+}
+```
+
+```csharp
+// Disposable class that uses a timer to periodically scan stacks of pooled items and dispose items that were
+// idle too long, or all items when the low memory flag is raised.
+public sealed class NativeMemoryCleaner<TStack, TPooledItem> : IDisposable
+{
+    // Creates the cleaner, storing a weak reference to the cleanup target, the context getter, the low memory flag
+    // and idle time, and starts a timer that fires with the given period as both due time and interval.
+    NativeMemoryCleaner(object cleanupTarget, Func<object, ICollection<TStack>> getContexts, SharedMultipleUseFlag lowMemoryFlag, TimeSpan period, TimeSpan idleTime);
+    // Timer callback that returns if another cleanup holds the lock. Otherwise it walks each stack and disposes
+    // and nulls items that are idle past the idle time or all items under low memory, if InUse can be raised.
+    void CleanNativeMemory(object state);
+    // Disposes the timer and waits for its disposal handle to be signaled if the timer was active.
+    void Dispose();
+}
+```
+
+```csharp
+// Abstract base class for pooled items that holds an InUse flag and the time the item entered the pool, and
+// requires a Dispose implementation.
+public abstract class PooledItem : IDisposable
+{
+    // Public field holding the DateTime at which the item entered the pool.
+    DateTime InPoolSince;
+    // Public MultipleUseFlag field marking whether the item is in use, initialized to a new flag.
+    MultipleUseFlag InUse;
+    // Abstract method that derived classes implement to release the item.
+    void Dispose();
+}
+```
+
+```csharp
+// Generic class holding the Head node of a linked stack of StackNode items, plus a static node named
+// HeaderDisposed.
+public class StackHeader<T>
+{
+    // Default constructor with no logic.
+    StackHeader();
+    // Public field referencing the first StackNode of the stack.
+    StackNode<T> Head;
+    // Static readonly StackNode instance named HeaderDisposed, shared by all headers of the same type.
+    static StackNode<T> HeaderDisposed;
+}
+```
+
+```csharp
+// Generic node holding a Value and a reference to the Next node in a singly linked stack.
+public sealed class StackNode<T>
+{
+    // Default constructor with no logic.
+    StackNode();
+    // Public field referencing the next node.
+    StackNode<T> Next;
+    // Public field holding the value stored in the node.
+    T Value;
+}
+```
+
+
+### `Raven.Embedded`
+
+```csharp
+// Holds the security settings of an embedded server: certificate path, password, load executable and
+// arguments, client certificate and server certificate thumbprint.
+public sealed class ServerOptions.SecurityOptions
+{
+    // Gets the executable used to load the server certificate, passed to the server as the
+    // Security.Certificate.Load.Exec setting. Set by the Secured overload taking an executable.
+    string CertificateLoadExec { get; }
+    // Gets the arguments for the certificate load executable, passed to the server as the
+    // Security.Certificate.Load.Exec.Arguments setting.
+    string CertificateLoadExecArguments { get; }
+    // Gets the password of the certificate file, passed to the server as the Security.Certificate.Password setting
+    // when not null.
+    string CertificatePassword { get; }
+    // Gets the path of the server certificate file, passed to the server as the Security.Certificate.Path setting
+    // when not null.
+    string CertificatePath { get; }
+    // Gets the client certificate used by the embedded client when connecting, and whose thumbprint is configured
+    // as the well-known admin certificate.
+    X509Certificate2 ClientCertificate { get; }
+    // Gets the expected server certificate thumbprint, compared with the certificate thumbprint in the embedded
+    // client's remote certificate validation callback.
+    string ServerCertificateThumbprint { get; }
+}
+```
+
+
+## Members of the Sparrow, Raven.Embedded and Raven.TestDriver assemblies that no article mentions
+
+These are public members of types of those assemblies that are described elsewhere, whose names appear nowhere else in this documentation.
+
+### `Sparrow`
+
+```csharp
+public static class Memory
+{
+    // Compares size bytes at two pointers and returns 0 if the pointers are equal. Otherwise it returns a sequence
+    // comparison result, using an AVX256 comparison when supported.
+    static int CompareInline(Void* p1, Void* p2, int size);
+    // Compares size bytes at two byte references, using an AVX256 comparison when supported and otherwise a span
+    // sequence comparison.
+    static int CompareInline(ref byte p1, ref byte p2, int size);
+    // Compares two byte spans, using an AVX256 comparison on their starting references when supported and
+    // otherwise comparing the spans with SequenceCompareTo.
+    static int CompareInline(ReadOnlySpan<byte> p1, ReadOnlySpan<byte> p2, int size);
+    // Copies n bytes from the source pointer to the destination pointer using an unaligned block copy.
+    static void CopyUnaligned(Byte* dest, Byte* src, UInt32 n);
+    // Returns whether the constant bytes equal the memory at the pointer for the constant's length. Throws
+    // NotSupportedException if the length is 64 or more.
+    static bool IsEqualConstant(ReadOnlySpan<byte> constant, Byte* ptr);
+    // Returns whether size bytes at the constant pointer equal the memory at ptr. Throws NotSupportedException if
+    // size is 64 or more.
+    static bool IsEqualConstant(Byte* constant, int size, Byte* ptr);
+    // Returns false if size differs from the constant length, otherwise whether the constant equals the memory at
+    // the pointer. Throws NotSupportedException if the constant length is 64 or more.
+    static bool IsEqualConstant(ReadOnlySpan<byte> constant, Byte* ptr, int size);
+}
+```
+
+```csharp
+public struct Size
+{
+    // Converts a value in the given unit to bytes by multiplying by the unit's byte factor. Throws
+    // NotSupportedException for an unsupported unit.
+    static double ConvertToBytes(double value, SizeUnit unit);
+    // Returns the stored byte size converted to the requested unit as a double.
+    double GetDoubleValue(SizeUnit requestedUnit);
+}
+```
+
+```csharp
+public enum SizeUnit
+{
+    // Size unit equal to 1024 bytes (OneKb factor), used when converting sizes.
+    Kilobytes,
+    // Size unit equal to the OneGb byte factor, used when converting sizes.
+    Gigabytes,
+    // Size unit equal to the OneTb byte factor, used when converting sizes.
+    Terabytes,
+}
+```
+
+```csharp
+public struct TimeValue : IDynamicJson, IEquatable<TimeValue>
+{
+    // Returns true if the other value is a multiple of this one: for equal units, when its value divides evenly by
+    // this value. For a month other value, when seconds per day divides evenly by this value. Otherwise false.
+    bool IsMultiple(TimeValue multiple);
+    // Returns 0 if from is not before to. Otherwise returns the number of this interval between the dates, using
+    // month difference for months and seconds for seconds, and throws ArgumentException for other units.
+    double TimesInInterval(DateTime from, DateTime to);
+}
+```
+
+### `Sparrow.Json`
+
+```csharp
+public abstract class AbstractBlittableJsonTextWriter : IBlittableJsonTextWriter
+{
+    // Static byte array holding the UTF-8 bytes of the text false.
+    static byte[] FalseBuffer;
+    // Static byte array holding the UTF-8 bytes of the text null.
+    static byte[] NullBuffer;
+    // Static byte array holding the UTF-8 bytes of the text true.
+    static byte[] TrueBuffer;
+    // Returns the UTF-8 bytes of the quoted string NaN.
+    static ReadOnlySpan<byte> NaNBuffer { get; }
+    // Returns the UTF-8 bytes of the quoted string -Infinity.
+    static ReadOnlySpan<byte> NegativeInfinityBuffer { get; }
+    // Returns the UTF-8 bytes of a carriage return followed by a line feed.
+    static ReadOnlySpan<byte> NewLineBuffer { get; }
+    // Returns the UTF-8 bytes of the quoted string Infinity.
+    static ReadOnlySpan<byte> PositiveInfinityBuffer { get; }
+    // Writes true or false as JSON text into the buffer.
+    void WriteBool(bool val);
+    // Copies the given bytes into the output buffer as is, after ensuring buffer space.
+    void WriteBufferFor(ReadOnlySpan<byte> buffer);
+    // Writes a comma character to the buffer.
+    void WriteComma();
+    // Writes null and returns 0 if the value is null, otherwise writes the date in the default Raven format as a
+    // quoted string and returns the number of bytes.
+    int WriteDateTime(DateTime? value, bool isUtc);
+    // Writes the date in the default Raven format as a quoted string without escaping and returns the number of
+    // bytes written.
+    int WriteDateTime(DateTime value, bool isUtc);
+    // Writes NaN, Infinity or -Infinity as quoted strings for those special values, otherwise writes the number's
+    // underlying string text unquoted.
+    void WriteDouble(LazyNumberValue val);
+    // Writes NaN, Infinity or -Infinity as quoted strings for those special values, otherwise formats the double
+    // as UTF-8 text and writes it. Throws InvalidOperationException if formatting fails.
+    void WriteDouble(double val);
+    // Writes a closing square bracket to the buffer.
+    void WriteEndArray();
+    // Writes a closing curly bracket to the buffer.
+    void WriteEndObject();
+    // Writes the signed integer as decimal digits, with a leading minus sign for negative values.
+    void WriteInteger(long val);
+    // Writes the unsigned integer as decimal digits.
+    void WriteInteger(UInt64 val);
+    // Writes the given number of bytes from the native pointer to the output by delegating to the byte pointer
+    // overload.
+    void WriteMemoryChunk(IntPtr ptr, int size);
+    // Copies size bytes from the pointer into the output buffer in chunks, flushing the buffer to the stream after
+    // each chunk.
+    void WriteMemoryChunk(Byte* ptr, int size);
+    // Writes a carriage return and line feed to the buffer.
+    void WriteNewLine();
+    // Writes the text null to the buffer.
+    void WriteNull();
+    // Writes null if the object is null, otherwise writes the object as JSON with its properties in insertion
+    // order, separated by commas.
+    void WriteObject(BlittableJsonReaderObject obj);
+    // Writes the given bytes to the buffer as raw string content, without adding a colon.
+    void WritePropertyName(ReadOnlySpan<byte> prop);
+    // Writes the property name as a quoted string followed by a colon.
+    void WritePropertyName(LazyStringValue prop);
+    // Writes the property name as a quoted string, using a cached lazy string of the context, followed by a colon.
+    void WritePropertyName(string prop);
+    // Writes the property name segment as a quoted string, using a cached lazy string of the context, followed by
+    // a colon.
+    void WritePropertyName(StringSegment prop);
+    // Writes the bytes to the buffer without quoting or escaping, using a large-write path when the length is at
+    // least the buffer size.
+    void WriteRawString(ReadOnlySpan<byte> buffer);
+    // Writes the buffer contents surrounded by quotes without escaping.
+    void WriteRawStringWhichMustBeWithoutEscapeChars(Byte* buffer, int size);
+    // Writes an opening square bracket to the buffer.
+    void WriteStartArray();
+    // Writes an opening curly bracket to the buffer.
+    void WriteStartObject();
+    // Writes the string as a quoted JSON string through a lazy string value of the context, with optional skipping
+    // of escaping.
+    void WriteString(string str, bool skipEscaping);
+    // Writes null if the value is null, otherwise writes it as a quoted JSON string, with optional skipping of
+    // escaping.
+    void WriteString(LazyStringValue str, bool skipEscaping);
+    // Writes the compressed string value as a quoted JSON string after decompressing it to a temporary buffer.
+    void WriteString(LazyCompressedStringValue str);
+    // Writes a value according to the blittable token: string, integer, array, object, number, boolean, null, blob
+    // or vector. Throws DataMisalignedException for an unidentified token.
+    void WriteValue(BlittableJsonToken token, object val);
+}
+```
+
+```csharp
+public sealed class AllocatedMemoryData
+{
+    // Public field referencing the ThreadStats of the thread that allocated this memory.
+    NativeMemory.ThreadStats AllocatingThread;
+    // Public field holding the generation number of the context that allocated this memory, set when the memory is
+    // allocated.
+    int ContextGeneration;
+    // Returns a Memory of bytes over this allocation, created from a lazily created memory manager.
+    Memory<byte> AsMemory();
+    // Returns a Span of bytes over the allocation address with length SizeInBytes.
+    Span<byte> AsSpan();
+}
+```
+
+```csharp
+public sealed class BlittableJsonReaderArray : BlittableJsonReaderBase, IEnumerable<object>, IDisposable
+{
+    // Pointer to the start of the array's data inside the parent object's memory.
+    Byte* DataStart { get; }
+    // Writes every item of the array to the given manual blittable document builder, passing each value with its
+    // type token.
+    void AddItemsToStream<T>(ManualBlittableJsonDocumentBuilder<T> writer);
+    // Binary search over the array items as strings using the given comparison. Returns the index if found,
+    // otherwise the bitwise complement of the insertion position.
+    int BinarySearch(string key, StringComparison comparison);
+    // Validates the blittable data by calling BlittableValidation on the parent object, if there is one.
+    void BlittableValidation();
+    // Returns an array reader that uses the given external context for allocations while still reading from the
+    // original memory without copying. Throws InvalidOperationException if the root array cannot be found.
+    BlittableJsonReaderArray CloneForConcurrentRead(JsonOperationContext externalContext);
+    // Creates the Modifications array if it is null and sets its SkipOriginalArray flag to true.
+    void EnsureArrayModifiable();
+    // Returns the type token of the array elements, read from the array metadata.
+    BlittableJsonToken GetArrayType();
+    // Returns the item at the given index converted to type T. Throws IndexOutOfRangeException if the index is
+    // outside the array.
+    T GetByIndex<T>(int index);
+    // Returns the item at the given index as a string, or null if the item is null. Other value types are
+    // converted to string.
+    string GetStringByIndex(int index);
+    // Returns the item at the given index together with its type token, caching nested blittable readers unless
+    // NoCache is set. Throws IndexOutOfRangeException if the index is outside the array.
+    ValueTuple<object, BlittableJsonToken> GetValueTokenTupleByIndex(int index);
+}
+```
+
+```csharp
+public abstract class BlittableJsonReaderBase
+{
+    // Constant mask combining the blittable value type flags: Boolean, LazyNumber, Integer, Null, StartArray,
+    // StartObject, String, CompressedString and Vector.
+    const BlittableJsonToken TypesMask;
+    // Returns true when the reader has a parent object.
+    bool HasParent { get; }
+    // Gets or sets a flag that disables caching of values read through this reader.
+    bool NoCache { get; set; }
+    // Returns true if the given context is the context this reader was created with.
+    bool BelongsToContext(JsonOperationContext context);
+    // Masks the token with TypesMask and returns the type. Throws ArgumentException if the type is not a valid
+    // value type token.
+    static BlittableJsonToken ProcessTokenTypeFlags(BlittableJsonToken currentType);
+    // Reads a compressed string at the given position, using its uncompressed and compressed sizes, and returns it
+    // as a lazy compressed string value.
+    LazyCompressedStringValue ReadCompressStringLazily(int pos);
+    // Reads the size at the given position and returns a nested blittable object reader over that memory,
+    // inheriting the NoCache setting.
+    BlittableJsonReaderObject ReadNestedObject(int pos);
+    // Reads the string size at the given position and returns a lazy string value over the stored bytes.
+    LazyStringValue ReadStringLazily(int pos);
+    // Reads a variable-size integer at the given position and returns it, with the number of bytes consumed in
+    // offset.
+    int ReadVariableSizeInt(int pos, out int offset);
+    // Reads a variable-size integer from the buffer at the given position and advances the position by the bytes
+    // consumed.
+    static int ReadVariableSizeInt(Byte* buffer, ref int pos);
+    // Reads a variable-size integer from the buffer at the given position. Returns the value, the bytes consumed
+    // in offset, and whether the read succeeded in success.
+    static int ReadVariableSizeInt(Byte* buffer, int pos, out int offset, out bool success);
+    // Reads a variable-size integer from the byte span at the given position in compact form. Returns the value,
+    // the bytes consumed in offset, and the success flag.
+    static int ReadVariableSizeInt(ReadOnlySpan<byte> buffer, int pos, out int offset, out bool success);
+    // Reads a variable-size integer backwards from the given position, moving toward lower addresses. Throws
+    // FormatException if the encoding exceeds the allowed shift.
+    static int ReadVariableSizeIntInReverse(Byte* buffer, int pos, out byte offset);
+}
+```
+
+```csharp
+public sealed class BlittableJsonReaderObject : BlittableJsonReaderBase, IDisposable
+{
+    // Pointer to the start of the object's memory. Throws InvalidOperationException if the object is a nested
+    // object.
+    Byte* BasePointer { get; }
+    // Hash of the object's memory bytes computed with XXHash64 over its size.
+    UInt64 DebugHash { get; }
+    // Writes each property of the object, in insertion order, with its name and value to the given manual
+    // blittable document builder.
+    void AddItemsToStream<T>(ManualBlittableJsonDocumentBuilder<T> writer);
+    // Debug-only check that throws InvalidOperationException if the object has pending modifications (removals or
+    // properties), optionally also checking nested objects and arrays. Throws if both assertRemovals and
+    // assertProperties are false.
+    static void AssertNoModifications(BlittableJsonReaderObject data, string id, bool assertChildren, bool assertRemovals, bool assertProperties);
+    // Returns a read-only span over the object's memory using its base pointer and size.
+    ReadOnlySpan<byte> AsSpan();
+    // Static method that wraps the given memory in a reader and runs its validation.
+    static void BlittableValidation(JsonOperationContext context, Byte* mem, int size);
+    // Validates the structure of the object's memory, throwing InvalidDataException when the root token, offsets
+    // or tokens are invalid.
+    void BlittableValidation();
+    // Returns a new root reader over the same memory using the given external context, without copying data.
+    // Throws InvalidOperationException if the object is not a root.
+    BlittableJsonReaderObject CloneForConcurrentRead(JsonOperationContext externalContext);
+    // Returns a copy of the object using the same context as this object.
+    BlittableJsonReaderObject CloneOnTheSameContext();
+    // Computes an XXHash64 hash over the property count and all property names, taken in their stored order.
+    UInt64 GetHashOfPropertyNames();
+    // Returns a disposable structure holding property indexes ordered by their stored offsets, giving insertion
+    // order.
+    BlittableJsonReaderObject.InsertionOrderProperties GetPropertiesByInsertionOrder();
+    // Fills the given PropertyDetails with the name, value and token of the property at the index, optionally
+    // adding the value to the cache. Throws ArgumentOutOfRangeException if the index is invalid.
+    void GetPropertyByIndex(int index, ref BlittableJsonReaderObject.PropertyDetails prop, bool addObjectToCache);
+    // Returns the index of the property with the given name using binary search, or -1 if not found.
+    int GetPropertyIndex(string name);
+    // Returns the index of the property whose name matches the given lazy string using binary search, or -1 if not
+    // found.
+    int GetPropertyIndex(LazyStringValue comparer);
+    // Returns the property names as an array in the order they are stored in the object's sorted metadata.
+    string[] GetSortedPropertyNames();
+    // Tries to get the named property and convert it to type T. Returns false with a default value if the property
+    // is missing or the conversion fails.
+    bool TryGetWithoutThrowingOnError<T>(string name, out T obj);
+    // Tries to get the property named by the string segment and convert it to type T. Returns false with a default
+    // value if the property is missing or the conversion fails.
+    bool TryGetWithoutThrowingOnError<T>(StringSegment name, out T obj);
+    // Writes the object as JSON text to the given stream using a blittable JSON text writer.
+    void WriteJsonTo(Stream stream);
+    // Writes the object as JSON text to the given stream asynchronously through the context and flushes the
+    // writer.
+    ValueTask WriteJsonToAsync(Stream stream, CancellationToken token);
+}
+```
+
+```csharp
+public sealed class CachedProperties.PropertyName : IComparable<CachedProperties.PropertyName>
+{
+    // Public field holding the property name as a lazy string value, used for comparisons.
+    LazyStringValue Comparer;
+    // Public field holding the global sort order assigned to the property name.
+    int GlobalSortOrder;
+    // Read-only field holding the hash code of the property name; used for equality and GetHashCode.
+    int HashCode;
+    // Public field that is true when the property name equals the vector property name constant; set in the
+    // constructor.
+    bool IsVectorProperty;
+    // Public field holding the property id assigned to the property name.
+    int PropertyId;
+    // Compares this property name with another by comparing their lazy string values.
+    int CompareTo(CachedProperties.PropertyName other);
+    // Returns true if the property name bytes are equal to the given byte span.
+    bool EqualsPropertyNameToBytes(ReadOnlySpan<byte> other);
+}
+```
+
+```csharp
+public interface IFillFromBlittableJson
+{
+    // Method to populate the implementing object from a BlittableJsonReaderObject.
+    void FillFromBlittableJson(BlittableJsonReaderObject json);
+}
+```
+
+```csharp
+public class JsonOperationContext : PooledItem
+{
+    // Public field holding the CachedProperties instance of the context, created in the constructor and renewed or
+    // reset with the context.
+    CachedProperties CachedProperties;
+    /// This flag means that this should be disposed, usually because we exceeded the maximum amount of memory budget
+    ///    we have and need to return it to the system
+    bool DoNotReuse;
+    // Constant with the value 4096, the minimum initial size used when allocating a stream buffer.
+    const int InitialStreamSize;
+    // Returns the amount of memory allocated by the context's arena allocator.
+    long AllocatedMemory { get; }
+    // Returns true when the context has been disposed.
+    bool Disposed { get; }
+    // Returns the total memory used according to the context's arena allocator.
+    long UsedMemory { get; }
+    // Acquires path cache dictionaries (by segment and by index) from the context's active path caches.
+    void AcquirePathCache(out Dictionary<StringSegment, object> pathCache, out Dictionary<int, object> pathCacheByIndex);
+    // Rents an array of at least the given size from the shared array pool and tracks it in the context for later
+    // return.
+    T[] AllocatePooledArray<T>(int size);
+    // Returns a lazy string value over the given pointer and size, reusing a pooled instance when available or
+    // creating a new one.
+    LazyStringValue AllocateStringValue(string str, Byte* ptr, int size);
+    // Sets the arena allocator's AvoidOverAllocation flag to true and returns a scope that resets it to false when
+    // disposed.
+    JsonOperationContext.AvoidOverAllocationScope AvoidOverAllocation();
+    // Returns a lazy string value holding the UTF-8 encoding of the given string, or null if the string is null.
+    // Throws ObjectDisposedException if the context is disposed.
+    LazyStringValue GetLazyString(string field);
+    // Encodes the characters as UTF-8 into context memory, records escape positions, and returns a lazy string
+    // value. Uses long-lived memory when longLived is true.
+    LazyStringValue GetLazyString(ReadOnlySpan<Char> value, string strValue, bool longLived);
+    // Copies the bytes of the span into context memory and returns a lazy string value, using long-lived memory
+    // when longLived is true.
+    LazyStringValue GetLazyString(Span<byte> span, bool longLived);
+    // Copies the bytes into context memory, records JSON escape positions, and returns a lazy string value. Uses
+    // long-lived memory when longLived is true.
+    LazyStringValue GetLazyString(Byte* ptr, int size, bool longLived);
+    // Returns a lazy string for the field name segment from the context's field-name cache, creating a long-lived
+    // one and caching it when missing.
+    LazyStringValue GetLazyStringForFieldWithCaching(StringSegment key);
+    // Returns a lazy string for the field name from the context's field-name cache, creating a long-lived one and
+    // caching it when missing.
+    LazyStringValue GetLazyStringForFieldWithCaching(string field);
+    // Copies the bytes byte-for-byte into context memory without the escape-position pass and returns a lazy
+    // string value.
+    LazyStringValue GetLazyStringRaw(Byte* ptr, int size, bool longLived);
+    // Reads a variable-size length prefix at the pointer and returns a lazy string value over the following bytes,
+    // with success indicating whether the length read succeeded.
+    LazyStringValue GetLazyStringValue(Byte* ptr, out bool success);
+    // Allocates memory of the requested size from the context's long-lived arena allocator. Throws
+    // ObjectDisposedException if that allocator is not available after a reset.
+    AllocatedMemoryData GetLongLivedMemory(int requestedSize);
+    // Allocates memory of the requested size from the context's arena allocator and marks it with the current
+    // context generation.
+    AllocatedMemoryData GetMemory(int requestedSize);
+    // Gets a memory buffer of the default size from the context and returns a disposable that returns the memory.
+    JsonOperationContext.MemoryBuffer.ReturnBuffer GetMemoryBuffer(out JsonOperationContext.MemoryBuffer buffer);
+    // Gets a memory buffer of the given size from the context and returns a disposable that returns the memory.
+    // Throws if the context is disposed.
+    JsonOperationContext.MemoryBuffer.ReturnBuffer GetMemoryBuffer(int size, out JsonOperationContext.MemoryBuffer buffer);
+    // Allocates raw memory of the given size, outputs it in buffer, and returns a disposable that returns the
+    // memory.
+    JsonOperationContext.MemoryBuffer.ReturnBuffer GetRawMemoryBuffer(int size, out AllocatedMemoryData buffer);
+    /// Generates new unmanaged stream. Should be disposed at the end of the usage.
+    UnmanagedWriteBuffer GetStream(int initialSize);
+    // Attempts to grow the given allocation by the given number of bytes using the arena allocator and returns
+    // whether it succeeded.
+    bool GrowAllocation(AllocatedMemoryData allocation, int sizeIncrease);
+    // Parses JSON from the unmanaged buffer into a blittable object using the given usage mode and optional
+    // modifier. Throws EndOfStreamException if the buffer ends before the JSON is complete.
+    BlittableJsonReaderObject ParseBuffer(Byte* buffer, int length, string debugTag, BlittableJsonDocumentBuilder.UsageMode mode, IBlittableDocumentModifier modifier);
+    // Parses a JSON array string into a blittable array reader using the given usage mode and optional modifier.
+    // Throws EndOfStreamException if the content ends before the JSON is complete.
+    BlittableJsonReaderArray ParseBufferToArray(string value, string debugTag, BlittableJsonDocumentBuilder.UsageMode mode, IBlittableDocumentModifier modifier);
+    // Reads JSON from the web socket into a blittable object using the supplied buffer. Throws
+    // EndOfStreamException if a read returns no bytes before the JSON is complete.
+    ValueTask<BlittableJsonReaderObject> ParseToMemoryAsync(WebSocket webSocket, string debugTag, BlittableJsonDocumentBuilder.UsageMode mode, JsonOperationContext.MemoryBuffer bytes, IBlittableDocumentModifier modifier, CancellationToken token);
+    // Reads JSON from the stream into a blittable object using the supplied buffer. Throws EndOfStreamException if
+    // the stream ends early and ArgumentException if maxSize is exceeded.
+    ValueTask<BlittableJsonReaderObject> ParseToMemoryAsync(Stream stream, string documentId, BlittableJsonDocumentBuilder.UsageMode mode, JsonOperationContext.MemoryBuffer bytes, IBlittableDocumentModifier modifier, CancellationToken? token, int maxSize);
+    // Parses the stream into a blittable object using the ToDisk usage mode.
+    ValueTask<BlittableJsonReaderObject> ReadForDiskAsync(Stream stream, string documentId, CancellationToken? token);
+    // Parses the stream into a blittable object using the None usage mode.
+    ValueTask<BlittableJsonReaderObject> ReadForMemoryAsync(Stream stream, string documentId, CancellationToken? token);
+    // Reads a JSON object from the web socket into a blittable object, returning null if a Close message is
+    // received.
+    Task<BlittableJsonReaderObject> ReadFromWebSocketAsync(WebSocket webSocket, string debugTag, CancellationToken token);
+    // Releases the given path cache dictionaries back to the context's active path caches.
+    void ReleasePathCache(Dictionary<StringSegment, object> pathCache, Dictionary<int, object> pathCacheByIndex);
+    // Returns the allocation to the arena allocator. Throws InvalidOperationException if the allocation belongs to
+    // a previous context generation.
+    void ReturnMemory(AllocatedMemoryData allocation);
+    // Creates a new JsonOperationContext with initial size 4096, long-lived size 1024, a maximum of 8192 allocated
+    // string values, and no low-memory flag.
+    static JsonOperationContext ShortTermSingleUse();
+    // Writes the JSON array at the parser's current position to the writer. Throws InvalidOperationException if
+    // the current token is not StartArray.
+    void WriteArray<TWriter>(TWriter writer, JsonParserState state, ObjectJsonParser parser);
+    // Writes the blittable object as JSON to the stream with an async text writer and flushes it.
+    ValueTask WriteAsync(Stream stream, BlittableJsonReaderObject json, CancellationToken token);
+    // Writes the JSON object at the parser's current position to the writer. Throws InvalidOperationException if
+    // the current token is not StartObject.
+    void WriteObject<TWriter>(TWriter writer, JsonParserState state, ObjectJsonParser parser);
+}
+```
+
+```csharp
+public sealed class LazyNumberValue : IComparable, IConvertible
+{
+    // Compares this value with a double, long or LazyNumberValue and returns the comparison result. Throws
+    // NotSupportedException for other types.
+    int CompareTo(object that);
+    // Returns TypeCode.Object.
+    TypeCode GetTypeCode();
+    // Returns true if the cached double value is NaN or the stored text equals NaN.
+    bool IsNaN();
+    // Returns true if the cached double value is negative infinity or the stored text equals -Infinity.
+    bool IsNegativeInfinity();
+    // Returns true if the cached double value is positive infinity or the stored text equals Infinity.
+    bool IsPositiveInfinity();
+    // Returns true if the stored text is 0 and false if it is 1; otherwise throws InvalidCastException.
+    bool ToBoolean(IFormatProvider provider);
+    // Converts the value to double and casts it to byte.
+    byte ToByte(IFormatProvider provider);
+    // Converts the value to double and casts it to char.
+    Char ToChar(IFormatProvider provider);
+    // Creates a DateTime whose ticks are the value converted to long.
+    DateTime ToDateTime(IFormatProvider provider);
+    // Returns the value as a decimal.
+    decimal ToDecimal(IFormatProvider provider);
+    // Returns the value as a double.
+    double ToDouble(IFormatProvider provider);
+    // Converts the value to double and casts it to short.
+    Int16 ToInt16(IFormatProvider provider);
+    // Converts the value to double and casts it to int.
+    int ToInt32(IFormatProvider provider);
+    // Returns the value as a long.
+    long ToInt64(IFormatProvider provider);
+    // Converts the value to double and casts it to sbyte.
+    SByte ToSByte(IFormatProvider provider);
+    // Converts the value to double and casts it to float.
+    float ToSingle(IFormatProvider provider);
+    // Returns typeof(LazyNumberValue) regardless of the requested type.
+    object ToType(Type conversionType, IFormatProvider provider);
+    // Converts the value to double and casts it to ushort.
+    UInt16 ToUInt16(IFormatProvider provider);
+    // Converts the value to double and casts it to uint.
+    UInt32 ToUInt32(IFormatProvider provider);
+    // Returns the value as an unsigned long.
+    UInt64 ToUInt64(IFormatProvider provider);
+    // Compares this value with a double, long or LazyNumberValue and returns the result, or null for other types.
+    int? TryCompareTo(object that);
+}
+```
+
+```csharp
+public sealed class LazyStringValue : IComparable<string>, IEquatable<string>, IComparable<LazyStringValue>, IEquatable<LazyStringValue>, IDisposable, IComparable, IConvertible, IEnumerable<Char>, ISpanFormattable
+{
+    // Holds the memory block allocated for this value; it is returned to the context when the value is disposed or
+    // renewed, if the context generation still matches.
+    AllocatedMemoryData AllocatedMemoryData;
+    // Holds the positions of characters that need escaping in the value; it is set to null when the value is
+    // renewed.
+    int[] EscapePositions;
+    // Set to true when the value is disposed and reset to false when the value is renewed.
+    bool IsDisposed;
+    // Returns true if a string representation has already been materialized for this value.
+    bool HasStringValue { get; }
+    // Returns a read-only span over the value's underlying UTF-8 buffer using its byte size.
+    ReadOnlySpan<byte> AsReadOnlySpan();
+    // Returns a writable span over the value's underlying UTF-8 buffer using its byte size.
+    Span<byte> AsSpan();
+    // Sets the thread-static temporary char and comparison buffers to null so they can be released; also
+    // registered as a thread-local cleanup handler.
+    static void CleanBuffers();
+    // Returns a copy for the given context that keeps the cached string and buffer reference; returns the
+    // context's empty value when the size is 0.
+    LazyStringValue CloneForConcurrentRead(JsonOperationContext context);
+    // Returns a new lazy string copied from the buffer on the same context, or that context's empty value when the
+    // size is 0.
+    LazyStringValue CloneOnSameContext();
+    // Compares ordinally with the given string, using the cached string if present or otherwise comparing the
+    // UTF-8 bytes of the string.
+    int CompareTo(string other);
+    // Compares with another lazy string, returning 0 if both share the same buffer and size, otherwise comparing
+    // their bytes.
+    int CompareTo(LazyStringValue other);
+    // Compares with a LazyStringValue or string; returns 1 for null and throws NotSupportedException for other
+    // types or ObjectDisposedException if disposed.
+    int CompareTo(object obj);
+    // Compares two UTF-8 byte buffers ignoring ASCII case, falling back to an ordinal ignore-case comparison of
+    // the decoded strings when non-ASCII bytes are met.
+    static int CompareToOrdinalIgnoreCase(Byte* strA, int strALen, Byte* strB, int strBLen);
+    // Returns true if the other value is equal to this one under an ordinal ignore-case comparison of their
+    // buffers.
+    bool EqualsOrdinalIgnoreCase(LazyStringValue other);
+    // Returns the TypeCode of the materialized string value.
+    TypeCode GetTypeCode();
+    // Returns the index of the character within the whole value, or -1 if not found.
+    int IndexOf(Char value);
+    // Returns the index of the character using the given comparison type, via the cached string or the
+    // materialized string.
+    int IndexOf(Char value, StringComparison comparisonType);
+    // Returns the index of the character searching from the start index to the end of the value.
+    int IndexOf(Char value, int startIndex);
+    // Returns the index of the character within the given range, using the cached string or decoding the buffer;
+    // throws ObjectDisposedException if disposed.
+    int IndexOf(Char value, int startIndex, int count);
+    // Returns the ordinal index of the string in the materialized string value.
+    int IndexOf(string value);
+    // Returns the index of the string in the materialized string, starting at the given index.
+    int IndexOf(string value, int startIndex);
+    // Returns the index of the string in the materialized string within the given start index and count.
+    int IndexOf(string value, int startIndex, int count);
+    // Returns the index of the string from the start index using the given comparison type, on the materialized
+    // string.
+    int IndexOf(string value, int startIndex, StringComparison comparisonType);
+    // Returns the index of the string within the given range using the given comparison type, on the materialized
+    // string.
+    int IndexOf(string value, int startIndex, int count, StringComparison comparisonType);
+    // Returns the index of the string using the given comparison type, on the materialized string.
+    int IndexOf(string value, StringComparison comparisonType);
+    // Returns the index of the first occurrence of any of the characters, searching the whole value.
+    int IndexOfAny(Char[] anyOf);
+    // Returns the index of the first occurrence of any of the characters, starting at the given index.
+    int IndexOfAny(Char[] anyOf, int startIndex);
+    // Returns the index of the first occurrence of any of the characters within the given range; throws
+    // ObjectDisposedException if disposed.
+    int IndexOfAny(Char[] anyOf, int startIndex, int count);
+    // Returns true if the single byte of the value is below 32 or between 127 and 159, and outputs that byte;
+    // asserts the size is 1.
+    bool IsControlCodeCharacter(out byte b);
+    // Returns whether the materialized string is in Unicode normalization form C.
+    bool IsNormalized();
+    // Returns whether the materialized string is in the specified Unicode normalization form.
+    bool IsNormalized(NormalizationForm normalizationForm);
+    // Returns the index of the last occurrence of the character, searching backward from the end of the value.
+    int LastIndexOf(Char value);
+    // Returns the index of the last occurrence of the character, searching backward from the start index.
+    int LastIndexOf(Char value, int startIndex);
+    // Returns the index of the last occurrence of the character within the given range; throws
+    // ObjectDisposedException if disposed.
+    int LastIndexOf(Char value, int startIndex, int count);
+    // Returns the last ordinal index of the string in the value, using the cached string if present.
+    int LastIndexOf(string value);
+    // Returns the last index of the string using the given comparison type, on the materialized string.
+    int LastIndexOf(string value, StringComparison comparisonType);
+    // Returns the last index of the string searching backward from the start index, on the materialized string.
+    int LastIndexOf(string value, int startIndex);
+    // Returns the last index of the string within the given start index and count, on the materialized string.
+    int LastIndexOf(string value, int startIndex, int count);
+    // Returns the last index of the string from the start index using the given comparison type, on the
+    // materialized string.
+    int LastIndexOf(string value, int startIndex, StringComparison comparisonType);
+    // Returns the last index of the string within the given range using the given comparison type, on the
+    // materialized string.
+    int LastIndexOf(string value, int startIndex, int count, StringComparison comparisonType);
+    // Returns the index of the last occurrence of any of the characters, searching backward from the end.
+    int LastIndexOfAny(Char[] anyOf);
+    // Returns the index of the last occurrence of any of the characters, searching backward from the start index.
+    int LastIndexOfAny(Char[] anyOf, int startIndex);
+    // Returns the index of the last occurrence of any of the characters within the given range; throws
+    // ObjectDisposedException if disposed.
+    int LastIndexOfAny(Char[] anyOf, int startIndex, int count);
+    // Returns the materialized string left-padded with spaces to the total width.
+    string PadLeft(int totalWidth);
+    // Returns the materialized string left-padded with the given character to the total width.
+    string PadLeft(int totalWidth, Char paddingChar);
+    // Returns the materialized string right-padded with spaces to the total width.
+    string PadRight(int totalWidth);
+    // Returns the materialized string right-padded with the given character to the total width.
+    string PadRight(int totalWidth, Char paddingChar);
+    // Returns false if the prefix is longer than this value; otherwise compares the first bytes of the value with
+    // the prefix ignoring case.
+    bool StartsWithOrdinalIgnoreCase(LazyStringValue prefix);
+    // Converts the materialized string to Boolean using the IConvertible implementation of string with the given
+    // format provider.
+    bool ToBoolean(IFormatProvider provider);
+    // Converts the materialized string to Byte using the IConvertible implementation of string with the given
+    // format provider.
+    byte ToByte(IFormatProvider provider);
+    // Converts the materialized string to Char using the IConvertible implementation of string with the given
+    // format provider.
+    Char ToChar(IFormatProvider provider);
+    // Converts the materialized string to DateTime using the IConvertible implementation of string with the given
+    // format provider.
+    DateTime ToDateTime(IFormatProvider provider);
+    // Converts the materialized string to Decimal using the IConvertible implementation of string with the given
+    // format provider.
+    decimal ToDecimal(IFormatProvider provider);
+    // Converts the materialized string to Double using the IConvertible implementation of string with the given
+    // format provider.
+    double ToDouble(IFormatProvider provider);
+    // Converts the materialized string to Int16 using the IConvertible implementation of string with the given
+    // format provider.
+    Int16 ToInt16(IFormatProvider provider);
+    // Converts the materialized string to Int32 using the IConvertible implementation of string with the given
+    // format provider.
+    int ToInt32(IFormatProvider provider);
+    // Converts the materialized string to Int64 using the IConvertible implementation of string with the given
+    // format provider.
+    long ToInt64(IFormatProvider provider);
+    // Converts the materialized string to SByte using the IConvertible implementation of string with the given
+    // format provider.
+    SByte ToSByte(IFormatProvider provider);
+    // Converts the materialized string to Single using the IConvertible implementation of string with the given
+    // format provider.
+    float ToSingle(IFormatProvider provider);
+    // Parses the materialized string as an enum when the target type is an enum; otherwise converts it to the
+    // target type through the IConvertible implementation of string.
+    object ToType(Type conversionType, IFormatProvider provider);
+    // Converts the materialized string to UInt16 using the IConvertible implementation of string with the given
+    // format provider.
+    UInt16 ToUInt16(IFormatProvider provider);
+    // Converts the materialized string to UInt32 using the IConvertible implementation of string with the given
+    // format provider.
+    UInt32 ToUInt32(IFormatProvider provider);
+    // Converts the materialized string to UInt64 using the IConvertible implementation of string with the given
+    // format provider.
+    UInt64 ToUInt64(IFormatProvider provider);
+    // Returns the materialized string converted to upper case using the current culture.
+    string ToUpper();
+    // Returns the materialized string converted to upper case using the given culture.
+    string ToUpper(CultureInfo culture);
+    // Returns the materialized string converted to upper case using the invariant culture.
+    string ToUpperInvariant();
+    // Returns the materialized string with trailing white-space removed.
+    string TrimEnd();
+    // Returns the materialized string with trailing occurrences of the given character removed.
+    string TrimEnd(Char trimChar);
+    // Returns the materialized string with trailing occurrences of any of the given characters removed.
+    string TrimEnd(Char[] trimChars);
+    // Returns the materialized string with leading white-space removed.
+    string TrimStart();
+    // Returns the materialized string with leading occurrences of the given character removed.
+    string TrimStart(Char trimChar);
+    // Returns the materialized string with leading occurrences of any of the given characters removed.
+    string TrimStart(Char[] trimChars);
+    // Sets the value's byte size to the given size, resets the cached length and clears the cached string.
+    void Truncate(int size);
+    // Copies the characters into the destination span via TryFormat; returns false if the destination is shorter
+    // than the value length.
+    bool TryCopyTo(Span<Char> destination);
+    // Writes the characters into the destination span and outputs the count written; returns false with 0 written
+    // if the destination is too small; throws ObjectDisposedException if disposed.
+    bool TryFormat(Span<Char> destination, out int charsWritten, ReadOnlySpan<Char> format, IFormatProvider provider);
+}
+```
+
+### `Sparrow.Json.Parsing`
+
+```csharp
+public sealed class DynamicJsonValue
+{
+    // Index into the Properties list of modifications, starting at 0, used while the parser enumerates the added
+    // or changed properties.
+    int ModificationsIndex;
+    // Index of the current source property during enumeration of the original object, starting at -1.
+    int SourceIndex;
+    // Holds the source object's properties in insertion order, assigned when the parser starts enumerating the
+    // original object.
+    BlittableJsonReaderObject.InsertionOrderProperties SourceProperties;
+    // Constant string value $type, used as the property name that stores the type name in a serialized object.
+    const string TypeFieldName;
+}
+```
+
+### `Sparrow.LowMemory`
+
+```csharp
+public interface ILowMemoryHandler
+{
+    // Called when low memory is detected, with the severity of the low memory condition.
+    void LowMemory(LowMemorySeverity lowMemorySeverity);
+    // Called when the low memory condition is over.
+    void LowMemoryOver();
+}
+```
+
+```csharp
+public struct MemoryInfoResult
+{
+    // Current commit charge; shown out of the total committable memory in the extended memory information text.
+    Size CurrentCommitCharge;
+    // Size of the installed memory.
+    Size InstalledMemory;
+    // Boolean flag indicating whether the extended memory information is included in the result.
+    bool IsExtended;
+    // Shared clean memory amount.
+    Size SharedCleanMemory;
+    // Total committable memory amount.
+    Size TotalCommittableMemory;
+    // Total physical memory amount.
+    Size TotalPhysicalMemory;
+    // Total swap size.
+    Size TotalSwapSize;
+    // Total swap usage amount.
+    Size TotalSwapUsage;
+    // Swap usage amount of the process working set.
+    Size WorkingSetSwapUsage;
+}
+```
+
+### `Sparrow.Utils`
+
+```csharp
+public enum NativeMemory.FileType
+{
+    // File type returned for mapped files with the .buffers extension whose name starts with scratch.
+    ScratchBuffer,
+    // File type returned for mapped files with the .buffers extension whose name starts with compression.
+    CompressionBuffer,
+    // File type returned for mapped files with the .buffers extension whose name starts with decompression.
+    DecompressionBuffer,
+}
+```
+
+```csharp
+public static class StringUtils
+{
+    // Clears the buffer, then adds the positions of bytes that are quote, backslash or below 32 as offsets from
+    // the previous escape; skips the work when the precomputed size shows no escapes.
+    static void FindEscapedPositions(FastList<int> buffer, Byte* str, int len, int previousComputedMaxSize);
+    // Finds escape positions in the buffer and expands control characters in place to backslash-u escape
+    // sequences, growing len; throws if the extra space exceeds the precomputed size.
+    static void FindEscapedPositionsAndEscapeControlsForBackwardCompatibility(JsonParserState state, Byte* str, ref int len, int previousComputedMaxSize);
+    // Counts the bytes needing escape and returns (count + 1) times 5, the maximum size for storing the escape
+    // positions.
+    static int FindMaxEscapePositionSize(Byte* str, int size);
+    // Counts the characters needing escape and returns (count + 1) times 5, the maximum size for storing the
+    // escape positions.
+    static int FindMaxEscapePositionSize(ReadOnlySpan<Char> str);
+    // Creates a LazyStringValue by copying the bytes into context memory, escaping control characters in place,
+    // and storing the escape positions after the data; the memory is long-lived when requested.
+    static LazyStringValue GetLazyStringForBackwardCompatibility(JsonOperationContext context, Byte* ptr, int size, bool longLived);
+    // Returns true if the bytes contain any control character.
+    static bool HasControlCharacters(ReadOnlySpan<byte> str);
+    // Returns true if the characters contain any control character.
+    static bool HasControlCharacters(ReadOnlySpan<Char> str);
+    // Returns true if the character is below 8, between 14 and 31, or equals 11.
+    static bool IsControlCharacter(Char c);
+}
+```
+
+```csharp
+public static class StringUtils.Compatibility
+{
+    // Finds escape positions and expands control characters in place into backslash-u escape sequences, updating
+    // len; throws if the extra size exceeds the precomputed size.
+    static void FindEscapedPositionsAndEscapeControls(FastList<int> buffer, Byte* str, ref int len, int previousComputedMaxSize);
+    // Returns the maximum size needed for escape positions and control character expansion, and outputs the number
+    // of control characters found.
+    static int FindMaxEscapePositionAndControlCharSize(Byte* str, int size, out int escapedCount);
+    // Returns the maximum size needed for escape positions and control character expansion for the characters, and
+    // outputs the number of control characters found.
+    static int FindMaxEscapePositionAndControlCharSize(ReadOnlySpan<Char> str, out int controlCount);
+}
+```
+
+
+### `Raven.Embedded`
+
+```csharp
+public sealed class EmbeddedServer : IDisposable
+{
+    // Gracefully shuts down the server process, killing it if the token is cancelled; throws
+    // InvalidOperationException if the server was not started, and ignores shutdown errors.
+    Task StopServerAsync(CancellationToken forceServerKillToken);
+}
+```
+
+```csharp
+public class ServerOptions
+{
+    // Time to wait for the server process to exit after a shutdown command is sent before it is killed; defaults
+    // to 30 seconds.
+    TimeSpan GracefulShutdownTimeout { get; set; }
+    // Time to wait for the server process to exit after it is killed; logs a message if it has not exited;
+    // defaults to 5 seconds.
+    TimeSpan ProcessKillTimeout { get; set; }
+}
+```
+
+
+### `Raven.TestDriver`
+
+```csharp
+public sealed class GetDocumentStoreOptions
+{
+    // Optional timeout; when it has a value, the database store creation waits for indexing to finish using that
+    // timeout.
+    TimeSpan? WaitForIndexingTimeout { get; set; }
+}
+```
+
+```csharp
+public sealed class TestServerOptions : ServerOptions
+{
+    // Returns TestServerOptions with the server URL set to the machine name on port 0 and the option allowing
+    // unsecured access on a private network.
+    static TestServerOptions UseFiddler();
 }
 ```
 
