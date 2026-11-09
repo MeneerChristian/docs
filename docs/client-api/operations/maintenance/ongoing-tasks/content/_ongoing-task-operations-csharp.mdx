@@ -170,7 +170,7 @@ public ToggleOngoingTaskStateOperation(long taskId, OngoingTaskType type, bool d
 
 <TabItem value="syntax_4" label="syntax_4">
 <CodeBlock language="csharp">
-{`private enum OngoingTaskType
+{`public enum OngoingTaskType
 \{
     Replication,
     RavenEtl,
@@ -178,11 +178,15 @@ public ToggleOngoingTaskStateOperation(long taskId, OngoingTaskType type, bool d
     OlapEtl,
     ElasticSearchEtl,
     QueueEtl,
+    SnowflakeEtl,
     Backup,
     Subscription,
     PullReplicationAsHub,
     PullReplicationAsSink,
     QueueSink,
+    CdcSink,
+    EmbeddingsGeneration,
+    GenAi
 \}
 `}
 </CodeBlock>
@@ -209,5 +213,74 @@ public ToggleOngoingTaskStateOperation(long taskId, OngoingTaskType type, bool d
 </CodeBlock>
 </TabItem>
 
+* The `GetOngoingTaskInfoOperation(long taskId, OngoingTaskType type)` constructor throws an `ArgumentException`
+  when `type` is `OngoingTaskType.PullReplicationAsHub`.
+  Use `GetPullReplicationTasksInfoOperation` to get the info of a pull replication hub task.
+* When the operation is sent with a `taskName` that is null or whitespace, the command it creates throws an `ArgumentException`.
 
 
+
+## Ongoing task result types
+
+`GetOngoingTaskInfoOperation` returns an `OngoingTask`.
+Cast it to the class that matches the `type` you passed:
+
+| `OngoingTaskType`       | Returned class                    |
+|-------------------------|-----------------------------------|
+| `Replication`           | `OngoingTaskReplication`          |
+| `RavenEtl`              | `OngoingTaskRavenEtl`             |
+| `SqlEtl`                | `OngoingTaskSqlEtl`               |
+| `OlapEtl`               | `OngoingTaskOlapEtl`              |
+| `ElasticSearchEtl`      | `OngoingTaskElasticSearchEtl`     |
+| `QueueEtl`              | `OngoingTaskQueueEtl`             |
+| `SnowflakeEtl`          | `OngoingTaskSnowflakeEtl`         |
+| `Backup`                | `OngoingTaskBackup`               |
+| `Subscription`          | `OngoingTaskSubscription`         |
+| `PullReplicationAsSink` | `OngoingTaskPullReplicationAsSink`|
+| `PullReplicationAsHub`  | `OngoingTaskPullReplicationAsHub` |
+| `QueueSink`             | `OngoingTaskQueueSink`            |
+| `CdcSink`               | `OngoingTaskCdcSink`              |
+| `EmbeddingsGeneration`  | `EmbeddingsGeneration`            |
+| `GenAi`                 | `GenAi`                           |
+
+#### Properties shared by all task types
+
+Every returned class derives from `OngoingTask`:
+
+| Property               | Type                          | Description                                                          |
+|------------------------|-------------------------------|----------------------------------------------------------------------|
+| `TaskId`               | `long`                        | The task ID                                                          |
+| `TaskType`             | `OngoingTaskType`             | The task type (set by the derived class, read-only for callers)      |
+| `TaskName`             | `string`                      | The task name                                                        |
+| `TaskState`            | `OngoingTaskState`            | `None`, `Enabled`, `Disabled` or `PartiallyEnabled`                  |
+| `TaskConnectionStatus` | `OngoingTaskConnectionStatus` | `None`, `Active`, `NotActive`, `Reconnect` or `NotOnThisNode`        |
+| `ResponsibleNode`      | `NodeId`                      | The node responsible for the task. `NodeId` has the public fields `NodeTag`, `NodeUrl` and `ResponsibleNode` |
+| `MentorNode`           | `string`                      | The mentor node tag of the task                                      |
+| `PinToMentorNode`      | `bool`                        | Whether the task is pinned to the mentor node                        |
+| `Error`                | `string`                      | An error message about the task                                      |
+
+#### Task-specific properties
+
+| Class                              | Additional properties |
+|------------------------------------|-----------------------|
+| `OngoingTaskReplication`           | `FromToString` (`string`), `DestinationUrl` (`string`), `TopologyDiscoveryUrls` (`string[]`), `DestinationDatabase` (`string`), `ConnectionStringName` (`string`), `DelayReplicationFor` (`TimeSpan`), `LastAcceptedChangeVectorFromDestination` (`string`), `SourceDatabaseChangeVector` (`string`), `LastSentEtag` (`long`), `LastDatabaseEtag` (`long`) |
+| `OngoingTaskPullReplicationAsHub`  | `FromToString`, `DestinationUrl`, `DestinationDatabase` (`string`), `DelayReplicationFor` (`TimeSpan`), `HandlerId` (`string`), `LastAcceptedChangeVectorFromDestination`, `SourceDatabaseChangeVector` (`string`), `LastSentEtag`, `LastDatabaseEtag` (`long`) |
+| `OngoingTaskPullReplicationAsSink` | `HubName` (`string`), `Mode` (`PullReplicationMode`: `None`, `HubToSink`, `SinkToHub`), `DestinationUrl` (`string`), `TopologyDiscoveryUrls` (`string[]`), `DestinationDatabase` (`string`), `ConnectionStringName` (`string`), `CertificatePublicKey` (`string`), `AccessName` (`string`), `AllowedHubToSinkPaths` (`string[]`), `AllowedSinkToHubPaths` (`string[]`), `HubCursor` (`string`), `SinkCursor` (`string`) |
+| `OngoingTaskRavenEtl`              | `DestinationUrl`, `DestinationDatabase`, `ConnectionStringName` (`string`), `TopologyDiscoveryUrls` (`string[]`), `Configuration` (`RavenEtlConfiguration`) |
+| `OngoingTaskSqlEtl`                | `DestinationServer`, `DestinationDatabase`, `ConnectionStringName` (`string`), `ConnectionStringDefined` (`bool`), `Configuration` (`SqlEtlConfiguration`) |
+| `OngoingTaskOlapEtl`               | `ConnectionStringName`, `Destination` (`string`), `Configuration` (`OlapEtlConfiguration`) |
+| `OngoingTaskElasticSearchEtl`      | `ConnectionStringName` (`string`), `NodesUrls` (`string[]`), `Configuration` (`ElasticSearchEtlConfiguration`) |
+| `OngoingTaskQueueEtl`              | `BrokerType` (`QueueBrokerType`), `ConnectionStringName`, `Url` (`string`), `Configuration` (`QueueEtlConfiguration`) |
+| `OngoingTaskSnowflakeEtl`          | `ConnectionStringName`, `ConnectionString` (`string`), `Configuration` (`SnowflakeEtlConfiguration`) |
+| `OngoingTaskQueueSink`             | `BrokerType` (`QueueBrokerType`), `ConnectionStringName`, `Url` (`string`), `Configuration` (`QueueSinkConfiguration`) |
+| `OngoingTaskSubscription`          | `Query`, `SubscriptionName` (`string`), `SubscriptionId` (`long`), `ArchivedDataProcessingBehavior` (`ArchivedDataProcessingBehavior?`), `ChangeVectorForNextBatchStartingPoint` (`string`), `ChangeVectorForNextBatchStartingPointPerShard` (`Dictionary<string, string>`), `LastBatchAckTime`, `LastClientConnectionTime` (`DateTime?`), `Disabled` (`bool`) |
+| `OngoingTaskBackup`                | `BackupType` (`BackupType`: `Backup`, `Snapshot`), `BackupDestinations` (`List<string>`), `LastFullBackup`, `LastIncrementalBackup` (`DateTime?`), `OnGoingBackup` (`RunningBackup`), `NextBackup` (`NextBackup`), `RetentionPolicy` (`RetentionPolicy`), `IsEncrypted` (`bool`), `LastExecutingNodeTag`, `FullBackupFrequency`, `IncrementalBackupFrequency` (`string`), `BackupUploadMode` (`BackupUploadMode`: `Default`, `DirectUpload`), `HasCloudBackup` (`bool`) |
+| `OngoingTaskCdcSink`               | `Configuration` (`CdcSinkConfiguration`), `ConnectionStringName`, `FactoryName` (`string`), `LastBatchTime`, `LastActivityTime` (`DateTime?`), `LastCheckpoint` (`string`), `SecondsSinceLastBatch`, `SecondsSinceLastActivity` (`double?`), `HealthIssue` (`string`) |
+| `EmbeddingsGeneration`             | `ConnectionStringName` (`string`), `Configuration` (`EmbeddingsGenerationConfiguration`) |
+| `GenAi`                            | `ConnectionStringName` (`string`), `Configuration` (`GenAiConfiguration`), `ChangeVector` (`string`) |
+
+`NextBackup` has the properties `TimeSpan` (`TimeSpan`), `DateTime` (`DateTime`), `IsFull` (`bool`) and `OriginalBackupTime` (`DateTime?`).
+`RunningBackup` has the properties `StartTime` (`DateTime?`), `IsFull` (`bool`) and `RunningBackupTaskId` (`long`).
+
+`DeleteOngoingTaskOperation` and `ToggleOngoingTaskStateOperation` return a `ModifyOngoingTaskResult`
+with `TaskId` (`long`) and the public fields `RaftCommandIndex` (`long`) and `ResponsibleNode` (`string`).
