@@ -280,5 +280,33 @@ using (documentStore)
   you can introduce additional distribution by adjusting the context seed on the store.
 
 
+## SessionInfo members
 
+`session.Advanced.SessionInfo` exposes the following members:
 
+| Member | Type | Description |
+|--------|------|-------------|
+| **SetContext(string sessionKey)** | `void` | Sets the context string of the session. `sessionKey` cannot be null or whitespace.<br/>Throws `InvalidOperationException` if the session context was already used (see `SessionId`). |
+| **SessionId** | `int` | The identifier that is used to choose a node for the session.<br/>If a context string was set, it is calculated from that string and the store's context seed.<br/>Otherwise it is taken from the store's `LoadBalancerPerSessionContextSelector`, if one is defined, or is a client-side counter value.<br/>Reading `SessionId` marks the session context as used, so `SetContext` can no longer be called. |
+| **LastClusterTransactionIndex** | `long?` | The last cluster transaction index known to the session.<br/>It is initialized from the document store, updated by the session after cluster-wide transactions, and sent to the server in a request header. |
+| **AsyncCommandRunning** | `bool` | Set to `true` by the client while an asynchronous command of the session is executing.<br/>A request that is sent from the session while this is `true` is rejected as an invalid concurrent use of the session. |
+| **NoCaching** | `bool` | Taken from the `NoCaching` session option. |
+| **DatabaseName** | `string` | The name of the database the session operates on. |
+
+<TabItem value="LoadBalance_SessionInfo" label="LoadBalance_SessionInfo">
+<CodeBlock language="csharp">
+{`using (var session = documentStore.OpenSession())
+\{
+    SessionInfo sessionInfo = session.Advanced.SessionInfo;
+
+    sessionInfo.SetContext("team/9-A");
+
+    // The id calculated from the context string
+    int sessionId = sessionInfo.SessionId;
+
+    long? lastClusterTransactionIndex = sessionInfo.LastClusterTransactionIndex;
+    bool asyncCommandRunning = sessionInfo.AsyncCommandRunning; // false when no async command is running
+\}
+`}
+</CodeBlock>
+</TabItem>

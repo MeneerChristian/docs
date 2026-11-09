@@ -27,6 +27,8 @@ import ContentFrame from "@site/src/components/ContentFrame";
   - [WaitForNonStaleResults](../../querying/customize-query.mdx#waitfornonstaleresults)
   - [WithTag](../../querying/customize-query.mdx#withtag)
 
+* [QueryOperation](../../querying/customize-query.mdx#queryoperation) property
+
 * [Methods return value](../../querying/customize-query.mdx#methods-return-value)
 
 </Admonition>
@@ -822,6 +824,61 @@ TSelf WithTag(string tag);
 | Parameter | Type     | Description |
 |-----------| -------- | ----------- |
 | **tag**   | `string` | A user-defined label to attach to the query. Cannot be `null`, empty, or whitespace. |
+
+</Panel>
+
+<Panel heading="QueryOperation">
+
+* The `QueryOperation` property of the customization object exposes the `QueryOperation` that is behind the query.  
+  It is created when the query is executed, so read it after the query has run.
+
+* Use it to inspect the `IndexQuery` that was sent to the server (`QueryOperation.IndexQuery`)
+  and the raw results of the query (`QueryOperation.CurrentQueryResults`).
+
+**Example**
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="Query" label="Query">
+```csharp
+IDocumentQueryCustomization customization = null;
+
+List<Employee> results = session
+    .Query<Employee>()
+     // Keep the customization object
+    .Customize(x => customization = x)
+    .Where(x => x.FirstName == "Robert")
+    .ToList();
+
+// The query was executed, its operation can now be inspected
+IndexQuery indexQuery = customization.QueryOperation.IndexQuery;
+QueryResult queryResult = customization.QueryOperation.CurrentQueryResults;
+```
+</TabItem>
+<TabItem value="Query_async" label="Query_async">
+```csharp
+IDocumentQueryCustomization customization = null;
+
+List<Employee> results = await asyncSession
+    .Query<Employee>()
+     // Keep the customization object
+    .Customize(x => customization = x)
+    .Where(x => x.FirstName == "Robert")
+    .ToListAsync();
+
+// The query was executed, its operation can now be inspected
+IndexQuery indexQuery = customization.QueryOperation.IndexQuery;
+QueryResult queryResult = customization.QueryOperation.CurrentQueryResults;
+```
+</TabItem>
+</Tabs>
+
+**Syntax**
+
+<TabItem>
+```csharp
+QueryOperation QueryOperation { get; }
+```
+</TabItem>
 
 </Panel>
 

@@ -660,6 +660,30 @@ using (IAsyncDocumentSession asyncSession = store.OpenAsyncSession())
     
 </Panel>
 
+<Panel heading="ConcurrencyCheckMode">
+
+* The session keeps a `ConcurrencyCheckMode` for each tracked entity (the `DocumentInfo.ConcurrencyCheckMode` property).
+  It overrides the session's `OptimisticConcurrencyMode` for that entity's PUT and DELETE commands.
+
+* The `Store` methods set it for you:
+
+  | `Store` call | `ConcurrencyCheckMode` of the entity |
+  |--------------|--------------------------------------|
+  | `Store(entity)` for an entity that has no ID yet | `Forced` |
+  | `Store(entity)` for an entity that already has an ID, or `Store(entity, id)` | `Auto` |
+  | `Store(entity, changeVector, id)` with a non-null change vector | `Forced` |
+  | `Store(entity, changeVector, id)` with a `null` change vector | `Disabled` |
+
+* The values:
+
+  | Value | Description |
+  |-------|-------------|
+  | `Auto` | The check depends on the session's `OptimisticConcurrencyMode` and on the change vector, if one was provided. |
+  | `Forced` | The check is performed even when the session's `OptimisticConcurrencyMode` is `None`. |
+  | `Disabled` | The check is not performed for this entity's PUT and DELETE commands, even when an `OptimisticConcurrencyMode` is set.<br/>When the mode is `WritesAndReads`, the entity is still verified during `SaveChanges()` to ensure it was not modified by another session. |
+
+</Panel>
+
 <Panel heading="Conditionally save changes based on a document not loaded into the session">
 
 * **When to use**:  
