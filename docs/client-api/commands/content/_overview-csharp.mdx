@@ -400,3 +400,58 @@ using (var cmd = new MultiGetCommand(requestExecutor, requests))
 | **ForceRetry** | `bool` | Whether the request should be retried |
 | **RequestHasErrors**() | `bool` | `false` when the status code is 0 (aggressively cached), 200, 201, 203, 204, 304 or 404, and `true` otherwise |
 
+
+## GetClusterTopologyCommand
+
+`GetClusterTopologyCommand` (namespace `Raven.Client.ServerWide.Commands`) sends a `GET` request to the `/cluster/topology` endpoint of a server
+and returns a `ClusterTopologyResponse` in `Result`. It has a parameterless constructor and a constructor that takes a `string debugTag`.
+
+<TabItem value="cluster_topology_cmd" label="cluster_topology_cmd">
+<CodeBlock language="csharp">
+{`var requestExecutor = store.GetRequestExecutor();
+using (requestExecutor.ContextPool.AllocateOperationContext(out var context))
+\{
+    var cmd = new GetClusterTopologyCommand();
+    requestExecutor.Execute(cmd, context);
+
+    ClusterTopologyResponse response = cmd.Result;
+    string leader = response.Leader;
+
+    foreach (KeyValuePair<string, string> member in response.Topology.Members)
+    \{
+        // member.Key is the node tag, member.Value is the node URL
+    \}
+\}
+`}
+</CodeBlock>
+</TabItem>
+
+#### `ClusterTopologyResponse` (namespace `Raven.Client.Http`)
+
+| Field | Type | Description |
+|---|---|---|
+| **Leader** | `string` | The leader of the cluster |
+| **NodeTag** | `string` | The tag of the node that answered |
+| **ServerRole** | `ServerNode.Role` | The role of that node: `None`, `Promotable`, `Member` or `Rehab` |
+| **Topology** | `ClusterTopology` | The cluster topology |
+| **Etag** | `long` | The etag of the topology |
+| **Status** | `Dictionary<string, NodeStatus>` | The status per node tag |
+
+#### `ClusterTopology`
+
+| Member | Type | Description |
+|---|---|---|
+| **TopologyId** | `string` | The topology ID |
+| **Members**, **Promotables**, **Watchers** | `Dictionary<string, string>` | Node tag to node URL, for each kind of node |
+| **AllNodes** | `Dictionary<string, string>` | The nodes of all three kinds |
+| **LastNodeId** | `string` | The last node ID |
+| **Etag** | `long` | The etag of the topology |
+| **Contains**(string node) | `bool` | `true` when the tag is in `Members`, `Promotables` or `Watchers` |
+| **GetUrlFromTag**(string tag) | `string` | The URL of the node with that tag, or `null` when the tag is `null` or not found |
+| **TryGetNodeTagByUrl**(string nodeUrl) | `(bool HasUrl, string NodeTag)` | Looks the URL up in `Members`, then `Promotables`, then `Watchers`. The source marks it as expensive. |
+
+#### `NodeStatus` (namespace `Raven.Client.Http`)
+
+`NodeStatus` has the properties `Name` (`string`), `Connected` (`bool`), `ErrorDetails` (`string`), `LastSent` (`DateTime`), `LastReply` (`DateTime`),
+`LastSentMessage` (`string`) and `LastMatchingIndex` (`long`).
+
