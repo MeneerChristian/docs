@@ -152,3 +152,102 @@ public class IndexingPerformanceBasicStats
 `}
 </CodeBlock>
 </TabItem>
+
+#### The details classes
+
+The `...Details` properties of `IndexingPerformanceOperation` are set on the nested operations (the `Operations` property) that record them, and are `null` on the others:
+
+* `MapDetails` is set on the operation named `Map`.
+* `ReferenceDetails` is set on the operation named `References`.
+* `ReduceDetails` is set on the operation named `Reduce`, with the attempts, successes, errors and memory figures,  
+  and on the reduce-trees operation, where it holds only `TreesReduceDetails`.
+* `CleanupDetails` is set on the operations that clean up documents and time series.
+* `LuceneMergeDetails` is set on the Lucene merge operation.
+* `CommitDetails` is set on the storage commit operation.
+
+<TabItem value="syntax_5" label="syntax_5">
+<CodeBlock language="csharp">
+{`public sealed class MapRunDetails
+\{
+    public string BatchCompleteReason \{ get; set; \}
+    public long ProcessPrivateMemory \{ get; set; \}
+    public long ProcessWorkingSet \{ get; set; \}
+    public long CurrentlyAllocated \{ get; set; \}
+    public long AllocationBudget \{ get; set; \}
+\}
+
+public sealed class ReferenceRunDetails
+\{
+    public int ReferenceAttempts \{ get; set; \}
+    public int ReferenceSuccesses \{ get; set; \}
+    public int ReferenceErrors \{ get; set; \}
+    public long ProcessPrivateMemory \{ get; set; \}
+    public long ProcessWorkingSet \{ get; set; \}
+    public long CurrentlyAllocated \{ get; set; \}
+    public long AllocationBudget \{ get; set; \}
+    public string BatchCompleteReason \{ get; set; \}
+\}
+
+public sealed class ReduceRunDetails
+\{
+    public long ProcessPrivateMemory \{ get; set; \}
+    public long ProcessWorkingSet \{ get; set; \}
+    public long CurrentlyAllocated \{ get; set; \}
+    public long ReduceAttempts \{ get; set; \}
+    public long ReduceSuccesses \{ get; set; \}
+    public long ReduceErrors \{ get; set; \}
+    public TreesReduceDetails TreesReduceDetails \{ get; set; \}
+\}
+
+public sealed class TreesReduceDetails
+\{
+    public int NumberOfModifiedLeafs \{ get; set; \}
+    public int NumberOfModifiedBranches \{ get; set; \}
+    public int NumberOfCompressedLeafs \{ get; set; \}
+\}
+
+public sealed class CleanupRunDetails
+\{
+    public int DeleteSuccesses \{ get; set; \}
+    public string BatchCompleteReason \{ get; set; \}
+\}
+
+public sealed class LuceneMergeDetails
+\{
+    public int TotalMergesCount \{ get; set; \}
+    public int ExecutedMergesCount \{ get; set; \}
+    public long MergedFilesCount \{ get; set; \}
+    public long MergedDocumentsCount \{ get; set; \}
+\}
+
+public sealed class StorageCommitDetails
+\{
+    public int NumberOfModifiedPages \{ get; set; \}
+    public int NumberOf4KbsWrittenToDisk \{ get; set; \}
+\}
+`}
+</CodeBlock>
+</TabItem>
+
+| Class | Property | Description |
+| - | - | - |
+| `MapRunDetails` | **BatchCompleteReason** | The reason the map batch ended |
+| | **ProcessPrivateMemory**, **ProcessWorkingSet** | The private memory and the working set of the server process, recorded for the batch |
+| | **CurrentlyAllocated** | The allocations of the indexing thread, recorded for the batch |
+| | **AllocationBudget** | The maximum memory allowed to the index, in bytes |
+| `ReferenceRunDetails` | **ReferenceAttempts**, **ReferenceSuccesses**, **ReferenceErrors** | The number of attempts to index a reference (a document that is loaded by the index) and how many of them succeeded and failed |
+| | **BatchCompleteReason** | The reason the references batch ended |
+| | **ProcessPrivateMemory**, **ProcessWorkingSet**, **CurrentlyAllocated**, **AllocationBudget** | As in `MapRunDetails` |
+| `ReduceRunDetails` | **ReduceAttempts**, **ReduceSuccesses**, **ReduceErrors** | The number of reduce attempts, and how many of them succeeded and failed |
+| | **ProcessPrivateMemory**, **ProcessWorkingSet**, **CurrentlyAllocated** | As in `MapRunDetails` |
+| | **TreesReduceDetails** | Details of the reduce trees, see below |
+| `TreesReduceDetails` | **NumberOfModifiedLeafs**, **NumberOfModifiedBranches** | The number of leaf and branch pages of the reduce trees that were modified |
+| | **NumberOfCompressedLeafs** | The number of leaf pages that were compressed |
+| `CleanupRunDetails` | **DeleteSuccesses** | The number of tombstones that were processed successfully |
+| | **BatchCompleteReason** | The reason the cleanup batch ended |
+| `LuceneMergeDetails` | **TotalMergesCount** | The number of pending merges that were recorded |
+| | **ExecutedMergesCount** | The number of merges that were executed |
+| | **MergedFilesCount**, **MergedDocumentsCount** | The number of files and of documents that the executed merges covered |
+| `StorageCommitDetails` | **NumberOfModifiedPages** | The number of pages modified by the commit |
+| | **NumberOf4KbsWrittenToDisk** | The number of 4 KB blocks the commit wrote to disk |
+
