@@ -494,6 +494,43 @@ Assert.Equal(4, facetValue.Count);
 </TabItem>
 
 
+#### Remaining terms:
+
+* When a page size limits the returned items, the `FacetResult` also describes the terms that did not make it into `Values`:
+
+    * `RemainingTermsCount` - the number of terms outside of those covered by `Values`.
+    * `RemainingHits` - the number of hits outside of those covered by `Values`.
+    * `RemainingTerms` - the remaining terms, in the sort order set by `TermSortMode`.
+      The server fills this list only when `IncludeRemainingTerms` is `true`, otherwise it stays empty.
+
+<TabItem value="facets_remaining" label="facets_remaining">
+<CodeBlock language="csharp">
+{`Dictionary<string, FacetResult> results = session
+    .Query<Cameras_ByFeatures.IndexEntry, Cameras_ByFeatures>()
+    .AggregateBy(new Facet
+    {
+        FieldName = "Brand",
+        Options = new FacetOptions
+        {
+            PageSize = 3,
+            TermSortMode = FacetTermSortMode.CountDesc,
+            IncludeRemainingTerms = true
+        }
+    })
+    .Execute();
+
+FacetResult brandFacets = results["Brand"];
+
+// With the sample data of this article:
+// brandFacets.Values - "fuji", "nikon" and "olympus"
+int remainingTermsCount = brandFacets.RemainingTermsCount; // 2
+int remainingHits = brandFacets.RemainingHits;             // 3
+List<string> remainingTerms = brandFacets.RemainingTerms;  // "sony", "canon"
+`}
+</CodeBlock>
+</TabItem>
+
+
 
 ## Facets - Aggregations
 
@@ -813,6 +850,34 @@ Assert.Equal(17, facetValue.Sum);
 </TabItem>
 
 
+#### Aggregating over all index results:
+
+* Use `AllResults` in the facet builder to scope the aggregation to all the results of the index  
+  instead of a single index-field. This is useful for index-wide statistics.
+
+* The results are returned under the key `Constants.Documents.Querying.Facet.AllResults` (`"@AllResults"`).  
+  In `Values`, `Count` is the number of documents and the aggregations are set as in the examples above;  
+  `Name` holds the index-field that each aggregation was done on.
+
+<TabItem value="facets_allresults" label="facets_allresults">
+<CodeBlock language="csharp">
+{`Dictionary<string, FacetResult> results = session
+    .Query<Cameras_ByFeatures.IndexEntry, Cameras_ByFeatures>()
+    .AggregateBy(builder => builder
+        .AllResults()
+        .SumOn(x => x.UnitsInStock)
+        .AverageOn(x => x.Price))
+    .Execute();
+
+FacetResult allResults = results[Constants.Documents.Querying.Facet.AllResults];
+FacetValue facetValue = allResults.Values[0];
+
+int numberOfDocuments = facetValue.Count;
+`}
+</CodeBlock>
+</TabItem>
+
+
 
 ## Storing facets definition in a document
 
@@ -1027,24 +1092,34 @@ public class RangeFacet<T>
 
 <TabItem value="syntax_6" label="syntax_6">
 <CodeBlock language="csharp">
-{`IFacetOperations<T> ByField(string fieldName);
+{`// IFacetBuilder<T>
+IFacetOperations<T> ByField(string fieldName);
 IFacetOperations<T> ByField(Expression<Func<T, object>> path);
-IFacetOperations<T> ByRanges(Expression<Func<T, bool>> path, params Expression<Func<T, bool>>[] paths);
-IFacetOperations<T> WithDisplayName(string displayName);
+IRangeFacetOperations<T> ByRanges(Expression<Func<T, bool>> path, params Expression<Func<T, bool>>[] paths);
+IFacetOperations<T> AllResults();
+
+// IFacetOperationsBase<T, TSelf>
+// (implemented by IFacetOperations<T> and IRangeFacetOperations<T>, TSelf is the type itself)
+TSelf WithDisplayName(string displayName);
+TSelf SumOn(Expression<Func<T, object>> path, string displayName = null);
+TSelf MinOn(Expression<Func<T, object>> path, string displayName = null);
+TSelf MaxOn(Expression<Func<T, object>> path, string displayName = null);
+TSelf AverageOn(Expression<Func<T, object>> path, string displayName = null);
+
+// IFacetOperations<T> only
 IFacetOperations<T> WithOptions(FacetOptions options);
-IFacetOperations<T> SumOn(Expression<Func<T, object>> path);
-IFacetOperations<T> MinOn(Expression<Func<T, object>> path);
-IFacetOperations<T> MaxOn(Expression<Func<T, object>> path);
-IFacetOperations<T> AverageOn(Expression<Func<T, object>> path);
 `}
 </CodeBlock>
 </TabItem>
+
+* `ByRanges` returns `IRangeFacetOperations<T>`, which has the members of `IFacetOperationsBase` but not `WithOptions`.  
+  `ByField` and `AllResults` return `IFacetOperations<T>`, which adds `WithOptions`.
 
 | Parameter       | Type                        | Description                                                                                                                            |
 |-----------------|-----------------------------|----------------------------------------------------------------------------------------------------------------------------------------|
 | **fieldName**   | `string`                    | The index-field to use for the facet                                                                                                   |
 | **path**        | `Expression<Func<T, bool>>` | Points to the index-field to use for the facet (`ByRanges`, `ByField`) or for the aggregation (`SumOn`, `MinOn`, `MaxOn`, `AverageOn`) |
-| **displayName** | `string`                    | If set, results of a facet will be returned under this name                                                                            |
+| **displayName** | `string`                    | `WithDisplayName`: results of a facet will be returned under this name.<br/>`SumOn`, `MinOn`, `MaxOn`, `AverageOn`: optional display name of the aggregation. |
 | **options**     | `FacetOptions`              | Non-default options to use in the facet definition                                                                                     |
 
 **Options**:
@@ -1072,3 +1147,68 @@ IFacetOperations<T> AverageOn(Expression<Func<T, object>> path);
 
 
 
+
+**Facet results**:
+
+<TabItem value="syntax_8" label="syntax_8">
+<CodeBlock language="csharp">
+{`public sealed class FacetResult
+{
+    public string Name { get; set; }
+    public List<FacetValue> Values { get; set; }
+    public List<string> RemainingTerms { get; set; }
+    public int RemainingTermsCount { get; set; }
+    public int RemainingHits { get; set; }
+}
+`}
+</CodeBlock>
+</TabItem>
+
+| Property                | Type               | Description                                                                                                         |
+|-------------------------|--------------------|---------------------------------------------------------------------------------------------------------------------|
+| **Name**                | `string`           | The facet name: the display name if one was set, otherwise the index-field                                          |
+| **Values**              | `List<FacetValue>` | The facet terms and hits, up to the page size, sorted by `TermSortMode`                                             |
+| **RemainingTerms**      | `List<string>`     | The terms outside of `Values`, in the sort order. Filled only when `IncludeRemainingTerms` is `true`                |
+| **RemainingTermsCount** | `int`              | The number of terms outside of those covered by `Values`                                                            |
+| **RemainingHits**       | `int`              | The number of hits outside of those covered by `Values`                                                             |
+
+**Return types of `AggregateBy` and `AggregateUsing` in `DocumentQuery`**:
+
+* In a sync `DocumentQuery`, these methods return `IAggregationDocumentQuery<T>`.  
+  In an async `AsyncDocumentQuery`, they return `IAsyncAggregationDocumentQuery<T>`.
+
+<TabItem value="syntax_9" label="syntax_9">
+<CodeBlock language="csharp">
+{`public interface IAggregationDocumentQuery<T>
+{
+    IAggregationDocumentQuery<T> AndAggregateBy(Action<IFacetBuilder<T>> builder = null);
+    IAggregationDocumentQuery<T> AndAggregateBy(FacetBase facet);
+
+    Dictionary<string, FacetResult> Execute();
+    Lazy<Dictionary<string, FacetResult>> ExecuteLazy(
+        Action<Dictionary<string, FacetResult>> onEval = null);
+}
+
+public interface IAsyncAggregationDocumentQuery<T>
+{
+    IAsyncAggregationDocumentQuery<T> AndAggregateBy(Action<IFacetBuilder<T>> builder = null);
+    IAsyncAggregationDocumentQuery<T> AndAggregateBy(FacetBase facet);
+
+    Task<Dictionary<string, FacetResult>> ExecuteAsync(CancellationToken token = default);
+    Lazy<Task<Dictionary<string, FacetResult>>> ExecuteLazyAsync(
+        Action<Dictionary<string, FacetResult>> onEval = null,
+        CancellationToken token = default);
+}
+`}
+</CodeBlock>
+</TabItem>
+
+<TabItem value="DocumentQuery_async" label="DocumentQuery_async">
+<CodeBlock language="csharp">
+{`Dictionary<string, FacetResult> results = await asyncSession.Advanced
+    .AsyncDocumentQuery<Cameras_ByFeatures.IndexEntry, Cameras_ByFeatures>()
+    .AggregateBy(facets)
+    .ExecuteAsync();
+`}
+</CodeBlock>
+</TabItem>
