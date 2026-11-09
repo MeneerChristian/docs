@@ -88,6 +88,24 @@ public string[] Fields \{ get; set; \}
 | **StopWordsDocumentId** | string | Document ID containing custom stop words |
 | **Fields** | string[] | Fields to compare |
 
+The option properties are nullable and are `null` until you set them.  
+`MoreLikeThisOptions` also exposes the default values described for the options above as constants:
+
+<TabItem value="more_like_this_defaults" label="more_like_this_defaults">
+<CodeBlock language="csharp">
+{`public const int DefaultMaximumNumberOfTokensParsed = 5000;
+public const int DefaultMinimumTermFrequency = 2;
+public const int DefaultMinimumDocumentFrequency = 5;
+public const int DefaultMaximumDocumentFrequency = int.MaxValue;
+public const bool DefaultBoost = false;
+public const float DefaultBoostFactor = 1;
+public const int DefaultMinimumWordLength = 0;
+public const int DefaultMaximumWordLength = 0;
+public const int DefaultMaximumQueryTerms = 25;
+`}
+</CodeBlock>
+</TabItem>
+
 ## Example I
 
 <Tabs groupId='languageSyntax'>
