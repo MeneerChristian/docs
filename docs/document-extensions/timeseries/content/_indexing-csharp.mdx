@@ -18,6 +18,7 @@ import CodeBlock from '@theme/CodeBlock';
       * [Map index - index all time series from all collections](../../../document-extensions/timeseries/indexing.mdx#map-index---index-all-time-series-from-all-collections)
       * [Multi-Map index - index time series from several collections](../../../document-extensions/timeseries/indexing.mdx#multi-map-index---index-time-series-from-several-collections)
       * [Map-Reduce index](../../../document-extensions/timeseries/indexing.mdx#map-reduce-index)
+  * [Index the names of a document's time series](../../../document-extensions/timeseries/indexing.mdx#index-the-names-of-a-documents-time-series)
   * [Syntax](../../../document-extensions/timeseries/indexing.mdx#syntax)
 
 </Admonition>
@@ -472,6 +473,60 @@ public class AllTimeSeriesFromAllCollections : AbstractTimeSeriesIndexCreationTa
 </CodeBlock>
 </TabItem>
 </Tabs>
+
+
+
+## Index the names of a document's time series
+
+* A **document** index (a class inheriting from `AbstractIndexCreationTask`) cannot index time series _entries_,  
+  but the protected method `TimeSeriesNamesFor` is available in its map function.  
+  It returns the names of the time series of a document, which RavenDB keeps in the `@timeseries` entry  
+  of the document's metadata. When the document has no time series, the result is empty.
+
+* `TimeSeriesNamesFor` is a marker that is translated when the index is deployed.  
+  Calling it from client code throws a `NotSupportedException`.
+
+<TabItem value="timeseries_names_for_syntax" label="syntax">
+<CodeBlock language="csharp">
+{`IEnumerable<string> TimeSeriesNamesFor(object doc);
+`}
+</CodeBlock>
+</TabItem>
+
+<TabItem value="timeseries_names_for_index" label="index">
+<CodeBlock language="csharp">
+{`public class Companies_ByTimeSeriesNames : AbstractIndexCreationTask<Company>
+\{
+    public class Result
+    \{
+        public string[] TimeSeriesNames \{ get; set; \}
+    \}
+
+    public Companies_ByTimeSeriesNames()
+    \{
+        Map = companies => from company in companies
+                          let timeSeriesNames = TimeSeriesNamesFor(company)
+                          select new Result
+                          \{
+                              TimeSeriesNames = timeSeriesNames.ToArray()
+                          \};
+    \}
+\}
+`}
+</CodeBlock>
+</TabItem>
+
+<TabItem value="timeseries_names_for_query" label="query">
+<CodeBlock language="csharp">
+{`// return all companies that have a 'StockPrices' time series
+List<Company> companies = session
+    .Query<Companies_ByTimeSeriesNames.Result, Companies_ByTimeSeriesNames>()
+    .Where(x => x.TimeSeriesNames.Contains("StockPrices"))
+    .OfType<Company>()
+    .ToList();
+`}
+</CodeBlock>
+</TabItem>
 
 
 
