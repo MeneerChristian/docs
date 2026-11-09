@@ -156,8 +156,8 @@ so `Memory` is `null` in the results that they return.
 | **LastProcessedDocumentEtag** | The Etag of the last document of the collection that the index processed |
 | **LastProcessedTombstoneEtag** | The Etag of the last tombstone of the collection that the index processed |
 | **LastProcessedTimeSeriesDeletedRangeEtag** | The Etag of the last time series deleted range of the collection that the index processed |
-| **DocumentLag** | The number of documents the index still has to process. `-1` when it was not set. |
-| **TombstoneLag** | The number of tombstones the index still has to process. `-1` when it was not set. |
+| **DocumentLag** | The difference between the Etag of the last document of the collection and `LastProcessedDocumentEtag`. `-1` when it was not set. |
+| **TombstoneLag** | The difference between the Etag of the last tombstone of the collection and `LastProcessedTombstoneEtag`. `-1` when it was not set. |
 
 #### `IsInvalidIndex` and `IndexFailureInformation`
 
