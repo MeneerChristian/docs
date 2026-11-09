@@ -619,3 +619,57 @@ public SuggestionSortMode SortMode \{ get; set; \}
 | **Distance** | `StringDistanceTypes` | <ul><li>String distance algorithm to use.</li><li>`None` / `Levenshtein` / `JaroWinkler` / `NGram`</li><li>Default is <strong>Levenshtein</strong>.</li></ul> |
 | **Accuracy** | `float?`              | <ul><li>Suggestion accuracy.</li><li>Default is <strong>0.5f</strong></li></ul> |
 | **SortMode** | `SuggestionSortMode`  | <ul><li>Indicates the order by which results are returned.</li><li>`None` / `Popularity`</li><li>Default is <strong>Popularity</strong>.</li></ul> |
+
+The default values are also exposed as static fields of `SuggestionOptions`:
+
+<TabItem value="syntax_4" label="syntax_4">
+<CodeBlock language="csharp">
+{`public static readonly float DefaultAccuracy = 0.5f;
+public static readonly int DefaultPageSize = 15;
+public static readonly StringDistanceTypes DefaultDistance = StringDistanceTypes.Levenshtein;
+public static readonly SuggestionSortMode DefaultSortMode = SuggestionSortMode.Popularity;
+`}
+</CodeBlock>
+</TabItem>
+
+**Return types of `SuggestUsing` in `DocumentQuery`**:
+
+* In a sync `DocumentQuery`, `SuggestUsing` returns `ISuggestionDocumentQuery<T>`.  
+  In an async `AsyncDocumentQuery`, it returns `IAsyncSuggestionDocumentQuery<T>`.
+
+<TabItem value="syntax_5" label="syntax_5">
+<CodeBlock language="csharp">
+{`public interface ISuggestionDocumentQuery<T>
+{
+    ISuggestionDocumentQuery<T> AndSuggestUsing(SuggestionBase suggestion);
+    ISuggestionDocumentQuery<T> AndSuggestUsing(Action<ISuggestionBuilder<T>> builder);
+
+    Dictionary<string, SuggestionResult> Execute();
+    Lazy<Dictionary<string, SuggestionResult>> ExecuteLazy(
+        Action<Dictionary<string, SuggestionResult>> onEval = null);
+}
+
+public interface IAsyncSuggestionDocumentQuery<T>
+{
+    IAsyncSuggestionDocumentQuery<T> AndSuggestUsing(SuggestionBase suggestion);
+    IAsyncSuggestionDocumentQuery<T> AndSuggestUsing(Action<ISuggestionBuilder<T>> builder);
+
+    Task<Dictionary<string, SuggestionResult>> ExecuteAsync(CancellationToken token = default);
+    Lazy<Task<Dictionary<string, SuggestionResult>>> ExecuteLazyAsync(
+        Action<Dictionary<string, SuggestionResult>> onEval = null,
+        CancellationToken token = default);
+}
+`}
+</CodeBlock>
+</TabItem>
+
+<TabItem value="DocumentQuery_async" label="DocumentQuery_async">
+<CodeBlock language="csharp">
+{`Dictionary<string, SuggestionResult> suggestions = await asyncSession.Advanced
+    .AsyncDocumentQuery<Product>()
+    .SuggestUsing(builder => builder
+        .ByField(x => x.Name, "chaig"))
+    .ExecuteAsync();
+`}
+</CodeBlock>
+</TabItem>
