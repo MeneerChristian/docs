@@ -82,7 +82,44 @@ IAsyncDocumentSession OpenAsyncSession(SessionOptions options);
 | Option                                                       | Type     | Description                                                                                                                                                                                                                   |
 |--------------------------------------------------------------|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **DisableAtomicDocumentWrites-<br/>InClusterWideTransaction** | `bool?` | `true` - Disable Atomic-Guards in cluster-wide sessions.<br/>`false` (Default) - Automatic atomic writes in cluster-wide sessions are enabled.<br/>Learn more in [Atomic-Guards](../../../compare-exchange/atomic-guards.mdx) |
-| **ShardedBatchBehavior** | `ShardedBatchBehavior?` | Define the consistency level for persisting changes in a sharded database. |
+| **ShardedBatchBehavior** | `ShardedBatchBehavior?` | Define the consistency level for persisting changes in a sharded database.<br/>When `null` (Default), the session uses the value of `Conventions.Sharding.BatchBehavior`.<br/>See [ShardedBatchBehavior values](../../../client-api/session/opening-a-session.mdx#shardedbatchbehavior-values). |
+
+### ShardedBatchBehavior values
+
+| Value | Description |
+|-------|-------------|
+| `Default` | The client does not force a behavior and relies on the server's default. |
+| `TransactionalSingleBucketOnly` | Batch commands may be performed only on a single bucket, on a single shard, with `SingleNode` transaction guarantees.<br/>A `SaveChanges` that contains changes belonging to multiple buckets is rejected by the server, and a `ShardedBatchBehaviorViolationException` is thrown.<br/>Documents can be kept in the same bucket by [anchoring](../../../sharding/administration/anchoring-documents.mdx) them. |
+| `NonTransactionalMultiBucket` | Batch commands may be spread over multiple buckets, and be performed on multiple shards, without ACID transaction guarantees. |
+
+<Tabs groupId='languageSyntax'>
+<TabItem value="Sync" label="Sync">
+<CodeBlock language="csharp">
+{`using (IDocumentSession session = store.OpenSession(new SessionOptions
+{
+    ShardedBatchBehavior = ShardedBatchBehavior.TransactionalSingleBucketOnly
+}))
+{
+    // ...
+    session.SaveChanges();
+}
+`}
+</CodeBlock>
+</TabItem>
+<TabItem value="Async" label="Async">
+<CodeBlock language="csharp">
+{`using (IAsyncDocumentSession asyncSession = store.OpenAsyncSession(new SessionOptions
+{
+    ShardedBatchBehavior = ShardedBatchBehavior.NonTransactionalMultiBucket
+}))
+{
+    // ...
+    await asyncSession.SaveChangesAsync();
+}
+`}
+</CodeBlock>
+</TabItem>
+</Tabs>
 
 ## Open session example
 
