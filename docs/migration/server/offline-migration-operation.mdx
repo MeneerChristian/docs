@@ -1,0 +1,73 @@
+---
+title: "Migration: OfflineMigrationOperation"
+sidebar_label: OfflineMigrationOperation
+description: "Start an offline migration of legacy storage files into a new database with OfflineMigrationOperation and OfflineMigrationConfiguration."
+sidebar_position: 5
+---
+
+import Admonition from '@theme/Admonition';
+import TabItem from '@theme/TabItem';
+import CodeBlock from '@theme/CodeBlock';
+
+<Admonition type="note" title="">
+
+* `OfflineMigrationOperation` (namespace `Raven.Client.ServerWide.Operations.Migration`) is a server operation.
+  It sends an `OfflineMigrationConfiguration` to the `/admin/migrate/offline` endpoint of the server and returns an `OperationIdResult`.
+
+* The configuration points to a legacy data directory and to the full path of an external data exporter executable.
+  The source refers to the exporter as `Raven.StorageExporter.exe` and to data files named `Data`, `Data.ravenfs`, `Raven.voron`, `RavenDB.Voron.Backup` and `RavenDB.Backup`.
+
+</Admonition>
+
+## Example
+
+<TabItem value="offline_migration" label="offline_migration">
+<CodeBlock language="csharp">
+{`var configuration = new OfflineMigrationConfiguration(
+    dataDirectory: @"C:\\OldRavenData\\Northwind",
+    dataExporterFullPath: @"C:\\Tools\\Raven.StorageExporter.exe",
+    databaseRecord: new DatabaseRecord("Northwind"))
+\{
+    IsCompressed = true,
+    BatchSize = 1000
+\};
+
+var operation = store.Maintenance.Server.Send(new OfflineMigrationOperation(configuration));
+`}
+</CodeBlock>
+</TabItem>
+
+## Syntax
+
+<TabItem value="syntax" label="syntax">
+<CodeBlock language="csharp">
+{`public OfflineMigrationOperation(OfflineMigrationConfiguration configuration)
+
+public OfflineMigrationConfiguration(string dataDirectory, string dataExporterFullPath, DatabaseRecord databaseRecord)
+`}
+</CodeBlock>
+</TabItem>
+
+The `OfflineMigrationOperation` constructor throws an `ArgumentNullException` when `configuration` is `null`, when `DataDirectory` or `DataExporterFullPath` is null or whitespace,
+when `DatabaseRecord` is `null`, or when `DatabaseRecord.DatabaseName` is null or whitespace.
+
+| `OfflineMigrationConfiguration` property | Type | Description |
+|---|---|---|
+| **DataDirectory** | `string` | The legacy data directory. Required. |
+| **DataExporterFullPath** | `string` | The full path of the exporter executable. Required. |
+| **DatabaseRecord** | `DatabaseRecord` | The record of the database to create. Its `DatabaseName` is required. |
+| **OutputFilePath** | `string` | The path of the export file. When it is `null`, the exporter command line uses a file named `export-<database name>-<yyyyMMdd_HHmmss>.ravendump` in the temp directory. |
+| **BatchSize** | `int?` | Passed to the exporter as `-BatchSize` when it has a value |
+| **IsRavenFs** | `bool` | Passed to the exporter as `--RavenFS` when `true` |
+| **IsCompressed** | `bool` | Passed to the exporter as `--Compression` when `true` |
+| **JournalsPath** | `string` | Passed to the exporter as `-JournalsPath` when it is not empty |
+| **LogFileSize** | `int?` | Passed to the exporter as `-LogFileSize` when it has a value |
+| **MaxVerPages** | `int?` | Passed to the exporter as `-MaxVerPages` when it has a value |
+| **EncryptionKey**, **EncryptionAlgorithm**, **EncryptionKeyBitsSize** | `string`, `string`, `int?` | Passed to the exporter as `-Encryption` only when all three have a value |
+| **Timeout** | `TimeSpan?` | An optional timeout |
+
+## Progress and result
+
+The operation reports progress as an `OfflineMigrationProgress` and completes with an `OfflineMigrationResult`.
+Both come from the smuggler classes (`OfflineMigrationResult` derives from `SmugglerResult`, `OfflineMigrationProgress` from `SmugglerResult.SmugglerProgress`),
+and they add the property `DataExporter` (`Counts`), which holds the counters of the exporter step.
