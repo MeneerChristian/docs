@@ -580,3 +580,20 @@ include StateId
 </Tabs>
 
 </Admonition>
+
+
+## RavenQueryableExtensions
+
+The static class `RavenQueryableExtensions` (namespace `Raven.Client.Documents.Linq`) defines extension methods for `IRavenQueryable<T>` and for the operators that a LINQ query translates to RQL:
+
+| Method | Description |
+|---|---|
+| `Where<T>(this IRavenQueryable<T> source, Expression<Func<T, bool>> predicate)` and the overload with `Expression<Func<T, int, bool>>` | Filters the sequence |
+| `OrderBy<T, TK>`, `OrderByDescending<T, TK>` (each with an overload that takes an `IComparer<TK>`), `ThenBy<T, TK>`, `ThenByDescending<T, TK>` | Sorts the sequence by a key selector |
+| `Select<TSource, TResult>(this IRavenQueryable<TSource> source, Expression<Func<TSource, TResult>> selector)` and the overload with `Expression<Func<TSource, int, TResult>>` | Projects each element |
+| `Skip<TSource>(this IRavenQueryable<TSource> source, int count)`, `Take<TSource>(this IRavenQueryable<TSource> source, int count)` | Paging |
+| `In<T>(this T field, IEnumerable<T> values)`, `In<T>(this T field, params T[] values)` | The `in` operator |
+| `ContainsAny<T>(this IEnumerable<T> list, IEnumerable<T> items)` | The `Contains ANY` operator |
+| `ContainsAll<T>(this IEnumerable<T> list, IEnumerable<T> items)` | The `Contains ALL` operator |
+| `AsAsyncEnumerable<TSource>(this IQueryable<TSource> source)` | Returns an `IAsyncEnumerable<TSource>` |
+
