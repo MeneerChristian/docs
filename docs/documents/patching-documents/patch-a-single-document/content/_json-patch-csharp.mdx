@@ -135,6 +135,18 @@ var result = store.Operations.Send(
 See the [Syntax](#syntax) section for the `JsonPatchOperation` constructor
 and the `JsonPatchDocument` method signatures.
 
+`Send` returns a `JsonPatchResult`. It derives from `PatchResultBase` and has these members:
+
+| Member | Type | Description |
+|---|---|---|
+| **Status** | `PatchStatus` | The status of the patch: `DocumentDoesNotExist`, `Created`, `Patched`, `Skipped` or `NotModified`. |
+| **ModifiedDocument** | `BlittableJsonReaderObject` | The patched document. |
+| **LastModified** | `DateTime` (field) | The last modified time of the document. |
+| **ChangeVector** | `string` (field) | The change vector of the document. |
+| **Collection** | `string` (field) | The collection of the document. |
+
+`PatchResultBase` implements `IDisposable`; `Dispose` disposes `ModifiedDocument`.
+
 The target document must exist. Otherwise, RavenDB throws a `DocumentDoesNotExistException`.  
 `JsonPatchOperation` does not accept a change vector, 
 so it does not perform an [optimistic concurrency](../../../../client-api/session/configuration/how-to-enable-optimistic-concurrency.mdx) check against a caller-supplied document version.
