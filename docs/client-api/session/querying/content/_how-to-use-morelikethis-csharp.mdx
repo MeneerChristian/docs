@@ -46,25 +46,25 @@ IMoreLikeThisOperations<T> WithOptions(MoreLikeThisOptions options);
 
 <TabItem value="more_like_this_2" label="more_like_this_2">
 <CodeBlock language="csharp">
-{`public int? MinimumTermFrequency \{ get; set; \} = 2;
+{`public int? MinimumTermFrequency \{ get; set; \}
 
-public int? MaximumQueryTerms \{ get; set; \} = 25;
+public int? MaximumQueryTerms \{ get; set; \}
 
-public int? MaximumNumberOfTokensParsed \{ get; set; \} = 5000;
+public int? MaximumNumberOfTokensParsed \{ get; set; \}
 
-public int? MinimumWordLength \{ get; set; \} = 0;
+public int? MinimumWordLength \{ get; set; \}
 
-public int? MaximumWordLength \{ get; set; \} = 0;
+public int? MaximumWordLength \{ get; set; \}
 
-public int? MinimumDocumentFrequency \{ get; set; \} = 5;
+public int? MinimumDocumentFrequency \{ get; set; \}
 
-public int? MaximumDocumentFrequency \{ get; set; \} = int.MaxValue;
+public int? MaximumDocumentFrequency \{ get; set; \}
 
 public int? MaximumDocumentFrequencyPercentage \{ get; set; \}
 
-public bool? Boost \{ get; set; \} = false;
+public bool? Boost \{ get; set; \}
 
-public float? BoostFactor \{ get; set; \} = 1;
+public float? BoostFactor \{ get; set; \}
 
 public string StopWordsDocumentId \{ get; set; \}
 
@@ -88,8 +88,9 @@ public string[] Fields \{ get; set; \}
 | **StopWordsDocumentId** | string | Document ID containing custom stop words |
 | **Fields** | string[] | Fields to compare |
 
-The option properties are nullable and are `null` until you set them.  
-`MoreLikeThisOptions` also exposes the default values described for the options above as constants:
+The option properties are nullable and are `null` until you set them. A `null` option leaves the server's own default in effect.  
+`MoreLikeThisOptions` also declares the following constants. The client does not apply them,  
+and the server's default for `MinimumTermFrequency` and `MinimumDocumentFrequency` is `0` (no minimum), not the constant value:
 
 <TabItem value="more_like_this_defaults" label="more_like_this_defaults">
 <CodeBlock language="csharp">
