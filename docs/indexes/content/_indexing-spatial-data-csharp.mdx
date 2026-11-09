@@ -258,6 +258,62 @@ public class SpatialBounds
 </TabItem>
 </Tabs>
 
+#### SpatialOptions
+
+The factory methods return a `SpatialOptions` object. You can also create one yourself and set its properties.
+
+<TabItem value="spatial_options_syntax" label="spatial_options_syntax">
+<CodeBlock language="csharp">
+{`public class SpatialOptions
+\{
+    public const int DefaultGeohashLevel = 9;
+    public const int DefaultQuadTreeLevel = 23;
+
+    public SpatialFieldType Type \{ get; set; \}           // Geography, Cartesian
+    public SpatialSearchStrategy Strategy \{ get; set; \}  // GeohashPrefixTree, QuadPrefixTree, BoundingBox
+    public int MaxTreeLevel \{ get; set; \}
+    public double MinX \{ get; set; \}
+    public double MaxX \{ get; set; \}
+    public double MinY \{ get; set; \}
+    public double MaxY \{ get; set; \}
+
+    // Circle radius units, only used for geography indexes
+    public SpatialUnits Units \{ get; set; \}          // Kilometers, Miles
+\}
+`}
+</CodeBlock>
+</TabItem>
+
+* A new `SpatialOptions` object starts with `Type` set to `Geography`, `Strategy` set to `GeohashPrefixTree`,  
+  `MaxTreeLevel` set to `DefaultGeohashLevel` (9), `Units` set to `Kilometers`,  
+  and the bounds set to `MinX` -180, `MaxX` 180, `MinY` -90, `MaxY` 90.
+
+* `DefaultGeohashLevel` (9) and `DefaultQuadTreeLevel` (23) are the levels that the geography factory methods  
+  `GeohashPrefixTreeIndex` and `QuadPrefixTreeIndex` use when they are called with a `maxTreeLevel` of `0`.  
+  `Default` calls `GeohashPrefixTreeIndex` with `0`.
+
+* The cartesian `QuadPrefixTreeIndex` throws an `ArgumentOutOfRangeException` when `maxTreeLevel` is `0`.
+
+* When two `SpatialOptions` objects are compared, `MaxTreeLevel` is not taken into account for the `BoundingBox` strategy,  
+  and the bounds are only taken into account for a cartesian type with a strategy other than `BoundingBox`.
+
+<TabItem value="spatial_options_sample" label="spatial_options_sample">
+<CodeBlock language="csharp">
+{`// A geography QuadPrefixTree index with the default precision level
+var geographyOptions = new SpatialOptions
+\{
+    Type = SpatialFieldType.Geography,
+    Strategy = SpatialSearchStrategy.QuadPrefixTree,
+    MaxTreeLevel = SpatialOptions.DefaultQuadTreeLevel
+\};
+
+// A cartesian QuadPrefixTree index, created with the factory
+var cartesianOptions = new SpatialOptionsFactory().Cartesian
+    .QuadPrefixTreeIndex(20, new SpatialBounds(0, 0, 1000, 1000));
+`}
+</CodeBlock>
+</TabItem>
+
 
 
 ## Spatial indexing strategies
