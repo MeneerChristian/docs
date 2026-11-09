@@ -158,3 +158,49 @@ so `Memory` is `null` in the results that they return.
 | **LastProcessedTimeSeriesDeletedRangeEtag** | The Etag of the last time series deleted range of the collection that the index processed |
 | **DocumentLag** | The number of documents the index still has to process. `-1` when it was not set. |
 | **TombstoneLag** | The number of tombstones the index still has to process. `-1` when it was not set. |
+
+#### `IsInvalidIndex` and `IndexFailureInformation`
+
+`IndexStats.IsInvalidIndex` is calculated on the client by the public static method  
+`IndexFailureInformation.CheckIndexInvalid`, which you can call with your own counters:
+
+<TabItem value="check_index_invalid_syntax" label="syntax">
+<CodeBlock language="csharp">
+{`public static bool CheckIndexInvalid(
+    long mapAttempts, long mapErrors,
+    long? mapReferenceAttempts, long? mapReferenceErrors,
+    long? reduceAttempts, long? reduceErrors,
+    bool isStale)
+`}
+</CodeBlock>
+</TabItem>
+
+<TabItem value="check_index_invalid_sample" label="sample">
+<CodeBlock language="csharp">
+{`IndexStats stats = store.Maintenance.Send(new GetIndexStatisticsOperation("Orders/ByCompany"));
+
+bool isInvalid = IndexFailureInformation.CheckIndexInvalid(
+    stats.MapAttempts, stats.MapErrors,
+    stats.MapReferenceAttempts, stats.MapReferenceErrors,
+    stats.ReduceAttempts, stats.ReduceErrors,
+    stats.IsStale);
+`}
+</CodeBlock>
+</TabItem>
+
+The method adds the map, map-reference and reduce attempts (a `null` counts as zero), and the errors in the same way. Then:
+
+1. It returns `false` when there are no attempts or no errors.
+2. With more than 100 attempts, it returns `true` when `errors / attempts` is greater than 0.15.
+3. With 100 attempts or fewer, it returns `false` if the index is stale (`isStale` is `true`).
+4. Otherwise, with at least 6 attempts, it returns `true` when `errors / attempts` is greater than 0.15.
+5. Otherwise it returns `true` only when every attempt failed.
+
+The `IndexFailureInformation` class holds the same counters (`Name`, `MapAttempts`, `MapSuccesses`, `MapErrors`,  
+`MapReferenceAttempts`, `MapReferenceSuccesses`, `MapReferenceErrors`, `ReduceAttempts`, `ReduceSuccesses`, `ReduceErrors`) and has these members:
+
+| Member | Description |
+| - | - |
+| `bool IsInvalidIndex(bool isStale)` | Applies `CheckIndexInvalid` to the counters of the object |
+| `float FailureRate` | The errors divided by the attempts, both summed as described above. `0` when there are no attempts. |
+| `string GetErrorMessage()` | A message that names the index and the attempt and error counts, and says that the error rate exceeds the allowed 15% |
