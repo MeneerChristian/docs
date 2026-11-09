@@ -333,6 +333,33 @@ var added = configuration.TryAddValueName("Companies", "StockPrices",
 </CodeBlock>
 </TabItem>
 
+#### Register names with `ConfigureTimeSeriesValueNamesOperation`
 
+`ConfigureTimeSeriesValueNamesOperation` (namespace `Raven.Client.Documents.Operations.TimeSeries`) is the maintenance operation that stores the value names of one time series.
+The `Register` methods of `store.TimeSeries` send it with `Update` set to `true`.
+It returns a `ConfigureTimeSeriesOperationResult`.
 
+<TabItem value="ConfigureValueNames" label="ConfigureValueNames">
+<CodeBlock language="csharp">
+{`store.Maintenance.Send(new ConfigureTimeSeriesValueNamesOperation(
+    new ConfigureTimeSeriesValueNamesOperation.Parameters
+    \{
+        Collection = "Companies",
+        TimeSeries = "StockPrices",
+        ValueNames = new[] \{ "Open", "Close", "High", "Low", "Volume" \},
+        Update = true
+    \}));
+`}
+</CodeBlock>
+</TabItem>
+
+| `Parameters` field | Type | Description |
+|---|---|---|
+| **Collection** | `string` | The collection of the documents that hold the time series. Required. |
+| **TimeSeries** | `string` | The time series name. Required. |
+| **ValueNames** | `string[]` | The value names. Must not be null or empty. |
+| **Update** | `bool` | When `false` and names are already configured for this time series in the collection, the operation throws an exception. Default: `false`. |
+
+The constructor throws an `ArgumentNullException` when `parameters` is `null`, or when `Collection` or `TimeSeries` is null or empty,
+and an `ArgumentException` when `ValueNames` is null or empty.
 
