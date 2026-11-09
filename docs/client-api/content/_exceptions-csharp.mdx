@@ -24,6 +24,8 @@ import Panel from "@site/src/components/Panel";
     * [Cluster and node exceptions](../../client-api/exceptions.mdx#cluster-and-node-exceptions)
     * [Attachment, counter, revisions and license exceptions](../../client-api/exceptions.mdx#attachment-counter-revisions-and-license-exceptions)
     * [Bulk insert, sharding, security and compilation exceptions](../../client-api/exceptions.mdx#bulk-insert-sharding-security-and-compilation-exceptions)
+    * [AI exceptions](../../client-api/exceptions.mdx#ai-exceptions)
+    * [License limit exception](../../client-api/exceptions.mdx#license-limit-exception)
 
 </Admonition>
 
@@ -236,6 +238,43 @@ All of these derive from `RavenException`.
 | `AnalyzerCompilationException`            | `Documents.Compilation`                   | `CompilationException` | A custom analyzer's code fails to compile, or the analyzer's type is not found in the given assembly. |
 | `SorterCompilationException`              | `Documents.Compilation`                   | `CompilationException` | A custom sorter's code fails to compile, or the sorter's type is not found in the given assembly. |
 | `JavaScriptParseException`                | `Documents.Patching`                      | `JavaScriptException` | The server fails to parse a JavaScript script (for example a patch script). The script is part of the message. |
+
+</Panel>
+
+<Panel heading="AI exceptions">
+
+The AI exceptions are in the namespace `Raven.Client.Exceptions`. `AiException` derives from `RavenException` and has the property `RequestId` (`string`).
+
+| Exception | Derives from | Members | Thrown when |
+|---|---|---|---|
+| `AiException` | `RavenException` | `RequestId` | Base class of the AI exceptions below (except `MissingAiAgentParameterException`). |
+| `UnsuccessfulAiRequestException` | `AiException` | `StatusCode` (`HttpStatusCode`) | The AI provider answers a chat completion request with an error that no other exception covers. The message starts with "Status Code: ...". |
+| `TooManyRequestsException` | `UnsuccessfulAiRequestException` | | Base class of the exceptions below. Its status code is 429. |
+| `RateLimitException` | `TooManyRequestsException` | `RetryAfter` (`TimeSpan`) | The provider answers with a rate-limit or too-many-requests error and a retry-after value is available. |
+| `TooManyTokensException` | `TooManyRequestsException` | | The same kind of error, when no retry-after value is available. |
+| `InsufficientQuotaException` | `TooManyRequestsException` | | The provider reports insufficient quota. |
+| `RefusedToAnswerException` | `AiException` | `Refusal` (`string`), `FinishReason` (`string`) | The model refuses the request. The message contains the refusal text and the response content. |
+| `QueryToolFailedException` | `AiException` | | A query tool of an AI agent fails to run. The original exception is the inner exception. |
+| `UnsupportedAiQueryParameterException` | `AiException` | | A query tool uses a parameter whose value has an unsupported type. |
+| `AiAgentParameterCollisionException` | `AiException` | | A tool argument has the same name as an agent-level parameter. The message names the parameter and the tool. |
+| `MissingAiAgentParameterException` | `RavenException` | | An agent parameter has no value, or has a type that differs between a parent agent and a sub-agent. |
+
+For `RateLimitException`, the client sets `StatusCode` to 429 and parses `RetryAfter` from the error response when it is present.
+
+</Panel>
+
+<Panel heading="License limit exception">
+
+`LicenseLimitException` (namespace `Raven.Client.Exceptions.Commercial`, derives from `RavenException`) is thrown by the server when a feature is not allowed by the license.
+For example, the server throws it with `LimitType.AiAgent` when the license does not include AI agents.
+The property `LimitType` (`LimitType`) says which limit was hit; the client fills it from the error response.
+
+The `LimitType` values are: `InvalidLicense`, `ForbiddenHost`, `DynamicNodeDistribution`, `ClusterSize`, `SnapshotBackup`, `CloudBackup`, `Encryption`, `DocumentsCompression`,
+`RollingIndexes`, `ExternalReplication`, `RavenEtl`, `SqlEtl`, `OlapEtl`, `ElasticSearchEtl`, `QueueEtl`, `SnowflakeEtl`, `EmbeddingsGeneration`, `GenAi`, `AiAgent`, `AiAssistant`, `Quill`, `Cores`, `Snmp`,
+`PostgreSqlIntegration`, `PowerBI`, `DelayedExternalReplication`, `HighlyAvailableTasks`, `PullReplicationAsHub`, `PullReplicationAsSink`, `TimeSeriesRollupsAndRetention`, `EncryptedBackup`,
+`AdditionalAssembliesFromNuGet`, `MonitoringEndpoints`, `ReadOnlyCertificates`, `ConcurrentSubscriptions`, `TcpDataCompression`, `ServerWideBackups`, `ServerWideExternalReplications`,
+`ServerWideCustomSorters`, `ServerWideAnalyzers`, `ServerWideConnectionStrings`, `IndexCleanup`, `PeriodicBackup`, `ClientConfiguration`, `StudioConfiguration`, `QueueSink`, `CdcSink`, `DataArchival`,
+`Sharding`, `Subscriptions`, `RevisionsConfiguration`, `Expiration`, `Refresh`, `Indexes`, `CustomSorters`, `CustomAnalyzers`, `RemoteAttachments`, `SchemaValidation` and `Sso`.
 
 </Panel>
 
