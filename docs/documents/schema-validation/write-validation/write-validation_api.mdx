@@ -603,6 +603,22 @@ public class SchemaDefinition
 
 <ContentFrame>
 
+#### Operation results and `GetSchemaValidationConfiguration`:
+
+`ConfigureSchemaValidationOperation` returns a `ConfigureSchemaValidationOperationResult`
+with one property, `RaftCommandIndex` (`long?`).
+
+Use `GetSchemaValidationConfiguration` to read the configuration that is stored for the database:
+```csharp
+// The operation has a parameterless constructor and returns a SchemaValidationConfiguration
+SchemaValidationConfiguration configuration =
+    store.Maintenance.Send(new GetSchemaValidationConfiguration());
+```
+When the server returns no response body, the result of the operation is `null`.
+</ContentFrame>
+
+<ContentFrame>
+
 #### `SchemaValidationException` message:
 ```csharp
 // Initializes a new `SchemaValidationException` instance with an error message
