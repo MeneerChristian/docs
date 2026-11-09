@@ -97,3 +97,23 @@ IMetadataDictionary[] history = metadata.GetObjects("History");
 ```
 
 
+## Metadata field name constants
+
+The names of the metadata fields that RavenDB maintains are available as constants
+in `Constants.Documents.Metadata` (namespace `Raven.Client`), for example `Constants.Documents.Metadata.Collection`.
+These constants are not described elsewhere in this article:
+
+| Constant                      | Value                        | Description |
+|-------------------------------|------------------------------|-------------|
+| `Projection`                  | `"@projection"`              | The server sets it to `true` in the metadata of a projection result returned by a query. |
+| `Conflict`                    | `"@conflict"`                | When an include result contains a document that is in conflict, the server writes a stub for it. The stub's metadata has `@id`, an empty `@change-vector`, and `@conflict` set to `true`. |
+| `TimeSeriesNamedValues`       | `"@timeseries-named-values"` | The server adds an array of the named values to the metadata of a time series query result, when named values are configured for the queried collection and time series. |
+
+```csharp
+var user = session.Load<User>("users/1-A");
+var metadata = session.Advanced.GetMetadataFor(user);
+
+// Read a field by its constant instead of a string literal
+object collection = metadata[Constants.Documents.Metadata.Collection];
+```
+
