@@ -13035,3 +13035,15 @@ public sealed class TestServerOptions : ServerOptions
 }
 ```
 
+### Protected members of Sparrow types
+
+The listings above show public members. The following members of public Sparrow types are `protected` or `protected internal`, so they are visible only to classes that derive from the type. They are listed by name only; no description is given because they were not reviewed.
+
+* `AbstractBlittableJsonDocumentBuilder`: `ClearState`, `_propertiesCache`, `_positionsCache`, `_tokensCache`, `_continuationState`
+* `AbstractBlittableJsonTextWriter`: `EnsureBuffer`, `FlushInternal`, `DisposeInternal`, `_context`
+* `ArenaMemoryAllocator`: `Finalize`
+* `BlittableJsonReaderBase`: `ProcessTokenPropertyFlags`, `ProcessTokenOffsetFlags`, `ReadNumber`, `ReadVariableSizeLong`, `AssertContextNotDisposed`, `_parent`, `_mem`, `_context`
+* `JsonContextPool`: `CreateContext`
+* `JsonContextPoolBase`: `CreateContext`, `LowMemoryFlag`
+* `JsonOperationContext`: `_arenaAllocator`, `LowMemoryFlag`
+* `UnmanagedBuffersPool`: `Finalize`, `_debugTag`, `_databaseName`
