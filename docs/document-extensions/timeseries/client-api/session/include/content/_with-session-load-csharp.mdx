@@ -13,6 +13,7 @@ import CodeBlock from '@theme/CodeBlock';
 
 * In this page:
    * [Include time series when loading a document](../../../../../../document-extensions/timeseries/client-api/session/include/with-session-load.mdx#include-time-series-when-loading-a-document)
+   * [Include all time series of a document](../../../../../../document-extensions/timeseries/client-api/session/include/with-session-load.mdx#include-all-time-series-of-a-document)
    * [Syntax](../../../../../../document-extensions/timeseries/client-api/session/include/with-session-load.mdx#syntax)
 
 </Admonition>
@@ -38,6 +39,35 @@ and include a selected range of entries from time series "HeartRates".
     // the entries will be retrieved from the session's cache.  
     IEnumerable<TimeSeriesEntry> entries = session.TimeSeriesFor("users/john", "HeartRates")
         .Get(baseline.AddMinutes(3), baseline.AddMinutes(8));
+\}
+`}
+</CodeBlock>
+</TabItem>
+
+
+
+## Include all time series of a document
+
+Call `IncludeAllTimeSeries` to include all the time series of the loaded document without listing their names.
+The range can be limited by `from` and `to` dates, or by the last entries of each time series (by time or by count).
+
+<TabItem value="timeseries_region_Load-Document-And-Include-AllTimeSeries" label="timeseries_region_Load-Document-And-Include-AllTimeSeries">
+<CodeBlock language="csharp">
+{`using (var session = store.OpenSession())
+\{
+    var baseline = DateTime.Today;
+
+    // Include all the document's time series, limited to a range of dates
+    User user = session.Load<User>("users/john", includeBuilder =>
+        includeBuilder.IncludeAllTimeSeries(baseline.AddMinutes(3), baseline.AddMinutes(8)));
+
+    // Include the last 10 minutes of each of the document's time series
+    User user2 = session.Load<User>("users/john", includeBuilder =>
+        includeBuilder.IncludeAllTimeSeries(TimeSeriesRangeType.Last, TimeValue.FromMinutes(10)));
+
+    // Include the last 100 entries of each of the document's time series
+    User user3 = session.Load<User>("users/john", includeBuilder =>
+        includeBuilder.IncludeAllTimeSeries(TimeSeriesRangeType.Last, 100));
 \}
 `}
 </CodeBlock>
@@ -76,6 +106,21 @@ and include a selected range of entries from time series "HeartRates".
 | **from**  | `DateTime?` | Time series range start (inclusive).<br/>Default: `DateTime.MinValue`. |
 | **to**    | `DateTime?` | Time series range end (inclusive).<br/>Default: `DateTime.MaxValue`.   |
 
+**`IncludeAllTimeSeries`** builder methods:
 
+<TabItem value="IncludeAllTimeSeries-definition" label="IncludeAllTimeSeries-definition">
+<CodeBlock language="csharp">
+{`TBuilder IncludeAllTimeSeries(DateTime? from = null, DateTime? to = null);
+TBuilder IncludeAllTimeSeries(TimeSeriesRangeType type, TimeValue time);
+TBuilder IncludeAllTimeSeries(TimeSeriesRangeType type, int count);
+`}
+</CodeBlock>
+</TabItem>
 
-
+| Parameter | Type                  | Description                                                                                                                                                       |
+|-----------|-----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **from**  | `DateTime?`           | Range start (inclusive).<br/>`null` means no lower bound.                                                                                                          |
+| **to**    | `DateTime?`           | Range end (inclusive).<br/>`null` means no upper bound.                                                                                                            |
+| **type**  | `TimeSeriesRangeType` | `Last` - include the entries from the end of each time series, limited by `time` or by `count`.<br/>`None` cannot be used together with `time` or `count`.        |
+| **time**  | `TimeValue`           | The time span, counted back from the end of each time series, from which entries are included.                                                                       |
+| **count** | `int`                 | The maximum number of entries to include from the end of each time series.                                                                                          |

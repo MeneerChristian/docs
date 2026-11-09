@@ -13,6 +13,7 @@ import CodeBlock from '@theme/CodeBlock';
 
 * In this page:  
    * [Include time series when making a query](../../../../../../document-extensions/timeseries/client-api/session/include/with-session-query.mdx#include-time-series-when-making-a-query)
+   * [Include all time series when making a query](../../../../../../document-extensions/timeseries/client-api/session/include/with-session-query.mdx#include-all-time-series-when-making-a-query)
    * [Syntax](../../../../../../document-extensions/timeseries/client-api/session/include/with-session-query.mdx#syntax)
 
 </Admonition>
@@ -42,6 +43,32 @@ and _include_ entries from the document's "HeartRates" time series.
 
 
 
+## Include all time series when making a query
+
+Call `IncludeAllTimeSeries` to include all the time series of each document that the query returns.
+
+<TabItem value="timeseries_region_Query-Document-And-Include-AllTimeSeries" label="timeseries_region_Query-Document-And-Include-AllTimeSeries">
+<CodeBlock language="csharp">
+{`using (var session = store.OpenSession())
+\{
+    // Query for a document and include all of its time series, whole
+    User user = session.Query<User>()
+        .Where(u => u.Name == "John")
+        .Include(includeBuilder => includeBuilder.IncludeAllTimeSeries())
+        .FirstOrDefault();
+
+    // Include only the last 100 entries of each time series
+    User user2 = session.Query<User>()
+        .Where(u => u.Name == "John")
+        .Include(includeBuilder => includeBuilder.IncludeAllTimeSeries(TimeSeriesRangeType.Last, 100))
+        .FirstOrDefault();
+\}
+`}
+</CodeBlock>
+</TabItem>
+
+
+
 ## Syntax
 
 **`Include`** builder methods:
@@ -59,6 +86,21 @@ and _include_ entries from the document's "HeartRates" time series.
 | **from**  | `DateTime?` | Time series range start (inclusive).<br/>Default: `DateTime.MinValue`. |
 | **to**    | `DateTime?` | Time series range end (inclusive).<br/>Default: `DateTime.MaxValue`.   |
 
+**`IncludeAllTimeSeries`** builder methods:
 
+<TabItem value="IncludeAllTimeSeries-definition" label="IncludeAllTimeSeries-definition">
+<CodeBlock language="csharp">
+{`TBuilder IncludeAllTimeSeries(DateTime? from = null, DateTime? to = null);
+TBuilder IncludeAllTimeSeries(TimeSeriesRangeType type, TimeValue time);
+TBuilder IncludeAllTimeSeries(TimeSeriesRangeType type, int count);
+`}
+</CodeBlock>
+</TabItem>
 
-
+| Parameter | Type                  | Description                                                                                                                                                       |
+|-----------|-----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **from**  | `DateTime?`           | Range start (inclusive).<br/>`null` means no lower bound.                                                                                                          |
+| **to**    | `DateTime?`           | Range end (inclusive).<br/>`null` means no upper bound.                                                                                                            |
+| **type**  | `TimeSeriesRangeType` | `Last` - include the entries from the end of each time series, limited by `time` or by `count`.<br/>`None` cannot be used together with `time` or `count`.        |
+| **time**  | `TimeValue`           | The time span, counted back from the end of each time series, from which entries are included.                                                                       |
+| **count** | `int`                 | The maximum number of entries to include from the end of each time series.                                                                                          |
