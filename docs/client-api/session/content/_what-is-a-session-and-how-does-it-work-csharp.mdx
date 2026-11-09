@@ -193,7 +193,7 @@ using (IAsyncDocumentSession asyncSession = store.OpenAsyncSession())
 
 ### Inspecting the session state
 
-* `session.Advanced.ExternalState` is a `IDictionary<string, object>` that extensions can use to keep additional state per session.  
+* `session.Advanced.ExternalState` is an `IDictionary<string, object>` that extensions can use to keep additional state per session.  
   RavenDB does not read or write it, and it lives as long as the session.
 
 * The number of entities held by the session's unit of work, and the number of [deferred commands](../../../client-api/session/how-to/defer-operations.mdx) waiting for `SaveChanges()`,
@@ -206,7 +206,7 @@ using (IAsyncDocumentSession asyncSession = store.OpenAsyncSession())
 ```csharp
 using (IDocumentSession session = store.OpenSession())
 {
-    session.Advanced.ExternalState["my-extension"] = new MyExtensionState();
+    session.Advanced.ExternalState["my-extension"] = "my state";
 
     session.Store(new Employee { FirstName = "John" }, "employees/1-A");
 
@@ -221,7 +221,7 @@ using (IDocumentSession session = store.OpenSession())
 ```csharp
 using (IAsyncDocumentSession asyncSession = store.OpenAsyncSession())
 {
-    asyncSession.Advanced.ExternalState["my-extension"] = new MyExtensionState();
+    asyncSession.Advanced.ExternalState["my-extension"] = "my state";
 
     await asyncSession.StoreAsync(new Employee { FirstName = "John" }, "employees/1-A");
 
