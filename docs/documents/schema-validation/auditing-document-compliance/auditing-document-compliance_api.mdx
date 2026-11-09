@@ -63,13 +63,26 @@ public class Parameters
   // Target collection to validate
   public string Collection { get; set; }
   
-  // Optional: limit the number of error messages returned (default: 1024)
-  public int MaxErrorMessages { get; set; }
+  // Optional: limit the number of error messages returned (null: 1024).
+  // Must be >= 0 when specified.
+  public int? MaxErrorMessages { get; set; }
 
-  // Optional: limit the number of documents to validate (default: unlimited)
-  public int MaxDocumentsToValidate { get; set; }
+  // Optional: limit the number of documents to validate (null: unlimited).
+  // Must be > 0 when specified.
+  public long? MaxDocumentsToValidate { get; set; }
+
+  // Optional: the etag to start validating from (null: start from the first document).
+  // Not supported on a sharded database.
+  public long? StartEtag { get; set; }
 }
 ```
+
+The constructor throws an `ArgumentNullException` when `parameters` is null,
+an `ArgumentException` when `SchemaDefinition` or `Collection` is null, empty or whitespace,
+and an `ArgumentOutOfRangeException` when `MaxErrorMessages` is negative or `MaxDocumentsToValidate` is not greater than 0.
+
+On a sharded database, the server returns a `BadRequestException` when `StartEtag` is set,
+and divides `MaxErrorMessages` by the number of shards (with a minimum of 1).
 </ContentFrame>
 
 <ContentFrame>
@@ -82,8 +95,18 @@ The operation will run in the background and return a result object containing -
   The number of documents with at least one validation failure  
 - `Errors`  
   A dictionary where each entry contains:
-   - `Key` - The name of the document
-   - `Value` - A newline-delimited string of error messages for the document
+   - `Key` - The ID of the document
+   - `Value` - The error messages of the document, as one string
+
+  Error messages are collected for the first `MaxErrorMessages` invalid documents. Later invalid documents are only counted in `ErrorCount`.
+- `LastEtag`  
+  The etag of the last document that was validated.
+
+While the operation runs, it reports progress as a `ValidateSchemaProgress` with the properties `ValidatedCount` and `ErrorCount` (both `long`).
+`ValidateSchemaResult` derives from `ValidateSchemaProgress`.
+
+`StartSchemaValidationOperation` returns an `OperationIdResult<StartValidateSchemaOperationResult>`.
+`StartValidateSchemaOperationResult` has the properties `ResponsibleNode` (`string`) and `OperationId` (`long`).
 </ContentFrame>
 
 <ContentFrame>
