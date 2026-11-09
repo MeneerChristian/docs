@@ -440,6 +440,18 @@ public GetRemoteAttachmentsConfigurationOperation
 | Parameter         | Type                             | Description                                 |
 |-------------------|----------------------------------|---------------------------------------------|
 | **configuration** | `RemoteAttachmentsConfiguration` | The remote attachments configuration class. |
+
+`ConfigureRemoteAttachmentsOperation` returns a `ConfigureRemoteAttachmentsOperationResult`:
+
+<TabItem value="" label="">
+```csharp
+public sealed class ConfigureRemoteAttachmentsOperationResult
+{
+    // The index of the Raft command that was executed to configure remote attachments
+    public long? RaftCommandIndex { get; set; }
+}
+```
+</TabItem>
     
 ---     
     
@@ -503,6 +515,12 @@ public class RemoteAttachmentsS3Settings
     public string RemoteFolderName { get; set; }
     public string CustomServerUrl { get; set; }
     public bool ForcePathStyle { get; set; }
+    
+    // Set to 'true' to disable checksum validation of the uploads.
+    // Do this only if your S3-compatible storage does not support modern object integrity checks.
+    // Default: false
+    public bool DisableChecksumValidation { get; set; }
+    
     public S3StorageClass? StorageClass { get; set; }
 }
 ```
@@ -519,6 +537,18 @@ public class RemoteAttachmentsAzureSettings
     public string AccountName { get; set; }
     public string AccountKey { get; set; }
     public string SasToken { get; set; }
+}
+```
+</TabItem>
+
+Both `RemoteAttachmentsS3Settings` and `RemoteAttachmentsAzureSettings` implement the `IRemoteAttachmentsSettings` interface,  
+which defines the remote folder name (an S3 key prefix or an Azure Blob Storage folder path, `null` for the root location):
+
+<TabItem value="" label="">
+```csharp
+public interface IRemoteAttachmentsSettings
+{
+    public string RemoteFolderName { get; set; }
 }
 ```
 </TabItem>

@@ -380,6 +380,22 @@ public class StoreAttachmentParameters
 }
 ```
 </TabItem>
+
+`StoreAttachmentParameters` implements the `IStoreAttachmentParameters` interface,  
+which defines the same members:
+
+<TabItem>
+```csharp 
+public interface IStoreAttachmentParameters
+{
+    string Name { get; }
+    Stream Stream { get; }
+    string ChangeVector { get; set; }
+    string ContentType { get; set; }
+    RemoteAttachmentParameters RemoteParameters { get; set; }
+}
+```
+</TabItem>
     
 <TabItem >
 ```csharp 
