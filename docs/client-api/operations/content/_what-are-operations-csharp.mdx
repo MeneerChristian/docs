@@ -777,3 +777,32 @@ public async Task KillAsync(CancellationToken token = default)
 | Parameter   | Type                | Description                                                          |
 |-------------|---------------------|----------------------------------------------------------------------|
 | **token**   | `CancellationToken` | Provide a cancellation token if needed to abort the KillAsync method |
+
+#### Get the state of an operation by its ID:
+
+If you have the ID of an operation, you can fetch its current state with `GetOperationStateOperation` (a maintenance operation on the database)
+or, for a server-wide operation, with `GetServerWideOperationStateOperation` (a server operation).
+
+<TabItem value="get_state" label="get_state">
+<CodeBlock language="csharp">
+{`// Syntax:
+public GetOperationStateOperation(long id)
+public GetOperationStateOperation(long id, string nodeTag)
+public GetServerWideOperationStateOperation(long id)
+
+// Example:
+OperationState state = store.Maintenance.Send(new GetOperationStateOperation(operationId));
+
+if (state != null && state.Status == OperationStatus.Completed)
+\{
+    IOperationResult result = state.Result;
+\}
+`}
+</CodeBlock>
+</TabItem>
+
+* The result is `null` when the server returns no body.
+* `OperationState` has the properties `Status` (`OperationStatus`), `Progress` (`IOperationProgress`) and `Result` (`IOperationResult`).
+* `OperationStatus` has the values `InProgress`, `Completed`, `Faulted` and `Canceled`.
+* The `nodeTag` overload sends the request to the node with that tag.
+
