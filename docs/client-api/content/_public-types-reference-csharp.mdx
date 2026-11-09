@@ -132,7 +132,11 @@ public static class LinqExtensions
     static Task<int> CountAsync<TSource>(IQueryable<TSource> source, Expression<Func<TSource, bool>> predicate, CancellationToken token);
     static Lazy<int> CountLazily<T>(IQueryable<T> source);
     static Lazy<Task<int>> CountLazilyAsync<T>(IQueryable<T> source, CancellationToken token);
+    // Filter allows querying on documents without the need for issuing indexes. It is meant for exploratory queries
+    //    or post query filtering. Criteria are evaluated at query time so please use Filter wisely to avoid
+    //    performance issues.
     static IRavenQueryable<T> Filter<T>(IRavenQueryable<T> source, Expression<Func<T, bool>> predicate, int limit);
+    // 
     static IRavenQueryable<T> Filter<T>(IQueryable<T> source, Expression<Func<T, bool>> predicate, int limit);
     static Task<TSource> FirstAsync<TSource>(IQueryable<TSource> source, CancellationToken token);
     static Task<TSource> FirstAsync<TSource>(IQueryable<TSource> source, Expression<Func<TSource, bool>> predicate, CancellationToken token);
@@ -206,18 +210,21 @@ public static class LinqExtensions
     static Task<TSource> SingleOrDefaultAsync<TSource>(IQueryable<TSource> source, CancellationToken token);
     static Task<TSource> SingleOrDefaultAsync<TSource>(IQueryable<TSource> source, Expression<Func<TSource, bool>> predicate, CancellationToken token);
     static IRavenQueryable<T> Skip<T>(IQueryable<T> source, long count);
+    // Performs spatial query.
     static IRavenQueryable<T> Spatial<T>(IQueryable<T> source, Expression<Func<T, object>> path, Func<SpatialCriteriaFactory, SpatialCriteria> clause);
     static IRavenQueryable<T> Spatial<T>(IQueryable<T> source, string fieldName, Func<SpatialCriteriaFactory, SpatialCriteria> clause);
     static IRavenQueryable<T> Spatial<T>(IQueryable<T> source, Func<DynamicSpatialFieldFactory<T>, DynamicSpatialField> field, Func<SpatialCriteriaFactory, SpatialCriteria> clause);
     static IRavenQueryable<T> Spatial<T>(IQueryable<T> source, DynamicSpatialField field, Func<SpatialCriteriaFactory, SpatialCriteria> clause);
     static ISuggestionQuery<T> SuggestUsing<T>(IQueryable<T> source, SuggestionBase suggestion);
     static ISuggestionQuery<T> SuggestUsing<T>(IQueryable<T> source, Action<ISuggestionBuilder<T>> builder);
+    // Performs secondary sorting of query results in ascending order.
     static IOrderedQueryable<T> ThenBy<T>(IOrderedQueryable<T> source, Expression<Func<T, object>> path, string sorterName);
     static IOrderedQueryable<T> ThenBy<T>(IOrderedQueryable<T> source, string path, string sorterName);
     static IOrderedQueryable<T> ThenBy<T>(IOrderedQueryable<T> source, Expression<Func<T, object>> path, OrderingType ordering);
     static IOrderedQueryable<T> ThenBy<T>(IOrderedQueryable<T> source, Expression<Func<T, object>> path, NullsOrdering nulls, OrderingType ordering);
     static IOrderedQueryable<T> ThenBy<T>(IOrderedQueryable<T> source, string path, OrderingType ordering);
     static IOrderedQueryable<T> ThenBy<T>(IOrderedQueryable<T> source, string path, NullsOrdering nulls, OrderingType ordering);
+    // Performs secondary sorting of query results in descending order.
     static IOrderedQueryable<T> ThenByDescending<T>(IOrderedQueryable<T> source, Expression<Func<T, object>> path, string sorterName);
     static IOrderedQueryable<T> ThenByDescending<T>(IOrderedQueryable<T> source, string path, string sorterName);
     static IOrderedQueryable<T> ThenByDescending<T>(IOrderedQueryable<T> source, Expression<Func<T, object>> path, OrderingType ordering);
@@ -232,12 +239,17 @@ public static class LinqExtensions
     static IAsyncDocumentQuery<T> ToAsyncDocumentQuery<T>(IQueryable<T> source);
     static IDocumentQuery<T> ToDocumentQuery<T>(IQueryable<T> source);
     static Task<List<T>> ToListAsync<T>(IQueryable<T> source, CancellationToken token);
+    // Returns the query results as a stream.
     static void ToStream<T>(IQueryable<T> self, Stream stream);
     static void ToStream<T>(IDocumentQuery<T> self, Stream stream);
+    // Returns the query results as an asynchronous stream.
     static Task ToStreamAsync<T>(IQueryable<T> self, Stream stream, CancellationToken token);
     static Task ToStreamAsync<T>(IAsyncDocumentQuery<T> self, Stream stream, CancellationToken token);
+    // Performs vector search on text data, by queried text.
     static IRavenQueryable<T> VectorSearch<T>(IQueryable<T> source, Func<IVectorFieldFactory<T>, IVectorEmbeddingTextField> textFieldFactory, Action<IVectorEmbeddingTextFieldValueFactory> textValueFactory, float? minimumSimilarity, int? numberOfCandidates, bool isExact);
+    // Performs vector search on embedding data, by queried embedding.
     static IRavenQueryable<T> VectorSearch<T>(IQueryable<T> source, Func<IVectorFieldFactory<T>, IVectorEmbeddingField> embeddingFieldFactory, Action<IVectorEmbeddingFieldValueFactory> embeddingValueFactory, float? minimumSimilarity, int? numberOfCandidates, bool isExact);
+    // Performs vector search on existing vector field.
     static IRavenQueryable<T> VectorSearch<T>(IQueryable<T> source, Func<IVectorFieldFactory<T>, IVectorField> embeddingFieldFactory, Action<IVectorFieldValueFactory> embeddingValueFactory, float? minimumSimilarity, int? numberOfCandidates, bool isExact);
     static IRavenQueryable<T> Where<T>(IQueryable<T> source, Expression<Func<T, int, bool>> predicate, bool exact);
     static IRavenQueryable<T> Where<T>(IQueryable<T> source, Expression<Func<T, bool>> predicate, bool exact);
@@ -275,9 +287,13 @@ public class AiOperations
     GetAiAgentsResponse GetAgents();
     // Retrieves all AI agents and their configurations.
     Task<GetAiAgentsResponse> GetAgentsAsync(CancellationToken token);
+    // Reads messages from an AI conversation. Returns the most recent messages by default.
     AiConversationMessagesResult GetConversationMessages(string conversationId);
+    // Reads messages from an AI conversation with full control over paging and filtering.
     AiConversationMessagesResult GetConversationMessages(GetConversationMessagesOptions parameters);
+    // Reads messages from an AI conversation. Returns the most recent messages by default.
     Task<AiConversationMessagesResult> GetConversationMessagesAsync(string conversationId, CancellationToken token);
+    // Reads messages from an AI conversation with full control over paging and filtering.
     Task<AiConversationMessagesResult> GetConversationMessagesAsync(GetConversationMessagesOptions parameters, CancellationToken token);
 }
 ```
@@ -1399,7 +1415,9 @@ public abstract class AbstractDocumentQuery<T, TSelf> : IDocumentQueryCustomizat
     void GroupBy(ValueTuple<string, GroupByMethod> field, ValueTuple<string, GroupByMethod>[] fields);
     // This function exists solely to forbid Linq group by clause on IDocumentQuery
     IEnumerable<IGrouping<TKey, T>> GroupBy<TKey>(Func<T, TKey> keySelector);
+    // This function exists solely to forbid Linq group by clause on IDocumentQuery
     IEnumerable<IGrouping<TKey, TElement>> GroupBy<TKey, TElement>(Func<T, TKey> keySelector, Func<T, TElement> elementSelector);
+    // This function exists solely to forbid Linq group by clause on IDocumentQuery
     IEnumerable<IGrouping<TKey, T>> GroupBy<TKey>(Func<T, TKey> keySelector, IEqualityComparer<TKey> comparer);
     // This function exists solely to forbid Linq group by clause on IDocumentQuery
     IEnumerable<IGrouping<TKey, TElement>> GroupBy<TKey, TElement>(Func<T, TKey> keySelector, Func<T, TElement> elementSelector, IEqualityComparer<TKey> comparer);
@@ -1622,11 +1640,15 @@ public sealed class DocumentSessionAttachments : DocumentSessionAttachmentsBase,
     DocumentSessionAttachments(InMemoryDocumentSessionOperations session);
     // Check if attachment exists
     bool Exists(string documentId, string name);
+    // Returns the attachment by the document id and attachment name
     AttachmentResult Get(string documentId, string name);
+    // Returns the attachment by the entity and attachment name
     AttachmentResult Get(object entity, string name);
     // Returns multiple attachments by their requests
     IEnumerator<AttachmentEnumeratorResult> Get(IEnumerable<AttachmentRequest> attachments);
+    // Returns a range of the attachment by the document id and attachment name
     AttachmentResult GetRange(string documentId, string name, long? from, long? to);
+    // Returns a range of the attachment by the entity and attachment name
     AttachmentResult GetRange(object entity, string name, long? from, long? to);
     // Returns the revision attachment by the document id, attachment name and change vector
     AttachmentResult GetRevision(string documentId, string name, string changeVector);
@@ -1640,11 +1662,15 @@ public sealed class DocumentSessionAttachmentsAsync : DocumentSessionAttachments
     DocumentSessionAttachmentsAsync(InMemoryDocumentSessionOperations session);
     // Check if attachment exists asynchronously
     Task<bool> ExistsAsync(string documentId, string name, CancellationToken token);
+    // Returns the attachment by the document id and attachment name asynchronously
     Task<AttachmentResult> GetAsync(string documentId, string name, CancellationToken token);
+    // Returns the attachment by the entity and attachment name asynchronously
     Task<AttachmentResult> GetAsync(object entity, string name, CancellationToken token);
     // Returns multiple attachments by their requests asynchronously
     Task<IEnumerator<AttachmentEnumeratorResult>> GetAsync(IEnumerable<AttachmentRequest> attachments, CancellationToken token);
+    // Returns a range of the attachment by the document id and attachment name asynchronously
     Task<AttachmentResult> GetRangeAsync(string documentId, string name, long? from, long? to, CancellationToken token);
+    // Returns a range of the attachment by the entity and attachment name asynchronously
     Task<AttachmentResult> GetRangeAsync(object entity, string name, long? from, long? to, CancellationToken token);
     // Returns the revision attachment by the document id, attachment name and change vector asynchronously
     Task<AttachmentResult> GetRevisionAsync(string documentId, string name, string changeVector, CancellationToken token);
@@ -1655,17 +1681,35 @@ public sealed class DocumentSessionAttachmentsAsync : DocumentSessionAttachments
 // Abstract implementation for in memory session operations
 public abstract class DocumentSessionAttachmentsBase : AdvancedSessionExtensionBase
 {
+    // Copies specified source document attachment to destination document. The operation will be executed when
+    //    SaveChanges is called
     void Copy(object sourceEntity, string sourceName, object destinationEntity, string destinationName);
+    // Copies specified source document attachment to destination document. The operation will be executed when
+    //    SaveChanges is called
     void Copy(string sourceDocumentId, string sourceName, string destinationDocumentId, string destinationName);
+    // Marks the specified document's attachment for deletion. The attachment will be deleted when SaveChanges is
+    //    called
     void Delete(object entity, string name);
+    // Marks the specified document's attachment for deletion. The attachment will be deleted when SaveChanges is
+    //    called
     void Delete(string documentId, string name);
     // Returns the attachments info of a document
     AttachmentName[] GetNames(object entity);
+    // Moves specified source document attachment to destination document. The operation will be executed when
+    //    SaveChanges is called
     void Move(object sourceEntity, string sourceName, object destinationEntity, string destinationName);
+    // Moves specified source document attachment to destination document. The operation will be executed when
+    //    SaveChanges is called
     void Move(string sourceDocumentId, string sourceName, string destinationDocumentId, string destinationName);
+    // Marks the specified document's attachment for rename. The attachment will be renamed when SaveChanges is
+    //    called
     void Rename(string documentId, string name, string newName);
+    // Marks the specified document's attachment for rename. The attachment will be renamed when SaveChanges is
+    //    called
     void Rename(object entity, string name, string newName);
+    // Stores attachment to be sent in the session
     void Store(string documentId, string name, Stream stream, string contentType);
+    // Stores attachment to be sent in the session
     void Store(object entity, string name, Stream stream, string contentType);
     // Stores attachment to be sent in the session using the provided parameters
     void Store(string documentId, StoreAttachmentParameters parameters);
@@ -1837,7 +1881,9 @@ public interface IAbstractDocumentQuery<T>
     void WhereEndsWith(string fieldName, object value);
     // Matches fields which ends with the specified value.
     void WhereEndsWith(string fieldName, object value, bool exact);
+    // Matches documents with value in specified field equal to value provided in parameter.
     void WhereEquals(string fieldName, object value, bool exact);
+    // Matches evaluated method
     void WhereEquals(string fieldName, MethodCall method, bool exact);
     // Matches value
     void WhereEquals(WhereParams whereParams);
@@ -1852,7 +1898,9 @@ public interface IAbstractDocumentQuery<T>
     void WhereLessThan(string fieldName, object value, bool exact);
     // Matches fields where the value is less than or equal to the specified value
     void WhereLessThanOrEqual(string fieldName, object value, bool exact);
+    // Not matches value
     void WhereNotEquals(string fieldName, object value, bool exact);
+    // Not matches evaluated method
     void WhereNotEquals(string fieldName, MethodCall method, bool exact);
     // Not matches value
     void WhereNotEquals(WhereParams whereParams);
@@ -2033,19 +2081,37 @@ public interface IAsyncTimeSeriesStreamingBase<T>
 ```csharp
 public interface IAttachmentsSessionOperationsBase
 {
+    // Copies specified source document attachment to destination document. The operation will be executed when
+    //    'SaveChanges' is called.
     void Copy(object sourceEntity, string sourceName, object destinationEntity, string destinationName);
+    // Copies specified source document attachment to destination document. The operation will be executed when
+    //    'SaveChanges' is called.
     void Copy(string sourceDocumentId, string sourceName, string destinationDocumentId, string destinationName);
+    // Marks the specified document's attachment for deletion. The attachment will be deleted when 'SaveChanges' is
+    //    called.
     void Delete(string documentId, string name);
+    // Marks the specified document's attachment for deletion. The attachment will be deleted when 'SaveChanges' is
+    //    called.
     void Delete(object entity, string name);
     // Returns the attachments info of a document.
     AttachmentName[] GetNames(object entity);
+    // Moves specified source document attachment to destination document. The operation will be executed when
+    //    'SaveChanges' is called.
     void Move(object sourceEntity, string sourceName, object destinationEntity, string destinationName);
+    // Moves specified source document attachment to destination document. The operation will be executed when
+    //    'SaveChanges' is called.
     void Move(string sourceDocumentId, string sourceName, string destinationDocumentId, string destinationName);
+    // Marks the specified document's attachment for rename. The attachment will be renamed when 'SaveChanges' is
+    //    called.
     void Rename(object entity, string name, string newName);
+    // Marks the specified document's attachment for rename. The attachment will be renamed when 'SaveChanges' is
+    //    called.
     void Rename(string documentId, string name, string newName);
     // Stores attachment to be sent in the session.
     void Store(string documentId, StoreAttachmentParameters parameters);
+    // Stores attachment to be sent in the session.
     void Store(string documentId, string name, Stream stream, string contentType);
+    // Stores attachment to be sent in the session.
     void Store(object entity, string name, Stream stream, string contentType);
 }
 ```
@@ -2067,6 +2133,8 @@ public interface IDocumentQueryBuilder
 ```csharp
 public interface IDocumentsSessionOperations
 {
+    // Creates a stream to fetch documents that satisfy criteria 'query'. Documents are converted to CLR type 'T'
+    //    along the way and wrapped in 'StreamResult`1' containing document metadata.
     IEnumerator<StreamResult<T>> Stream<T>(IQueryable<T> query);
     IEnumerator<StreamResult<T>> Stream<T>(IQueryable<T> query, out StreamQueryStatistics streamQueryStats);
     IEnumerator<StreamResult<T>> Stream<T>(IDocumentQuery<T> query);
@@ -2076,6 +2144,7 @@ public interface IDocumentsSessionOperations
     // Creates a stream to fetch documents whose IDs match the given parameters. Documents are converted to CLR type
     //    'T' along the way and wrapped in 'StreamResult`1' containing document metadata.
     IEnumerator<StreamResult<T>> Stream<T>(string startsWith, string matches, int start, int pageSize, string startAfter);
+    // Feeds the query results into given stream 'output'.
     void StreamInto<T>(IDocumentQuery<T> query, Stream output);
     void StreamInto<T>(IRawDocumentQuery<T> query, Stream output);
 }
@@ -2105,6 +2174,7 @@ public interface IPagingDocumentQueryBase<T, TSelf>
 // Time series advanced in memory session operations
 public interface ISessionDocumentAppendTimeSeriesBase
 {
+    // Appends values (and an optional tag) to the time series at the provided timestamp.
     void Append(DateTime timestamp, IEnumerable<double> values, string tag);
     void Append(DateTime timestamp, double value, string tag);
 }
@@ -2142,7 +2212,10 @@ public interface ISessionDocumentIncrementalTimeSeries : ITimeSeriesStreamingBas
 ```csharp
 public interface ISessionDocumentIncrementTimeSeriesBase
 {
+    // Increments the values of the incremental time series at the provided timestamp. If no existing values are
+    //    present, this method behaves as if setting the values.
     void Increment(DateTime timestamp, IEnumerable<double> values);
+    // 
     void Increment(IEnumerable<double> values);
     void Increment(DateTime timestamp, double value);
     void Increment(double value);
@@ -3514,17 +3587,36 @@ public interface IAiConversationOperations
 {
     // Retrieves the list of action-tool requests that the AI agent needs you to execute.
     IEnumerable<AiAgentActionRequest> RequiredActions();
+    // Synchronously executes one turn of the conversation with output format options.
     AiAnswer<TAnswer> RunWithSchema<TAnswer>(AiOutputOptions outputOptions);
+    // Synchronously executes one "turn" of the conversation, deriving the output schema from 'sampleObject' for
+    //    this turn only.
     AiAnswer<TAnswer> RunWithSchema<TAnswer>(TAnswer sampleObject);
+    // Synchronously executes one "turn" of the conversation with an explicit JSON schema override for this turn
+    //    only.
     AiAnswer<TAnswer> RunWithSchema<TAnswer>(string schema);
+    // Asynchronously executes one "turn" of the conversation with output format options, allowing the caller to
+    //    override the agent's default output schema or disable structured output.
     Task<AiAnswer<TAnswer>> RunWithSchemaAsync<TAnswer>(AiOutputOptions outputOptions, CancellationToken token);
+    // Asynchronously executes one "turn" of the conversation, deriving the output schema from 'sampleObject' for
+    //    this turn only.
     Task<AiAnswer<TAnswer>> RunWithSchemaAsync<TAnswer>(TAnswer sampleObject, CancellationToken token);
+    // Asynchronously executes one "turn" of the conversation with an explicit JSON schema override for this turn
+    //    only.
     Task<AiAnswer<TAnswer>> RunWithSchemaAsync<TAnswer>(string schema, CancellationToken token);
+    // Synchronously executes one "turn" of the conversation with streaming and output format options.
     AiAnswer<TAnswer> StreamWithSchema<TAnswer>(string streamPropertyPath, Action<string> streamedChunksCallback, AiOutputOptions outputOptions);
+    // Synchronously executes one "turn" of the conversation with streaming and output format options.
     AiAnswer<TAnswer> StreamWithSchema<TAnswer>(Expression<Func<TAnswer, string>> streamPropertyPath, Action<string> streamedChunksCallback, AiOutputOptions outputOptions);
+    // Asynchronously executes one "turn" of the conversation with streaming and output format options.
     Task<AiAnswer<TAnswer>> StreamWithSchemaAsync<TAnswer>(string streamPropertyPath, Func<string, Task> streamedChunksCallback, AiOutputOptions outputOptions, CancellationToken token);
+    // Asynchronously executes one "turn" of the conversation with streaming and output format options.
     Task<AiAnswer<TAnswer>> StreamWithSchemaAsync<TAnswer>(Expression<Func<TAnswer, string>> streamPropertyPath, Func<string, Task> streamedChunksCallback, AiOutputOptions outputOptions, CancellationToken token);
+    // Asynchronously executes one "turn" of the conversation with streaming, using a sample object to derive the
+    //    output schema.
     Task<AiAnswer<TAnswer>> StreamWithSchemaAsync<TAnswer>(string streamPropertyPath, Func<string, Task> streamedChunksCallback, TAnswer sampleObject, CancellationToken token);
+    // Asynchronously executes one "turn" of the conversation with streaming, using a sample object to derive the
+    //    output schema.
     Task<AiAnswer<TAnswer>> StreamWithSchemaAsync<TAnswer>(Expression<Func<TAnswer, string>> streamPropertyPath, Func<string, Task> streamedChunksCallback, TAnswer sampleObject, CancellationToken token);
 }
 ```
@@ -3862,6 +3954,7 @@ public struct QueryMethodConverter.Parameters<T>
 ```csharp
 public sealed class RavenQueryInspector<T> : IRavenQueryable<T>, IRavenQueryInspector, IAsyncEnumerable<T>
 {
+    // Set the fields to fetch
     void FieldsToFetch(IEnumerable<string> fields);
     IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken);
     // Initializes a new instance of the 'RavenQueryInspector`1' class.
