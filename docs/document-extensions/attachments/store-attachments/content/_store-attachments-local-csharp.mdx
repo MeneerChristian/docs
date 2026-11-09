@@ -370,8 +370,8 @@ void Store(object entity, string name, Stream stream, string contentType = null)
 ```csharp 
 public class StoreAttachmentParameters
 {
-    public string Name { get; set; }   // The name of the attachment to store.
-    public Stream Stream { get; set; } // The stream containing the attachment data.
+    public string Name { get; }   // The name of the attachment to store.
+    public Stream Stream { get; } // The stream containing the attachment data.
     public string ChangeVector { get; set; } 
     public string ContentType { get; set; }
     
@@ -382,7 +382,7 @@ public class StoreAttachmentParameters
 </TabItem>
 
 `StoreAttachmentParameters` implements the `IStoreAttachmentParameters` interface,  
-which defines the same members:
+which defines its members:
 
 <TabItem>
 ```csharp 
