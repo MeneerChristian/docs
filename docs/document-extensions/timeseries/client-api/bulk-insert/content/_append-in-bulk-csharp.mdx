@@ -17,6 +17,8 @@ import CodeBlock from '@theme/CodeBlock';
       * [Append multiple entries](../../../../../document-extensions/timeseries/client-api/bulk-insert/append-in-bulk.mdx#append-multiple-entries)
       * [Append multiple values per entry](../../../../../document-extensions/timeseries/client-api/bulk-insert/append-in-bulk.mdx#append-multiple-values-per-entry)
       * [Append multiple time series](../../../../../document-extensions/timeseries/client-api/bulk-insert/append-in-bulk.mdx#append-multiple-time-series) 
+      * [Append asynchronously](../../../../../document-extensions/timeseries/client-api/bulk-insert/append-in-bulk.mdx#append-asynchronously)
+      * [Append typed entries](../../../../../document-extensions/timeseries/client-api/bulk-insert/append-in-bulk.mdx#append-typed-entries)
   * [Syntax](../../../../../document-extensions/timeseries/client-api/bulk-insert/append-in-bulk.mdx#syntax)
 
 </Admonition>
@@ -150,6 +152,56 @@ In this example, we append multiple time series in different documents in the sa
 `}
 </CodeBlock>
 </TabItem>
+#### Append asynchronously:
+
+Each `Append` method has an `AppendAsync` counterpart that returns a `Task`.
+<TabItem value="timeseries_region_Use-BulkInsert-To-Append-async" label="timeseries_region_Use-BulkInsert-To-Append-async">
+<CodeBlock language="csharp">
+{`using (BulkInsertOperation bulkInsert = store.BulkInsert())
+\{
+    using (TimeSeriesBulkInsert timeSeriesBulkInsert =
+           bulkInsert.TimeSeriesFor("users/john", "HeartRates"))
+    \{
+        // Append a single value
+        await timeSeriesBulkInsert.AppendAsync(baseTime.AddMinutes(1), 61d, "watches/fitbit");
+
+        // Append multiple values
+        await timeSeriesBulkInsert.AppendAsync(
+            baseTime.AddMinutes(2), new List<double> \{ 59d, 63d, 61d \}, "watches/fitbit");
+    \}
+\}
+`}
+</CodeBlock>
+</TabItem>
+#### Append typed entries:
+
+Call `TimeSeriesFor<TValues>` to append entries of a [custom type](../../../../../document-extensions/timeseries/client-api/named-time-series-values.mdx).  
+The values are taken from the members of `TValues` that are marked with `[TimeSeriesValue]`.  
+When no name is passed, the time series name is the collection name of `TValues`, resolved using the store's conventions.
+<TabItem value="timeseries_region_Use-BulkInsert-To-Append-typed" label="timeseries_region_Use-BulkInsert-To-Append-typed">
+<CodeBlock language="csharp">
+{`using (BulkInsertOperation bulkInsert = store.BulkInsert())
+\{
+    using (TypedTimeSeriesBulkInsert<StockPrice> timeSeriesBulkInsert =
+           bulkInsert.TimeSeriesFor<StockPrice>("companies/91-A", "StockPrices"))
+    \{
+        // Append a value of the custom type
+        timeSeriesBulkInsert.Append(baseTime.AddDays(1),
+            new StockPrice \{ Open = 52, Close = 54, High = 63.5, Low = 51.4, Volume = 9824 \},
+            "companies/kitchenAppliances");
+
+        // Append a time series entry
+        timeSeriesBulkInsert.Append(new TimeSeriesEntry<StockPrice>
+        \{
+            Timestamp = baseTime.AddDays(2),
+            Value = new StockPrice \{ Open = 54, Close = 55, High = 57, Low = 53, Volume = 4560 \},
+            Tag = "companies/kitchenAppliances"
+        \});
+    \}
+\}
+`}
+</CodeBlock>
+</TabItem>
 
 
 
@@ -168,6 +220,14 @@ In this example, we append multiple time series in different documents in the sa
 |-------------|----------|------------------|
 | **id**      | `string` | Document ID      |
 | **name**    | `string` | Time Series Name |
+
+<TabItem value="TimeSeriesFor-typed-Definition" label="TimeSeriesFor-typed-Definition">
+<CodeBlock language="csharp">
+{`public TypedTimeSeriesBulkInsert<TValues> TimeSeriesFor<TValues>(string id, string name = null)
+    where TValues : new()
+`}
+</CodeBlock>
+</TabItem>
 
 **`TimeSeriesFor.Append`** overloads:
 
@@ -193,6 +253,35 @@ public void Append(DateTime timestamp, ICollection<double> values, string tag = 
 | **values**    | `ICollection<double>` | Multiple values           |
 | **tag**       | `string`              | TS-entry's tag (optional) |
 
+**`TimeSeriesFor.AppendAsync`** overloads:
 
+<TabItem value="AppendAsync-Operation-Definition" label="AppendAsync-Operation-Definition">
+<CodeBlock language="csharp">
+{`// Append a single value
+public Task AppendAsync(DateTime timestamp, double value, string tag = null)
 
+// Append multiple values
+public Task AppendAsync(DateTime timestamp, ICollection<double> values, string tag = null)
+`}
+</CodeBlock>
+</TabItem>
 
+**`TypedTimeSeriesBulkInsert<TValues>`** methods:
+
+<TabItem value="Typed-Append-Definition" label="Typed-Append-Definition">
+<CodeBlock language="csharp">
+{`public void Append(DateTime timestamp, TValues value, string tag = null)
+public Task AppendAsync(DateTime timestamp, TValues value, string tag = null)
+
+public void Append(TimeSeriesEntry<TValues> entry)
+public Task AppendAsync(TimeSeriesEntry<TValues> entry)
+`}
+</CodeBlock>
+</TabItem>
+
+| Parameter     | Type                        | Description                                         |
+|---------------|-----------------------------|-----------------------------------------------------|
+| **timestamp** | `DateTime`                  | TS-entry's timestamp                                |
+| **value**     | `TValues`                   | The entry's values, as an instance of the custom type |
+| **entry**     | `TimeSeriesEntry<TValues>`  | The entry's timestamp, values, and tag              |
+| **tag**       | `string`                    | TS-entry's tag (optional)                           |
