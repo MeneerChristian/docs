@@ -150,3 +150,44 @@ BulkInsert =
 * `IgnoreUnsafeMembers` default value: `false`  
 
 </ContentFrame>
+
+
+## Serialization
+
+`DocumentConventions.Serialization` (type `ISerializationConventions`) holds the serializer implementation that the client uses.
+
+* Its default value is a `NewtonsoftJsonSerializationConventions` instance, which is also the object that exposes
+  the Newtonsoft-specific conventions described above, such as `CustomizeJsonSerializer` and `JsonContractResolver`.
+* Setting it to `null` throws an `ArgumentNullException`.
+  Setting it initializes the new object with the conventions (`Initialize`).
+
+```csharp
+// Syntax:
+public ISerializationConventions Serialization { get; set; }
+```
+
+`ISerializationConventions` (namespace `Raven.Client.Json.Serialization`) has these members:
+
+| Member                                                                                | Description |
+|---------------------------------------------------------------------------------------|-------------|
+| `Conventions` (`DocumentConventions`)                                                 | The conventions the object was initialized with |
+| `Initialize(DocumentConventions conventions)`                                         | Binds the object to the conventions |
+| `CreateSerializer(CreateSerializerOptions options = null)`                            | Creates an `IJsonSerializer` for writing |
+| `CreateDeserializer(CreateDeserializerOptions options = null)`                        | Creates an `IJsonSerializer` for reading |
+| `DefaultConverter` (`IBlittableJsonConverter`)                                        | The default entity-to-blittable converter |
+| `CreateConverter<T>(SubscriptionBatch<T> batch)`                                      | Creates an `ISubscriptionsBlittableJsonConverter` for a subscription batch |
+| `CreateConverter(InMemoryDocumentSessionOperations session)`                          | Creates an `ISessionBlittableJsonConverter` for a session |
+| `CreateWriter(JsonOperationContext context)`                                          | Creates an `IJsonWriter` |
+| `DeserializeEntityFromBlittable(Type type, BlittableJsonReaderObject json)`           | Deserializes an entity of the given type |
+| `DeserializeEntityFromBlittable<T>(BlittableJsonReaderObject json)`                   | Deserializes an entity of type `T` |
+
+#### Serializer options
+
+`CreateSerializerOptions` has one property, `TypeNameHandling` (`TypeNameHandling?`, default `null`).
+`CreateDeserializerOptions` derives from it and adds nothing.
+The `TypeNameHandling` enum has the values `None`, `Objects` and `Auto`.
+
+With the Newtonsoft implementation, the serializers it creates start with `TypeNameHandling.Auto`.
+A non-null `TypeNameHandling` in the options replaces that setting, and `null` keeps it.
+For example, the client creates a serializer with `TypeNameHandling.None` for JSON patch operations.
+
