@@ -829,48 +829,8 @@ TSelf WithTag(string tag);
 
 <Panel heading="QueryOperation">
 
-* The `QueryOperation` property of the customization object exposes the `QueryOperation` that is behind the query.  
-  It is created when the query is executed, so read it after the query has run.
-
-* Use it to inspect the `IndexQuery` that was sent to the server (`QueryOperation.IndexQuery`)
-  and the raw results of the query (`QueryOperation.CurrentQueryResults`).
-
-**Example**
-
-<Tabs groupId='languageSyntax'>
-<TabItem value="Query" label="Query">
-```csharp
-IDocumentQueryCustomization customization = null;
-
-List<Employee> results = session
-    .Query<Employee>()
-     // Keep the customization object
-    .Customize(x => customization = x)
-    .Where(x => x.FirstName == "Robert")
-    .ToList();
-
-// The query was executed, its operation can now be inspected
-IndexQuery indexQuery = customization.QueryOperation.IndexQuery;
-QueryResult queryResult = customization.QueryOperation.CurrentQueryResults;
-```
-</TabItem>
-<TabItem value="Query_async" label="Query_async">
-```csharp
-IDocumentQueryCustomization customization = null;
-
-List<Employee> results = await asyncSession
-    .Query<Employee>()
-     // Keep the customization object
-    .Customize(x => customization = x)
-    .Where(x => x.FirstName == "Robert")
-    .ToListAsync();
-
-// The query was executed, its operation can now be inspected
-IndexQuery indexQuery = customization.QueryOperation.IndexQuery;
-QueryResult queryResult = customization.QueryOperation.CurrentQueryResults;
-```
-</TabItem>
-</Tabs>
+* The `QueryOperation` property of the customization object returns the raw query operation that will be sent to the server.  
+  It exposes the `IndexQuery` (`QueryOperation.IndexQuery`) and the raw results of the query (`QueryOperation.CurrentQueryResults`).
 
 **Syntax**
 
