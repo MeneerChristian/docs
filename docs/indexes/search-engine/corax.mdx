@@ -699,6 +699,42 @@ order by UnitsInStock
     
 ---
  
+#### Other ways to define a compound field in code:
+
+* `CompoundField` has an overload that takes the two index-field names as strings:  
+  `CompoundField(string firstField, string secondField)`. It is the overload to use in a JavaScript index class.
+
+* The pairs are collected in two public lists of the index class:  
+  `CompoundFields` (pairs of expressions, on `AbstractGenericIndexCreationTask<TReduceResult>`) and  
+  `CompoundFieldsStrings` (pairs of names, `List<string[]>`).  
+  The same lists exist on `IndexDefinitionBuilder`.
+
+* On an `IndexDefinition`, the pairs are the `CompoundFields` property, a `List<string[]>`.
+
+```csharp
+public class Products_ByCategoryAndUnitsInStock_JS : AbstractJavaScriptIndexCreationTask
+{
+    public Products_ByCategoryAndUnitsInStock_JS()
+    {
+        Maps = new HashSet<string>
+        {
+            @"map('Products', function (product) {
+                return {
+                    Category: product.Category,
+                    UnitsInStock: product.UnitsInStock
+                };
+            })"
+        };
+
+        SearchEngineType = Raven.Client.Documents.Indexes.SearchEngineType.Corax;
+
+        CompoundField("Category", "UnitsInStock");
+    }
+}
+```
+
+---
+
 You can also define a compound field from Studio when editing an index:    
     
  ![Corax Database Options](./assets/corax-09-add-compound-field.png)
