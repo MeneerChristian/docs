@@ -319,6 +319,42 @@ User user2 = await lazyUser2.Value;
 </CodeBlock>
 </TabItem>
 
+### Execute all requests - the returned `ResponseTimeInformation`
+
+`ExecuteAllPendingLazyOperations` and `ExecuteAllPendingLazyOperationsAsync` return a `ResponseTimeInformation` object
+that describes the executed requests. If no lazy request was pending, an empty object is returned.
+
+| Member | Type | Description |
+|--------|------|-------------|
+| **TotalServerDuration** | `TimeSpan` | The sum of the durations that the server reported for the individual requests. |
+| **TotalClientDuration** | `TimeSpan` | The time that passed on the client from the start of the execution until all the lazy results were evaluated. |
+| **DurationBreakdown** | `List<ResponseTimeItem>` | One item per request that was sent. |
+
+Each `ResponseTimeItem` has:
+
+| Member | Type | Description |
+|--------|------|-------------|
+| **Url** | `string` | The URL and query string of the request. |
+| **Duration** | `TimeSpan` | The request duration that the server reported. |
+
+<TabItem value="lazy_ResponseTimeInformation" label="lazy_ResponseTimeInformation">
+<CodeBlock language="csharp">
+{`Lazy<User> lazyUser = session.Advanced.Lazily.Load<User>("users/1-A");
+Lazy<IEnumerable<Employee>> lazyEmployees = session.Query<Employee>().Lazily();
+
+ResponseTimeInformation info = session.Advanced.Eagerly.ExecuteAllPendingLazyOperations();
+
+TimeSpan serverDuration = info.TotalServerDuration;
+TimeSpan clientDuration = info.TotalClientDuration;
+
+foreach (ResponseTimeItem item in info.DurationBreakdown)
+{
+    Console.WriteLine($"{item.Url}: {item.Duration}");
+}
+`}
+</CodeBlock>
+</TabItem>
+
 
 
 
